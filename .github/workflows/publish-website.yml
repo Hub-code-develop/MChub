@@ -20,16 +20,30 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: MChub.Web/package-lock.json
+
+      - name: 安装依赖
+        run: npm install
+        working-directory: MChub.Web
+
+      - name: 构建
+        run: npm run build
+        working-directory: MChub.Web
+
       - name: Prepare for GitHub Pages
         run: |
-          cd MChub.Web/wwwroot
+          cd MChub.Web/dist
           touch .nojekyll
           cp index.html 404.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: MChub.Web/wwwroot
+          path: MChub.Web/dist
 
       - name: Deploy to GitHub Pages
         id: deployment
