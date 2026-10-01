@@ -194,7 +194,7 @@
     "preauthFailed": "Xbox 预认证失败（{0}）：{1}",
     "responseMissingXboxProperty": "Xbox 响应缺少 {0}。",
     "serviceRejectedRequest": "服务拒绝请求",
-    "missingXUserHookDll": "MChub.Bedrock.Windows 未包含 MChub.XUserHook.dll。",
+    
     "missingAccessToken": "基岩账户缺少 Microsoft access token。",
     "invalidPrivateKeyBlob": "保存的 Xbox P-256 私钥 blob 无效。",
     "invalidPublicKey": "P-256 公钥坐标无效。",

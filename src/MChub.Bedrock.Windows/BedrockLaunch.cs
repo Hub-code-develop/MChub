@@ -77,14 +77,16 @@ public class BedrockLaunch : IBedrockLaunch
         var existingProcessIds = Process.GetProcessesByName("Minecraft.Windows").Select(process => process.Id).ToHashSet();
         var launchStarted = DateTime.Now;
         Log(BedrockLogLevel.Information, string.Format(LogLanguageManager.Instance.bedrockLaunch_launchingMinecraftWindows.CurrentValue(), _instanceConfig.InstancePath));
-        if (Authentication != null && _instanceConfig.BuildType == BedrockBuildType.GDK)
+        if (_instanceConfig.BuildType == BedrockBuildType.GDK)
         {
-            launchedProcess = await LaunchWithXboxAccountAsync(Authentication).ConfigureAwait(false);
+            var manifestExists = File.Exists(Path.Combine(_instanceConfig.InstancePath, "AppxManifest.xml"));
+            var launchModeLog = manifestExists
+                ? LogLanguageManager.Instance.bedrockLaunch_gdkAppModel.CurrentValue()
+                : LogLanguageManager.Instance.bedrockLaunch_gdkDirectLaunch.CurrentValue();
+            Log(BedrockLogLevel.Information, string.Format(launchModeLog, _instanceConfig.InstancePath));
         }
-        else
-        {
-            launchedProcess = await Task.Run(() => new BedrockWindowsCore().LaunchGameAsync(options)).ConfigureAwait(false);
-        }
+
+        launchedProcess = await Task.Run(() => new BedrockWindowsCore().LaunchGameAsync(options)).ConfigureAwait(false);
         if (launchedProcess == null)
         {
             Log(BedrockLogLevel.Warning, LogLanguageManager.Instance.bedrockLaunch_waitingForProcess.CurrentValue());
@@ -117,26 +119,6 @@ public class BedrockLaunch : IBedrockLaunch
     }
 
     private void Log(BedrockLogLevel level, string message) => LogReceived?.Invoke(message, level);
-
-    private async Task<Process> LaunchWithXboxAccountAsync(BedrockAuthentication account)
-    {
-        Log(BedrockLogLevel.Information, string.Format(LogLanguageManager.Instance.bedrockLaunch_linkingXboxAccount.CurrentValue(), account.Gamertag));
-        var launcher = new MChubXUserLauncher(_instanceConfig.InstancePath);
-        launcher.DeployHook();
-        using var authentication = await MChubXUserLauncher.AuthenticateAsync(account.AccessToken);
-        var executable = Path.Combine(_instanceConfig.InstancePath, "Minecraft.Windows.exe");
-        var result = await MChubXUserLauncher.LaunchAndInjectAsync(executable, BuildLaunchArguments(),
-            _instanceConfig.InstancePath,
-            authentication, TimeSpan.FromSeconds(60), processId =>
-            {
-                MinecraftProcess = Process.GetProcessById((int)processId);
-                BedrockPreloadTrigger.Trigger(MinecraftProcess, LogReceived);
-                ProcessStarted?.Invoke(MinecraftProcess);
-            });
-        var process = Process.GetProcessById((int)result.ProcessId);
-        Log(BedrockLogLevel.Information, LogLanguageManager.Instance.bedrockLaunch_xboxAccountInjected.CurrentValue());
-        return process;
-    }
 
     private string? BuildLaunchArguments()
     {

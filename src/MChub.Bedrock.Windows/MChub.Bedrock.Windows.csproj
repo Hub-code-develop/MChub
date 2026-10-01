@@ -21,8 +21,6 @@
     <ItemGroup>
       <EmbeddedResource Include="..\MChub.Bedrock.Preload\MChub.Preload.dll"
                         LogicalName="MChub.Preload.dll" />
-      <EmbeddedResource Include="..\MChub.Bedrock.Hook\MChub.XUserHook.dll"
-                        LogicalName="MChub.Bedrock.XUserHook.dll" />
       <EmbeddedResource Include="$(NativeInjectorResource)"
                         LogicalName="MChub.Inject.dll" />
       <EmbeddedResource Include="$(NativeBootstrapResource)"

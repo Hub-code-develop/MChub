@@ -59,7 +59,10 @@ public sealed class BedrockWindowsCore : BedrockCore
 
 	public async Task<Process> LaunchGameAsync(LaunchOptions options)
 	{
-		if (options.MinecraftBuildType == MinecraftBuildTypeVersion.GDK)
+		// GDK 版解包后若带 AppxManifest.xml,就走下方官方应用模型激活,由 Xbox App / GamingServices 处理授权;
+		// 只有缺少清单时才退回直接启动可执行文件。
+		if (options.MinecraftBuildType == MinecraftBuildTypeVersion.GDK &&
+			!File.Exists(Path.Combine(options.GameFolder, "AppxManifest.xml")))
 		{
 			options.Progress?.Report(LaunchState.Launching);
 			string executable = Path.Combine(options.GameFolder, "Minecraft.Windows.exe");
@@ -100,7 +103,8 @@ public sealed class BedrockWindowsCore : BedrockCore
 			options.Progress?.Report(LaunchState.Launched);
 			return result;
 		}
-		if (options.MinecraftBuildType == MinecraftBuildTypeVersion.UWP)
+		if (options.MinecraftBuildType == MinecraftBuildTypeVersion.GDK ||
+			options.MinecraftBuildType == MinecraftBuildTypeVersion.UWP)
 		{
 			string manifestPath = Path.Combine(options.GameFolder, "AppxManifest.xml");
 			MinecraftGameTypeVersion gameType = options.GameType;

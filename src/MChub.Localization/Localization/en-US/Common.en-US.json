@@ -194,7 +194,7 @@
     "preauthFailed": "Xbox pre-authentication failed ({0}): {1}",
     "responseMissingXboxProperty": "The Xbox response is missing {0}.",
     "serviceRejectedRequest": "The service rejected the request",
-    "missingXUserHookDll": "MChub.Bedrock.Windows does not include MChub.XUserHook.dll.",
+    
     "missingAccessToken": "The Bedrock account is missing a Microsoft access token.",
     "invalidPrivateKeyBlob": "The saved Xbox P-256 private key blob is invalid.",
     "invalidPublicKey": "The P-256 public key coordinates are invalid.",
