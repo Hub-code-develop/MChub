@@ -21,8 +21,11 @@ public class InstanceManager
 
     private InstanceManager()
     {
+        // macOS 上没有原生基岩版，但可通过 Wine 系运行时承载 Windows GDK 版（x64），
+        // 因此 arm64 主机同样启用基岩版实例目录。
         if (OperatingSystem.IsWindows() ||
-            (OperatingSystem.IsLinux() && RuntimeInformation.ProcessArchitecture == Architecture.X64))
+            (OperatingSystem.IsLinux() && RuntimeInformation.ProcessArchitecture == Architecture.X64) ||
+            OperatingSystem.IsMacOS())
             VersionFolders.Add("bedrock_versions");
     }
 

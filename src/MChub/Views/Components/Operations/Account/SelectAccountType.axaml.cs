@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -45,12 +45,9 @@ public class SelectAccountTypeViewModel : ObservableObject, IDialogContext
         AuthServers.Add(OfflineServer);
         AuthServers.Add(MicrosoftServer);
         AuthServers.Add(YggdrasilServer);
-        if (!OperatingSystem.IsMacOS())
-        {
-            BedrockServer = new Minecraft.Classes.AuthServer(AccountType.Bedrock,
-                CommonLanguageManager.Instance.account_linkXbox.CurrentValue()) { IconGlyph = "\ue655" };
-            AuthServers.Add(BedrockServer);
-        }
+        BedrockServer = new Minecraft.Classes.AuthServer(AccountType.Bedrock,
+            CommonLanguageManager.Instance.account_linkXbox.CurrentValue()) { IconGlyph = "\ue655" };
+        AuthServers.Add(BedrockServer);
 
         NextCommand = new RelayCommand(Next, CanNext);
         CancelCommand = new RelayCommand(Cancel);

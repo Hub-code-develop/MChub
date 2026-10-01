@@ -11,6 +11,7 @@
     <Project Path="src/MChub.Bedrock.Hook/MChub.Bedrock.Hook.csproj" />
     <Project Path="src/MChub.Bedrock.Injector/MChub.Bedrock.Injector.vcxproj" />
     <Project Path="src/MChub.Bedrock.Linux/MChub.Bedrock.Linux.csproj" />
+    <Project Path="src/MChub.Bedrock.MacOS/MChub.Bedrock.MacOS.csproj" />
     <Project Path="src/MChub.Bedrock.PeNet/src/PeNet/MChub.Bedrock.PeNet.csproj" />
     <Project Path="src/MChub.Bedrock.Preload/MChub.Bedrock.Preload.csproj" />
     <Project Path="src/MChub.Bedrock.Standard/MChub.Bedrock.Standard.csproj" />

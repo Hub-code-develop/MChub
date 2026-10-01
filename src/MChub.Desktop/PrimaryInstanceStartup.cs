@@ -64,7 +64,7 @@ internal static class PrimaryInstanceStartup
 
         Logger.Info(LogLanguageManager.Instance.desktop_primaryInstance_mainEntry.CurrentValue());
 
-#if WINDOWS || LINUX
+#if WINDOWS || LINUX || MACOS
         AppSetup.RegisterBedrockLauncher();
 #endif
 

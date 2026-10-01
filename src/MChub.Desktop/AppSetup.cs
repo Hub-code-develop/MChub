@@ -7,7 +7,7 @@ namespace MChub.Desktop;
 
 internal static class AppSetup
 {
-#if WINDOWS || LINUX
+#if WINDOWS || LINUX || MACOS
     public static void RegisterBedrockLauncher()
     {
 #if WINDOWS
@@ -30,6 +30,16 @@ internal static class AppSetup
             };
         Bedrock.Standard.Interface.BedrockInstallationService.DefaultInstaller =
             new Bedrock.Linux.BedrockInstaller();
+#elif MACOS
+        // 基岩版没有 macOS 原生客户端，这里注册的是通过 Wine 系运行时承载的 Windows GDK 版。
+        MinecraftLaunchService.DefaultBedrockLauncherFactory =
+            config =>
+            {
+                config.LauncherVersion = AppVersionService.Instance.Version.VersionTitle;
+                return new Bedrock.MacOS.BedrockLaunch(config);
+            };
+        Bedrock.Standard.Interface.BedrockInstallationService.DefaultInstaller =
+            new Bedrock.MacOS.BedrockInstaller();
 #endif
     }
 #endif

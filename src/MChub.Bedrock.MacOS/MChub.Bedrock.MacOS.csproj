@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>MChub.Bedrock.MacOS</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MChub.Bedrock.PeNet\src\PeNet\MChub.Bedrock.PeNet.csproj" />
+    <ProjectReference Include="..\MChub.Bedrock.Core\MChub.Bedrock.Core.csproj" />
+    <ProjectReference Include="..\MChub.Bedrock.Standard\MChub.Bedrock.Standard.csproj" />
+    <ProjectReference Include="..\MChub.Localization\MChub.Localization.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\MChub.Bedrock.Preload\MChub.Preload.dll" LogicalName="MChub.Preload.dll" />
+    <EmbeddedResource Include="..\MChub.Bedrock.Bootstrap\MChub.Bootstrap.dll" LogicalName="MChub.Bootstrap.dll" />
+  </ItemGroup>
+
+</Project>

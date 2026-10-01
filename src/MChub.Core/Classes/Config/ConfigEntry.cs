@@ -53,12 +53,12 @@ public partial class ConfigEntry : ObservableObject
     public ObservableCollection<MinecraftAccount> MinecraftAccounts { get; } = [];
     public ObservableCollection<BedrockAccount> BedrockAccounts { get; } = [];
     public bool HasJavaAccounts => MinecraftAccounts.Count > 0;
-    public bool HasBedrockAccounts => !OperatingSystem.IsMacOS() && BedrockAccounts.Count > 0;
+    public bool HasBedrockAccounts => BedrockAccounts.Count > 0;
     public bool HasBothAccountEditions => HasJavaAccounts && HasBedrockAccounts;
     public bool HasAnyAccounts => HasJavaAccounts || HasBedrockAccounts;
 
     public string CurrentAccountDisplay => UsingMinecraftMinecraftAccount?.ShortDisplay
-                                           ?? (OperatingSystem.IsMacOS() ? null : UsingBedrockAccount?.ShortDisplay)
+                                           ?? UsingBedrockAccount?.ShortDisplay
                                            ?? CommonLanguageManager.Instance.config_noAccount.CurrentValue();
 
     public ObservableCollection<MinecraftFolderEntry> MinecraftFolders { get; } = [];

@@ -17,6 +17,7 @@
     <PropertyGroup Condition="$(RuntimeIdentifier.Contains('osx'))">
         <DefineConstants>MACOS</DefineConstants>
         <UseMauiEssentials>false</UseMauiEssentials>
+        <TargetsMacOS>true</TargetsMacOS>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(TargetsLinux)' == 'true'">

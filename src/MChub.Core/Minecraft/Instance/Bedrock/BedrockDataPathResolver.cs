@@ -15,6 +15,9 @@ public static class BedrockDataPathResolver
         if (OperatingSystem.IsLinux())
             return GetLinuxProtonDataRoot(config);
 
+        if (OperatingSystem.IsMacOS())
+            return GetMacWineDataRoot(config);
+
         if (config.EnableIndependentInstance)
             return config.EnableLauncherSharedData
                 ? GetInstanceSharedDataRoot(config)
@@ -58,6 +61,29 @@ public static class BedrockDataPathResolver
 
         return Path.Combine(Path.GetFullPath(prefix), "pfx", "drive_c", "users", "steamuser", "AppData",
             "Roaming", GetBedrockFolderName(config));
+    }
+
+    /// <summary>
+    /// macOS 侧的 Wine 前缀布局与 Proton 不同：标准 Wine（GPTK / CrossOver / Whisky）没有
+    /// 中间的 <c>pfx</c> 层，用户目录名也随前缀初始化时的用户名而定。
+    /// </summary>
+    private static string GetMacWineDataRoot(BedrockInstanceConfig config)
+    {
+        var prefix = Environment.GetEnvironmentVariable("MCHUB_BEDROCK_PREFIX");
+        if (string.IsNullOrWhiteSpace(prefix))
+            prefix = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Library", "Application Support", "MChub", "Bedrock", "wine-prefix");
+
+        var users = Path.Combine(Path.GetFullPath(prefix), "drive_c", "users");
+        var user = Directory.Exists(users)
+            ? Directory.EnumerateDirectories(users)
+                .Select(Path.GetFileName)
+                .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name) &&
+                                        !string.Equals(name, "Public", StringComparison.OrdinalIgnoreCase))
+            : null;
+        user ??= Environment.UserName;
+
+        return Path.Combine(users, user, "AppData", "Roaming", GetBedrockFolderName(config));
     }
 
     public static string GetMojangDataRoot(BedrockInstanceConfig config, string userId = "Shared")

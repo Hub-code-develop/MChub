@@ -67,6 +67,8 @@
                           Include="..\MChub.Bedrock.Windows\MChub.Bedrock.Windows.csproj"/>
         <ProjectReference Condition="'$(TargetsLinux)' == 'true'"
                           Include="..\MChub.Bedrock.Linux\MChub.Bedrock.Linux.csproj"/>
+        <ProjectReference Condition="'$(TargetsMacOS)' == 'true'"
+                          Include="..\MChub.Bedrock.MacOS\MChub.Bedrock.MacOS.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
