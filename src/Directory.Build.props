@@ -14,7 +14,9 @@
         <TargetsLinux Condition="'$(RuntimeIdentifier)' == '' And '$(RuntimeIdentifiers)' == '' And '$(IsLinuxBuildHost)' == 'true' And '$(IsX64BuildHost)' == 'true'">true</TargetsLinux>
     </PropertyGroup>
 
-    <PropertyGroup Condition="$(RuntimeIdentifier.Contains('osx'))">
+    <!-- dotnet restore -r osx-arm64 只会设置 RuntimeIdentifiers（复数），只有构建时的 -p:RuntimeIdentifier= 才设置单数，
+         两处都要判定，否则 restore 阶段 MChub.Bedrock.MacOS 不进入还原图，构建时就会报 NETSDK1004。 -->
+    <PropertyGroup Condition="$(RuntimeIdentifier.Contains('osx')) Or ('$(RuntimeIdentifier)' == '' And $(RuntimeIdentifiers.Contains('osx')))">
         <DefineConstants>MACOS</DefineConstants>
         <UseMauiEssentials>false</UseMauiEssentials>
         <TargetsMacOS>true</TargetsMacOS>

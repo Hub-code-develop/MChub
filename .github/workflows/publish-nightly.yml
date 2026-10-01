@@ -347,8 +347,9 @@ jobs:
               local pid=$!
               ( sleep 600; kill -9 "$pid" 2>/dev/null ) &
               local killer=$!
-              wait "$pid"
-              local rc=$?
+              # GitHub 默认 shell 带 -e，wait 直接返回非 0 会终止脚本，导致重试分支永远不执行
+              local rc=0
+              wait "$pid" || rc=$?
               kill "$killer" 2>/dev/null || true
               if [ "$rc" -eq 0 ]; then
                 echo "== $label OK =="
