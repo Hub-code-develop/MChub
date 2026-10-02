@@ -470,4 +470,6 @@ LAUNCH-VERIFY.log
 # ===== 发布会产生的临时目录 =====
 dist/
 MChub.Release/
+# macOS 基岩版运行时构建(scripts/mcbe-macos)的中间目录与产物
+.work/
 

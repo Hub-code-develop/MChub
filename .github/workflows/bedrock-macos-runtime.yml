@@ -1,0 +1,136 @@
+name: bedrock-macos-runtime
+
+# macOS 上运行 Windows GDK 版基岩版所需的运行时:
+#   wine/    —— WineGDK 分支的 Wine(x86_64),含 xgameruntime.dll(PE) 与 xgameruntime.so(unix)
+#   xodus/   —— 原生 xodus-service,负责 MSA/XSTS/许可,监听 /tmp/xodus.sock
+#   render/  —— MoltenVK、DXVK、vkd3d-proton
+#
+# 由 mac-dmg 通过 workflow_call 调用,产物以 mcbe-macos-runtime 工件上传,
+# 打包时解到 MChub.app/Contents/MacOS/mcbe-macos(MChub.Bedrock.MacOS 会在该路径下探测)。
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WINE_GDK_REPO: https://github.com/Weather-OS/WineGDK.git
+  WINE_GDK_REF: b03ba49c4f326c36aa6930fbe6cf72841ef3738c
+  XODUS_REPO: https://github.com/xodus-gaming/xodus.git
+  XODUS_REF: main
+  MOLTENVK_VERSION: 1.4.2
+  DXVK_VERSION: 3.1.1
+  VKD3D_PROTON_VERSION: 3.0.1
+
+jobs:
+  xodus-service:
+    name: xodus-service (native macOS)
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 安装 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 缓存 cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ runner.os }}-xodus-${{ hashFiles('.github/workflows/bedrock-macos-runtime.yml') }}
+
+      - name: 安装 protobuf(xodus 的 build script 需要 protoc)
+        run: brew install --quiet protobuf
+
+      - name: 构建 xodus-service
+        run: ./scripts/mcbe-macos/build-xodus-service.sh
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v7
+        with:
+          name: mcbe-macos-xodus-service
+          path: artifacts/runtime/xodus
+          if-no-files-found: error
+
+  render-stack:
+    name: render stack (MoltenVK/DXVK/vkd3d-proton)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 安装 zstd
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq zstd
+
+      - name: 收集渲染栈
+        run: ./scripts/mcbe-macos/fetch-render-stack.sh
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v7
+        with:
+          name: mcbe-macos-render-stack
+          path: artifacts/runtime/render
+          if-no-files-found: error
+
+  runtime:
+    name: runtime (Wine x86_64 + xodus + 渲染栈)
+    runs-on: macos-15-intel
+    needs: [ xodus-service, render-stack ]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 释放磁盘空间
+        run: |
+          df -h /
+          sudo rm -rf /Users/runner/Library/Caches/Homebrew/downloads || true
+          sudo rm -rf /usr/local/Homebrew/Library/Taps || true
+          df -h /
+
+      - name: 缓存 Wine 构建结果
+        id: wine-cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/runtime/wine
+          key: wine-gdk-${{ env.WINE_GDK_REF }}-${{ runner.os }}-${{ runner.arch }}-v1
+
+      - name: 构建 Wine(WineGDK,x86_64)
+        if: steps.wine-cache.outputs.cache-hit != 'true'
+        run: ./scripts/mcbe-macos/build-wine.sh
+
+      - name: Wine 缓存命中,校验产物
+        if: steps.wine-cache.outputs.cache-hit == 'true'
+        run: |
+          test -x artifacts/runtime/wine/bin/wine
+          test -f artifacts/runtime/wine/lib/wine/x86_64-windows/xgameruntime.dll
+          test -f artifacts/runtime/wine/lib/wine/x86_64-unix/xgameruntime.so
+          artifacts/runtime/wine/bin/wine --version || true
+
+      - name: 下载 xodus-service
+        uses: actions/download-artifact@v7
+        with:
+          name: mcbe-macos-xodus-service
+          path: artifacts/runtime/xodus
+
+      - name: 下载渲染栈
+        uses: actions/download-artifact@v7
+        with:
+          name: mcbe-macos-render-stack
+          path: artifacts/runtime/render
+
+      - name: 确保可执行位
+        run: chmod +x artifacts/runtime/xodus/xodus-service
+
+      - name: 汇总并自检
+        env:
+          WINE_GDK_REF: ${{ env.WINE_GDK_REF }}
+          XODUS_REF: ${{ env.XODUS_REF }}
+        run: ./scripts/mcbe-macos/assemble-runtime.sh
+
+      - name: 上传运行时
+        uses: actions/upload-artifact@v7
+        with:
+          name: mcbe-macos-runtime
+          path: artifacts/runtime
+          if-no-files-found: error

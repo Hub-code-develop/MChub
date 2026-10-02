@@ -265,9 +265,15 @@ jobs:
           name: win-installer-win.${{ matrix.arch }}-artifacts
           path: assets/conf/Deploy/OUT/MChub.win.*.installer.zip
 
+  # 基岩版在 macOS 上没有原生客户端，靠 Wine(WineGDK) + xodus-service 跑 Windows GDK 版；
+  # 运行时由可复用的 bedrock-macos-runtime.yml 构建，再内嵌进 .app。
+  bedrock-macos-runtime:
+    name: bedrock-macos-runtime
+    uses: ./.github/workflows/bedrock-macos-runtime.yml
+
   mac-dmg:
     runs-on: macos-latest
-    needs: prepare
+    needs: [prepare, bedrock-macos-runtime]
     env:
       CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
       MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
@@ -364,6 +370,22 @@ jobs:
           }
           run_with_timeout restore restore -r ${{ matrix.rid }}
           run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true
+
+      - name: Download Bedrock macOS runtime
+        uses: actions/download-artifact@v7
+        with:
+          name: mcbe-macos-runtime
+          path: .runtime
+
+      - name: Embed Bedrock macOS runtime
+        run: |
+          APP="./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/MChub.app"
+          mkdir -p "$APP/Contents/MacOS/mcbe-macos"
+          # MChub.Bedrock.MacOS 在 AppContext.BaseDirectory/mcbe-macos 下探测运行时。
+          cp -R ./.runtime/. "$APP/Contents/MacOS/mcbe-macos/"
+          chmod +x "$APP/Contents/MacOS/mcbe-macos/wine/bin/"* || true
+          chmod +x "$APP/Contents/MacOS/mcbe-macos/xodus/xodus-service"
+          ls -l "$APP/Contents/MacOS/mcbe-macos"
 
       # DotNet.Bundle 不支持 CFBundleURLTypes，mchub:// 协议声明在打包后写入 Info.plist
       - name: Declare mchub URL Scheme

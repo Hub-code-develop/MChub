@@ -9,7 +9,7 @@ namespace MChub.Bedrock.MacOS;
 /// 否则为 <c>&lt;运行时&gt; &lt;可执行文件&gt; [参数]</c> 并依赖 <c>WINEPREFIX</c>。
 /// </summary>
 public sealed record MacBedrockRuntime(string WineBinary, string WineRoot, string PrefixPath,
-    bool PrefixAsArgument)
+    bool PrefixAsArgument, McbeMacOSRuntime? Bundled = null)
 {
     /// <summary>标准 Wine 布局下的 drive_c 根目录。</summary>
     public string DriveC => Path.Combine(PrefixPath, "drive_c");
@@ -55,6 +55,16 @@ public sealed class MacBedrockRuntimeResolver
     {
         EnsureSupportedPlatform();
         progress?.Invoke(CommonLanguageManager.Instance.bedrockLaunch_macResolvingWineRuntime.CurrentValue());
+
+        // 随应用分发的运行时（CI 打进 MChub.app 的 mcbe-macos）优先：它带 WineGDK 的 XUser 实现与 xodus-service，
+        // 是本机安装的 GPTK/CrossOver/Whisky 之外唯一能走 Xbox 登录的组合。
+        var bundled = McbeMacOSRuntime.Locate();
+        if (bundled is not null && bundled.IsComplete)
+        {
+            var bundledPrefix = ResolvePrefixPath();
+            Directory.CreateDirectory(bundledPrefix);
+            return new MacBedrockRuntime(bundled.WineBinary, bundled.WineRoot, bundledPrefix, false, bundled);
+        }
 
         var wineBinary = ResolveWineBinary();
         var prefixPath = ResolvePrefixPath();

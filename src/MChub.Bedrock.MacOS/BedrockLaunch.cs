@@ -44,6 +44,13 @@ public sealed class BedrockLaunch : IBedrockLaunch
         Log(BedrockLogLevel.Information,
             string.Format(CommonLanguageManager.Instance.bedrockLaunch_macWineRuntimeReady.CurrentValue(), runtime.WineBinary));
 
+        if (runtime.Bundled is { } bundled)
+        {
+            Log(BedrockLogLevel.Information,
+                string.Format(CommonLanguageManager.Instance.bedrockLaunch_macBundledRuntimeInUse.CurrentValue(), bundled.Root));
+            await EnsureXodusServiceAsync(bundled, cancellationToken).ConfigureAwait(false);
+        }
+
         await EnsurePrefixAsync(runtime, cancellationToken).ConfigureAwait(false);
         if (Authentication != null)
             await SetRefreshTokenAsync(runtime, Authentication.RefreshToken, cancellationToken).ConfigureAwait(false);
@@ -105,7 +112,14 @@ public sealed class BedrockLaunch : IBedrockLaunch
     private static void ApplyRuntimeEnvironment(ProcessStartInfo startInfo, MacBedrockRuntime runtime)
     {
         startInfo.Environment["WINEPREFIX"] = runtime.PrefixPath;
-        // 与 Linux 不同：不设置 WINEDLLOVERRIDES，避免禁用 GPTK 的 D3DMetal 后端。
+        if (runtime.Bundled is { } bundled)
+        {
+            // 随应用分发的 WineGDK：覆盖 d3d11/dxgi/d3d12 与 xgameruntime，并让 winevulkan 找到 MoltenVK。
+            foreach (var (key, value) in WineEnvironment.Create(bundled, runtime.PrefixPath))
+                startInfo.Environment[key] = value;
+        }
+
+        // 第三方运行时（GPTK/CrossOver/Whisky）下不设置 WINEDLLOVERRIDES，避免禁用其 D3DMetal 后端。
         startInfo.Environment["MICROSOFT_WINDOWSAPPRUNTIME_BOOTSTRAP_INITIALIZE_SHOWUI"] = "0";
         startInfo.Environment["MICROSOFT_WINDOWSAPPRUNTIME_BOOTSTRAP_INITIALIZE_FAILFAST"] = "0";
         startInfo.Environment["MICROSOFT_WINDOWSAPPRUNTIME_DEPLOYMENT_INITIALIZE_ONERRORSHOWUI"] = "0";
@@ -380,6 +394,37 @@ public sealed class BedrockLaunch : IBedrockLaunch
     }
 
     private static string EscapeRegistryValue(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+    private static readonly object XodusServiceLock = new();
+    private static XodusServiceHost? XodusService;
+
+    /// <summary>
+    /// 拉起随应用分发的 xodus-service。它提供 MSA/XSTS/许可，WineGDK 的 xgameruntime 通过
+    /// <c>/tmp/xodus.sock</c> 访问，因此必须在游戏进程之前就绪；同一进程内只启动一次。
+    /// </summary>
+    private async Task EnsureXodusServiceAsync(McbeMacOSRuntime runtime, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        XodusServiceHost host;
+        lock (XodusServiceLock)
+        {
+            if (XodusService is { IsRunning: true }) return;
+            XodusService = host = new XodusServiceHost(runtime.XodusServiceBinary);
+        }
+
+        Log(BedrockLogLevel.Information, CommonLanguageManager.Instance.bedrockLaunch_macXodusServiceStarting.CurrentValue());
+        try
+        {
+            await host.StartAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is IOException or InvalidOperationException or TimeoutException)
+        {
+            // 登录后端不可用不阻断启动：游戏仍可离线运行，只是在线登录可能失败。
+            Log(BedrockLogLevel.Warning,
+                string.Format(CommonLanguageManager.Instance.bedrockLaunch_macXodusServiceFailed.CurrentValue(), exception.Message));
+        }
+    }
 
     private static void KillProcess(Process process)
     {
