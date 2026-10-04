@@ -31,6 +31,10 @@ public class BedrockCore
 				{
 					throw new InvalidOperationException($"Unsupported game type for GDK package: {options.GameTypeVersion}");
 				}
+				if (cik.Length != CikKey.MaxSize)
+				{
+					throw new InvalidOperationException(CommonLanguageManager.Instance.bedrockInstall_gdkCikMissing.CurrentValue());
+				}
 				using MsiXVDDecoder decoder = new MsiXVDDecoder(new CikKey(cik), options.UseHardwareDecode);
 				using MsiXVDStream stream = new MsiXVDStream(options.FileFullPath);
 				stream.Parse();
