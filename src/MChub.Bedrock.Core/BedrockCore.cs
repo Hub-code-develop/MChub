@@ -31,13 +31,14 @@ public class BedrockCore
 				{
 					throw new InvalidOperationException($"Unsupported game type for GDK package: {options.GameTypeVersion}");
 				}
-				if (cik.Length != CikKey.MaxSize)
+				using MsiXVDStream stream = new MsiXVDStream(options.FileFullPath);
+				stream.Parse();
+				CikKey? key = BedrockCikKeys.Resolve(stream.EncryptionKeys, cik);
+				if (key == null)
 				{
 					throw new InvalidOperationException(CommonLanguageManager.Instance.bedrockInstall_gdkCikMissing.CurrentValue());
 				}
-				using MsiXVDDecoder decoder = new MsiXVDDecoder(new CikKey(cik), options.UseHardwareDecode);
-				using MsiXVDStream stream = new MsiXVDStream(options.FileFullPath);
-				stream.Parse();
+				using MsiXVDDecoder decoder = new MsiXVDDecoder(key, options.UseHardwareDecode);
 				options.InstallStates?.Report(InstallStates.Extracting);
 				await stream.ExtractTaskAsync(Path.GetFullPath(options.InstallDstFolder), decoder, options.ExtractionProgress, options.CancellationToken ?? CancellationToken.None);
 				options.InstallStates?.Report(InstallStates.Extracted);

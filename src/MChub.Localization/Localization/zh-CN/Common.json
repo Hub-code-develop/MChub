@@ -241,7 +241,7 @@
     "sourceNoRangeDownload": "下载源不支持分段下载。",
     "dependencyInstallFailedIgnored": "基岩版运行依赖安装失败（忽略，启动时会再次尝试）：{0}",
     "gdkMissingMd5": "所选 GDK x64 安装包缺少 MD5，拒绝未校验安装。",
-    "gdkCikMissing": "当前 MChub 进程缺少有效的 GDK 解密密钥，无法解压基岩版安装包。请在构建时配置 PRE_MC_KEY 与 REL_MC_KEY 后重新构建。",
+    "gdkCikMissing": "无法为所选基岩版安装包匹配 GDK 解密密钥（包声明的密钥 ID 不在已知密钥表中）。请更新 MChub，或配置 PRE_MC_KEY 与 REL_MC_KEY 后重新构建。",
     "gdkInstanceInvalid": "MChub.Bedrock.Core 未能生成有效的 GDK 实例。",
     "gdkVersionUnavailable": "所选 GDK x64 版本已不可用，请刷新列表后重试。",
     "md5VerificationFailed": "GDK 安装包 MD5 校验失败，文件已丢弃。",
