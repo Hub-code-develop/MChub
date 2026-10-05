@@ -76,7 +76,13 @@ public static class JavaExtensions {
                 ? version.AsSpan()
                 : version.AsSpan(0, separator);
 
-            return int.TryParse(major, out var value1) && value1 >= 22 ? 21 : 8;
+            if (!int.TryParse(major, out var value1))
+                return 8;
+
+            // 新版版本号方案：26.x 起要求 Java 25；22~25 归为 Java 21。
+            if (value1 >= 26)
+                return 25;
+            return value1 >= 22 ? 21 : 8;
         }
 
         var minorEnd = version.IndexOf('.', 2);

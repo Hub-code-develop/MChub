@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
 using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
@@ -848,6 +849,9 @@ public static class MinecraftLaunchService
             if (options.GameExited != null)
                 Dispatcher.UIThread.Post(options.GameExited);
             processExit.TrySetResult();
+
+            // 异常退出（退出码非 0）时自动诊断：命中「Java 版本不匹配」等已知原因就明确告诉用户。
+            _ = DiagnoseAbnormalExitAsync(instance, topLevel, process);
         };
 
         if (!IsProcessRunning(process))
@@ -855,6 +859,77 @@ public static class MinecraftLaunchService
             instance.StopPlayTimer();
             processExit.TrySetResult();
         }
+    }
+
+    /// <summary>
+    /// 游戏进程异常退出（退出码非 0）时，抓取最近产生的崩溃报告做本地诊断：
+    /// 命中「Java 版本不合适」等已知原因，就明确告诉用户问题所在，而不是只提示一句“游戏已退出”。
+    /// </summary>
+    private static async Task DiagnoseAbnormalExitAsync(MinecraftInstance instance, TopLevel? topLevel,
+        MinecraftProcess process)
+    {
+        int exitCode;
+        try
+        {
+            exitCode = process.Process?.ExitCode ?? 0;
+        }
+        catch (InvalidOperationException)
+        {
+            return; // 进程信息已不可用
+        }
+
+        if (exitCode == 0)
+            return;
+
+        var crashText = await TryReadLatestCrashReportAsync(instance);
+        var requiredVersion = instance.MinecraftEntry is { } entry
+            ? IridiumEntryHelper.GetAppropriateJavaVersion(entry)
+            : 0;
+        var result = JavaCompatibilityDiagnostics.Analyse(crashText, requiredVersion);
+
+        if (result is not null)
+            Notice(topLevel, $"{result.Title}：{result.Detail}", NotificationType.Error);
+        else
+            Notice(topLevel,
+                string.Format(CommonLanguageManager.Instance.launch_abnormalExit.CurrentValue(), exitCode),
+                NotificationType.Warning);
+    }
+
+    /// <summary>读取实例崩溃报告目录中“最近一次启动前后”产生的最新报告文本；无则返回 null。</summary>
+    private static async Task<string?> TryReadLatestCrashReportAsync(MinecraftInstance instance)
+    {
+        try
+        {
+            var folder = instance.GetSpecialFolder(MinecraftSpecialFolder.CrashReportsFolder);
+            if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
+                return null;
+
+            var newest = new DirectoryInfo(folder).EnumerateFiles()
+                .OrderByDescending(file => file.LastWriteTimeUtc)
+                .FirstOrDefault();
+
+            // 只认最近 10 分钟内新产生的报告，避免把历史崩溃误判为本次原因。
+            if (newest is null || newest.LastWriteTimeUtc < DateTime.UtcNow.AddMinutes(-10))
+                return null;
+
+            return await ReadCrashFileAsync(newest.FullName);
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning($"读取崩溃报告失败：{exception.Message}");
+            return null;
+        }
+    }
+
+    private static async Task<string> ReadCrashFileAsync(string path)
+    {
+        if (!path.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
+            return await File.ReadAllTextAsync(path);
+
+        await using var file = File.OpenRead(path);
+        await using var gzip = new GZipStream(file, CompressionMode.Decompress);
+        using var reader = new StreamReader(gzip);
+        return await reader.ReadToEndAsync();
     }
 
     private static bool IsProcessRunning(MinecraftProcess process)

@@ -568,6 +568,7 @@
     "copyLaunchArgumentsDescription": "复制本次启动使用的完整 Java 参数。",
     "clipboardUnsupported": "当前窗口不支持访问系统剪贴板。",
     "processExited": "{0} 已退出",
+    "abnormalExit": "游戏进程异常退出（退出码 {0}）。可在“崩溃报告”页查看详情。",
     "bedrockConfigMissing": "基岩版实例配置缺失。",
     "refreshingBedrockAccount": "正在刷新基岩版 Xbox 账户",
     "startingBedrockGame": "正在启动基岩版游戏",

@@ -568,6 +568,7 @@
     "copyLaunchArgumentsDescription": "Copy the full Java arguments used for this launch.",
     "clipboardUnsupported": "The current window does not support accessing the system clipboard.",
     "processExited": "{0} exited",
+    "abnormalExit": "The game process exited abnormally (exit code {0}). See the \"Crash Reports\" page for details.",
     "bedrockConfigMissing": "Bedrock Edition instance configuration is missing.",
     "refreshingBedrockAccount": "Refreshing the Bedrock Xbox account",
     "startingBedrockGame": "Starting the Bedrock Edition game",

@@ -565,8 +565,16 @@ public static class MinecraftInstallationTasks
     public static int GetRecommendedJavaVersion(string minecraftVersion)
     {
         var parts = minecraftVersion.Split('.', '-', '_');
-        if (parts.Length < 2 || !int.TryParse(parts[0], out var major) || !int.TryParse(parts[1], out var minor) ||
-            major != 1)
+        if (parts.Length < 1 || !int.TryParse(parts[0], out var major))
+            return 21;
+
+        // 新版版本号方案（形如 26.3，不再以 “1.” 开头）：自 26 起要求 Java 25
+        // （26.3 使用了 JDK 25 才新增的 API，例如 java.lang.Math.powExact）。
+        // 旧逻辑对非 1.x 一律返回 21，会导致在 26.x 上安装/启动 Forge 系装载器时选错 Java。
+        if (major >= 26)
+            return 25;
+
+        if (parts.Length < 2 || !int.TryParse(parts[1], out var minor) || major != 1)
             return 21;
         if (minor >= 21) return 21;
         if (minor == 20 && parts.Length > 2 && int.TryParse(parts[2], out var patch) && patch >= 5) return 21;
