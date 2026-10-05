@@ -186,11 +186,16 @@ public sealed class SkinViewer3D : OpenGlControlBase, ICustomHitTest
 
     public void ChangeSkin(string skin, string cape = default!)
     {
+        // 未完成 OpenGL 初始化时还没有 _skin；直接返回即可——OnOpenGlInit 会用当前的
+        // Skin / Cape 属性值重新加载一次，不会丢设置。
+        if (_skin == null)
+            return;
+
         if (string.IsNullOrEmpty(skin) && string.IsNullOrEmpty(cape))
             return;
 
         if (!string.IsNullOrEmpty(skin))
-            _skin!.SetSkin(skin);
+            _skin.SetSkin(skin);
 
         if (!string.IsNullOrEmpty(cape))
         {
@@ -321,7 +326,12 @@ public sealed class SkinViewer3D : OpenGlControlBase, ICustomHitTest
 
         if (change.Property == RenderModeProperty)
         {
-            _skin.RenderMode = RenderMode;
+            // _skin 只在本控件完成 OpenGL 初始化（OnOpenGlInit）后才存在，而使用方可能在更早的
+            // Loaded 里就设置 RenderMode；此处判空。所设的值不会丢——OnOpenGlInit 会用当前属性值
+            // 统一初始化 _skin（见该方法里的对象初始化器）。
+            if (_skin != null)
+                _skin.RenderMode = RenderMode;
+
             RequestNextFrameRendering();
         }
 
