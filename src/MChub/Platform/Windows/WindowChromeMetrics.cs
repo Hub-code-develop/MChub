@@ -28,23 +28,26 @@ internal static class WindowChromeMetrics
     /// </summary>
     public static int GetCaptionButtonsWidth(IntPtr windowHandle, uint dpi)
     {
-        if (windowHandle == IntPtr.Zero) return 0;
-
-        try
+        // 句柄拿不到（例如窗口尚未创建）时也要继续走系统度量兜底：
+        // 直接返回 0 会让标题栏完全不留白，系统按钮照旧压住内容。
+        if (windowHandle != IntPtr.Zero)
         {
-            if (DwmGetWindowAttribute(windowHandle, DwmwaCaptionButtonBounds, out var bounds,
-                    Marshal.SizeOf<NativeRect>()) == 0)
+            try
             {
-                var width = bounds.Right - bounds.Left;
-                if (width > 0) return width;
+                if (DwmGetWindowAttribute(windowHandle, DwmwaCaptionButtonBounds, out var bounds,
+                        Marshal.SizeOf<NativeRect>()) == 0)
+                {
+                    var width = bounds.Right - bounds.Left;
+                    if (width > 0) return width;
+                }
             }
-        }
-        catch (DllNotFoundException)
-        {
-            // 没有 dwmapi（理论上的非 Windows 宿主），退回系统度量
-        }
-        catch (EntryPointNotFoundException)
-        {
+            catch (DllNotFoundException)
+            {
+                // 没有 dwmapi（理论上的非 Windows 宿主），退回系统度量
+            }
+            catch (EntryPointNotFoundException)
+            {
+            }
         }
 
         var button = SystemMetric(SmCxSize, dpi);

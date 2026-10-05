@@ -301,7 +301,14 @@ public partial class TabWindow : TioTabWindowBase
 
         var handle = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
         var pixelWidth = WindowChromeMetrics.GetCaptionButtonsWidth(handle, (uint)Math.Round(96 * scaling));
-        return pixelWidth > 0 ? pixelWidth / scaling + WindowChromeMetrics.Gap : 0;
+        if (pixelWidth <= 0) return 0;
+
+        var inset = pixelWidth / scaling + WindowChromeMetrics.Gap;
+
+        // 防御：万一量到异常值（不同系统版本上该接口语义有差异），不要把标题栏推到看不见。
+        // 系统按钮区正常情况下远小于窗口宽度的四成。
+        var limit = Bounds.Width * 0.4;
+        return limit <= 0 || inset <= limit ? inset : 0;
     }
 
     private void TabWindow_OnLoadedChromeInsets(object? sender, RoutedEventArgs e)
