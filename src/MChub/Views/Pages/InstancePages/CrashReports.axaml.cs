@@ -11,7 +11,9 @@ using Avalonia.Platform.Storage;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Highlighting;
 using AvaloniaEdit.Highlighting.Xshd;
+using MChub.Core.Minecraft;
 using MChub.Core.Minecraft.Classes;
+using MChub.Core.Minecraft.Instance.Java;
 using MChub.Localization;
 using Tio.Avalonia.Standard.Tab.Gateway;
 
@@ -20,6 +22,7 @@ namespace MChub.Views.Pages.InstancePages;
 public partial class CrashReports : UserControl
 {
     private readonly string? _crashReportsPath;
+    private readonly MinecraftInstance? _instance;
     private readonly IHighlightingDefinition _highlighting;
 
     public CrashReports()
@@ -33,6 +36,7 @@ public partial class CrashReports : UserControl
 
     public CrashReports(MinecraftInstance instance) : this()
     {
+        _instance = instance;
         _crashReportsPath = instance.GetSpecialFolder(MinecraftSpecialFolder.CrashReportsFolder);
         AttachedToVisualTree += async (_, _) => await RefreshLogFilesAsync();
     }
@@ -85,7 +89,7 @@ public partial class CrashReports : UserControl
 
         try
         {
-            LogEditor.Document.Text = await ReadLogAsync(path);
+            LogEditor.Document.Text = ApplyJavaDiagnostics(await ReadLogAsync(path));
             LogEditor.ScrollToHome();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
@@ -95,6 +99,24 @@ public partial class CrashReports : UserControl
                 topLevel.Notice(string.Format(CommonLanguageManager.Instance.crashReports_readFailed.CurrentValue(),
                     ex.Message), NotificationType.Error);
         }
+    }
+
+    /// <summary>
+    /// 对崩溃日志做本地 Java 兼容性诊断；命中「Java 版本不合适」时，把结论插到日志顶部
+    /// 并弹出提示 —— 让用户一眼看到「是 Java 的问题」，而不是只看到一堆堆栈。
+    /// </summary>
+    private string ApplyJavaDiagnostics(string text)
+    {
+        var requiredVersion = _instance?.MinecraftEntry is { } entry
+            ? IridiumEntryHelper.GetAppropriateJavaVersion(entry)
+            : 0;
+        var result = JavaCompatibilityDiagnostics.Analyse(text, requiredVersion);
+        if (result is null)
+            return text;
+
+        TopLevel.GetTopLevel(this)?.Notice($"{result.Title}：{result.Detail}", NotificationType.Warning);
+
+        return JavaCompatibilityDiagnostics.Format(result) + text;
     }
 
     private static async Task<string> ReadLogAsync(string path)

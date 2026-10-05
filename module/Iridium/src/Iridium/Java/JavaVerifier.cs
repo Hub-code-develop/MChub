@@ -8,12 +8,25 @@ public static class JavaVerifier {
     private static readonly ConcurrentDictionary<string, bool> ModuleCache = new(StringComparer.OrdinalIgnoreCase);
 
     public static async Task<bool> IsUsableAsync(string javaPath, int majorVersion,
+        CancellationToken cancellationToken = default)
+        => await IsUsableAsync(javaPath, majorVersion, null, cancellationToken);
+
+    /// <param name="javaVersion">
+    /// 该运行时的完整版本串（如 <c>25.0.1</c> / <c>25-loom</c> / <c>25-ea</c>）。传入后可直接识别
+    /// 预发布/早期预览（EA）构建；为 null 时跳过该判断，仅做模块探测。
+    /// </param>
+    public static async Task<bool> IsUsableAsync(string javaPath, int majorVersion, string? javaVersion,
         CancellationToken cancellationToken = default) {
         if (string.IsNullOrWhiteSpace(javaPath) || !File.Exists(javaPath))
             return false;
-        
+
         if (majorVersion < 9)
             return true;
+
+        // 预发布/早期预览（EA）构建常缺少正式版才有的 API（实际案例：25-loom 缺少 Math.powExact
+        // 致 MC 26.3 启动即 NoSuchMethodError），直接判为不可用。
+        if (IsPreReleaseBuild(javaVersion))
+            return false;
 
         var key = Path.GetFullPath(javaPath);
         if (ModuleCache.TryGetValue(key, out var cached))
@@ -22,6 +35,24 @@ public static class JavaVerifier {
         var usable = await ProbeModulesAsync(javaPath, cancellationToken);
         ModuleCache[key] = usable;
         return usable;
+    }
+
+    /// <summary>依据版本串判断是否为非正式版（EA / Loom / 预览 / 内部快照等）运行时。</summary>
+    public static bool IsPreReleaseBuild(string? javaVersion) {
+        if (string.IsNullOrWhiteSpace(javaVersion))
+            return false;
+
+        var version = javaVersion.ToLowerInvariant();
+        return version.Contains("-ea")
+               || version.Contains("-loom")
+               || version.Contains("-preview")
+               || version.Contains("-internal")
+               || version.Contains("-earlyaccess")
+               || version.Contains("-prerelease")
+               || version.Contains("-snapshot")
+               || version.Contains("-dev")
+               || version.Contains("-beta")
+               || version.Contains("-alpha");
     }
 
     private static async Task<bool> ProbeModulesAsync(string javaPath, CancellationToken cancellationToken) {

@@ -283,7 +283,8 @@ internal static class CliHeadlessLauncher
 
         if (preferred is not null)
         {
-            if (await JavaRuntimeVerifier.IsUsableAsync(preferred.JavaPath, preferred.MajorVersion))
+            if (await JavaRuntimeVerifier.IsUsableAsync(preferred.JavaPath, preferred.MajorVersion,
+                    preferred.JavaVersion))
                 return ToJavaEntry(preferred);
             throw new MissingJavaVersionException(requiredVersion);
         }
@@ -305,7 +306,8 @@ internal static class CliHeadlessLauncher
 
         foreach (var candidate in candidates)
         {
-            if (await JavaRuntimeVerifier.IsUsableAsync(candidate.JavaPath, candidate.MajorVersion))
+            if (await JavaRuntimeVerifier.IsUsableAsync(candidate.JavaPath, candidate.MajorVersion,
+                    candidate.JavaVersion))
                 return ToJavaEntry(candidate);
         }
 

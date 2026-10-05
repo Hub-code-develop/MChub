@@ -488,6 +488,12 @@
     "scanCancelled": "已取消，已找到的新增 {0} 个 Java，重复 {1} 个",
     "scanFailed": "扫描失败：{0}"
   },
+  "javaDiagnostics": {
+    "blockHeader": "MChub 诊断",
+    "title": "疑似 Java 版本不匹配",
+    "missingStandardApi": "崩溃日志显示游戏调用了当前 Java 标准库中不存在的方法：{0}。这通常是因为所用 Java 版本过旧，或为早期预览/测试版（缺少该游戏需要的 API）。当前游戏需要 Java {1}，请在「设置 → Java 运行环境」中改用对应的正式版 Java 后重试。",
+    "unsupportedClassVersion": "崩溃日志显示 Java 版本与游戏不兼容（类文件版本不受支持）：{0}。当前游戏需要 Java {1}，请在「设置 → Java 运行环境」中改用正确版本的 Java 后重试。"
+  },
   "launch": {
     "starting": "启动 {0}",
     "taskName": "启动 {0} {1}",

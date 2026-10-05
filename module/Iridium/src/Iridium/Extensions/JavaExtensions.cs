@@ -28,7 +28,7 @@ public static class JavaExtensions {
         foreach (var java in candidates) {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (await JavaVerifier.IsUsableAsync(java.JavaPath, java.MajorVersion, cancellationToken)
+            if (await JavaVerifier.IsUsableAsync(java.JavaPath, java.MajorVersion, java.Version, cancellationToken)
                     .ConfigureAwait(false))
                 return java;
         }

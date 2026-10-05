@@ -563,8 +563,32 @@ public static class MinecraftLaunchService
 
         foreach (var candidate in candidates)
         {
-            if (await JavaRuntimeVerifier.IsUsableAsync(candidate.JavaPath, candidate.MajorVersion, cancellationToken))
+            if (await JavaRuntimeVerifier.IsUsableAsync(candidate.JavaPath, candidate.MajorVersion,
+                    candidate.JavaVersion, cancellationToken))
                 return ToJavaEntry(candidate);
+        }
+
+        // 没有可用的 Java（未安装，或仅存在预发布/EA 版本）：先尝试自动安装/弹窗请求安装，
+        // 安装后再次校验；避免把“不合适的 Java”直接用于启动而导致游戏崩溃。
+        if (options.InstallMissingJava is { } installMissingJava)
+        {
+            try
+            {
+                var installed = await installMissingJava(requiredVersion,
+                    progress => ReportJavaInstallProgress(context, progress), cancellationToken);
+                if (installed is not null &&
+                    await JavaRuntimeVerifier.IsUsableAsync(installed.JavaPath, installed.MajorVersion,
+                        installed.JavaVersion, cancellationToken))
+                    return ToJavaEntry(installed);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                Logger.Warning($"Java 自动安装失败：{exception.Message}");
+            }
         }
 
         throw new MissingJavaVersionException(requiredVersion);
@@ -597,7 +621,8 @@ public static class MinecraftLaunchService
 
         foreach (var candidate in ordered)
         {
-            if (!await JavaRuntimeVerifier.IsUsableAsync(candidate.JavaPath, candidate.MajorVersion, cancellationToken))
+            if (!await JavaRuntimeVerifier.IsUsableAsync(candidate.JavaPath, candidate.MajorVersion,
+                    candidate.Version, cancellationToken))
                 continue;
             return candidate;
         }

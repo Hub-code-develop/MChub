@@ -488,6 +488,12 @@
     "scanCancelled": "Cancelled; {0} new Java runtimes found, {1} duplicates",
     "scanFailed": "Scan failed: {0}"
   },
+  "javaDiagnostics": {
+    "blockHeader": "MChub Diagnostics",
+    "title": "Possible Java version mismatch",
+    "missingStandardApi": "The crash log shows the game called a method that does not exist in the current Java standard library: {0}. This usually means the Java in use is too old, or is an early-access/preview build that lacks an API the game requires. This game needs Java {1}; please switch to the matching stable Java under \"Settings → Java Runtime\" and try again.",
+    "unsupportedClassVersion": "The crash log shows the Java version is incompatible with the game (unsupported class file version): {0}. This game needs Java {1}; please switch to a correct Java version under \"Settings → Java Runtime\" and try again."
+  },
   "launch": {
     "starting": "Launch {0}",
     "taskName": "Launch {0} {1}",

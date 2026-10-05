@@ -30,9 +30,9 @@ public static class JavaAutoInstallCoordinator
                     Data.ConfigEntry.JavaVersionDefaultPaths, cancellationToken));
         NotifyReconcile(reconcile);
 
-        var existing =
-            Data.ConfigEntry.JavaRuntimes.FirstOrDefault(x =>
-                x.MajorVersion == majorVersion && File.Exists(x.JavaPath));
+        // 只认“可用”的已装运行时：预发布/EA 构建（如 25-loom）虽报大版本匹配，但可能缺少
+        // 游戏所需 API，不能当作已满足要求而跳过安装。
+        var existing = await FindUsableAsync(majorVersion, cancellationToken);
         if (existing is not null) return existing;
         var approved = await ConfirmAsync(majorVersion);
         if (!approved) return null;
@@ -40,8 +40,7 @@ public static class JavaAutoInstallCoordinator
         await InstallLock.WaitAsync(cancellationToken);
         try
         {
-            existing = Data.ConfigEntry.JavaRuntimes.FirstOrDefault(x =>
-                x.MajorVersion == majorVersion && File.Exists(x.JavaPath));
+            existing = await FindUsableAsync(majorVersion, cancellationToken);
             if (existing is not null) return existing;
             var runtime = await JavaDistributionService.InstallMojangAsync(majorVersion, ConfigPath.JavaRuntimesPath,
                 progress, cancellationToken);
@@ -65,6 +64,24 @@ public static class JavaAutoInstallCoordinator
         {
             InstallLock.Release();
         }
+    }
+
+    /// <summary>
+    /// 在已配置的运行时中找出大版本匹配且「可用」的一个（会拒绝预发布/EA 构建等）。
+    /// </summary>
+    private static async Task<JavaRuntimeEntry?> FindUsableAsync(int majorVersion,
+        CancellationToken cancellationToken)
+    {
+        foreach (var runtime in Data.ConfigEntry.JavaRuntimes)
+        {
+            if (runtime.MajorVersion != majorVersion || !File.Exists(runtime.JavaPath))
+                continue;
+            if (await JavaRuntimeVerifier.IsUsableAsync(runtime.JavaPath, runtime.MajorVersion,
+                    runtime.JavaVersion, cancellationToken))
+                return runtime;
+        }
+
+        return null;
     }
 
     private static async Task<bool> ConfirmAsync(int majorVersion)
