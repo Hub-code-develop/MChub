@@ -29,6 +29,14 @@ public static partial class JavaCompatibilityDiagnostics
                 string.Format(CommonLanguageManager.Instance.javaDiagnostics_unsupportedClassVersion.CurrentValue(),
                     unsupportedClassVersion.Value.Trim(), demandedMajorVersion));
 
+        // 启动阶段的模块解析冲突：典型是启动器给的模块路径 / 忽略列表不正确，
+        // 让原版客户端 jar 之类的文件被当成自动模块，和加载器的模块互相抢包。
+        // 它和 Java 版本无关，必须给出不同结论，否则会把用户引向错误的排查方向。
+        if (ModuleConflictRegex().IsMatch(logText))
+            return new Result(
+                CommonLanguageManager.Instance.javaDiagnostics_moduleConflictTitle.CurrentValue(),
+                CommonLanguageManager.Instance.javaDiagnostics_moduleConflict.CurrentValue());
+
         var missing = MissingStandardLibraryRegex().Match(logText);
         if (missing.Success)
         {
@@ -67,4 +75,12 @@ public static partial class JavaCompatibilityDiagnostics
     [GeneratedRegex(
         @"(?im)UnsupportedClassVersionError|Unsupported class file major version|has been compiled by a more recent version of the Java Runtime")]
     private static partial Regex UnsupportedClassVersionRegex();
+
+    /// <summary>
+    /// 模块系统冲突：ModLauncher / Bootstraplauncher 构建模块层时的典型报错，
+    /// 以及「Modules A and B export package ...」这种双模块抢同一包的消息。
+    /// </summary>
+    [GeneratedRegex(
+        @"(?im)(?:java\.lang\.)?(?:module\.(?:ResolutionException|FindException)|LayerInstantiationException)|Modules\s+\S+\s+and\s+\S+\s+export package")]
+    private static partial Regex ModuleConflictRegex();
 }

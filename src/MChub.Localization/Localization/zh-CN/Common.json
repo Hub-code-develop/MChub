@@ -492,7 +492,9 @@
     "blockHeader": "MChub 诊断",
     "title": "疑似 Java 版本不匹配",
     "missingStandardApi": "崩溃日志显示游戏调用了当前 Java 标准库中不存在的方法：{0}。这通常是因为所用 Java 版本过旧，或为早期预览/测试版（缺少该游戏需要的 API）。当前游戏需要 Java {1}，请在「设置 → Java 运行环境」中改用对应的正式版 Java 后重试。",
-    "unsupportedClassVersion": "崩溃日志显示 Java 版本与游戏不兼容（类文件版本不受支持）：{0}。当前游戏需要 Java {1}，请在「设置 → Java 运行环境」中改用正确版本的 Java 后重试。"
+    "unsupportedClassVersion": "崩溃日志显示 Java 版本与游戏不兼容（类文件版本不受支持）：{0}。当前游戏需要 Java {1}，请在「设置 → Java 运行环境」中改用正确版本的 Java 后重试。",
+    "moduleConflictTitle": "启动阶段模块冲突",
+    "moduleConflict": "游戏在启动阶段就退出了，日志中出现模块解析冲突（如 Modules A and B export package ...）。这通常是启动器生成的模块参数（模块路径 / 忽略列表）与加载器不匹配所致，并非游戏或模组损坏。请把启动器更新到最新版本后重试。"
   },
   "launch": {
     "starting": "启动 {0}",
@@ -568,7 +570,7 @@
     "copyLaunchArgumentsDescription": "复制本次启动使用的完整 Java 参数。",
     "clipboardUnsupported": "当前窗口不支持访问系统剪贴板。",
     "processExited": "{0} 已退出",
-    "abnormalExit": "游戏进程异常退出（退出码 {0}）。可在“崩溃报告”页查看详情。",
+    "abnormalExit": "游戏进程异常退出（退出码 {0}）且没有生成崩溃报告，这类情况多发生在启动阶段（模组 / 加载器 / Java 环境）。游戏输出中的异常已记录到启动器日志，可在“崩溃报告”页查看。",
     "bedrockConfigMissing": "基岩版实例配置缺失。",
     "refreshingBedrockAccount": "正在刷新基岩版 Xbox 账户",
     "startingBedrockGame": "正在启动基岩版游戏",

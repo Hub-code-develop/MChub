@@ -211,7 +211,9 @@ public partial class TabWindow : TioTabWindowBase
     {
         Closed += TabWindow_OnClosed;
 
+        // 构造阶段窗口还没有 HWND，量不到系统按钮宽度；显示后再量一次。
         UpdateChromeInsets();
+        Loaded += TabWindow_OnLoadedChromeInsets;
 
         NavScrollViewer.ScrollChanged += (_, _) => { IsTabMaskVisible = NavScrollViewer.Offset.X > 0; };
         SizeChanged += TabWindow_OnSizeChanged;
@@ -244,13 +246,14 @@ public partial class TabWindow : TioTabWindowBase
     }
 
     /// <summary>
-    /// 标签栏与标题栏同处一行，左侧给系统红绿灯留出占位（三列 Grid 的第一列）。
-    /// 右侧由 Grid 的 Auto 列自动避让标题栏组件，不再手工算边距 —— 手工算曾导致
-    /// 内缩超过窗口宽度、标签条被压成 0 宽。
+    /// 标签栏与标题栏同处一行（三列 Grid）：左侧给 macOS 系统红绿灯留出占位，
+    /// 右侧给 Windows 系统窗口按钮留出占位（做成标题栏组件的右边距）。
+    /// 中间标签条由 `*` 列自动占满，不做手工内缩 —— 曾因手工算导致标签条被压成 0 宽。
     /// </summary>
     private void UpdateChromeInsets()
     {
         SystemChromeSpacer.Width = SystemChromeLeftInset();
+        BarComponent.Margin = new Thickness(0, 0, SystemChromeRightInset(), 0);
     }
 
     /// <summary>
@@ -282,6 +285,31 @@ public partial class TabWindow : TioTabWindowBase
         return OperatingSystem.IsMacOS() ? 70 : 3;
     }
 
+    /// <summary>
+    /// Windows 上右上角是系统绘制的最小化 / 最大化 / 关闭按钮。FAAppWindow 在 Win32 走
+    /// 系统边框、Avalonia 又不为其预留布局空间（WindowDecorationMargin.Right 恒为 0），
+    /// 客户区延伸后这排按钮会压在标题栏组件上，把搜索等控制按钮遮住并抢走点击。
+    /// 这里按实际按钮区宽度给标题栏组件留出右边距；其余平台没有右侧系统按钮，返回 0。
+    /// </summary>
+    private double SystemChromeRightInset()
+    {
+        if (!OperatingSystem.IsWindows()) return 0;
+        if (WindowState == WindowState.FullScreen) return 0;
+
+        var scaling = RenderScaling;
+        if (scaling <= 0) scaling = 1;
+
+        var handle = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+        var pixelWidth = WindowChromeMetrics.GetCaptionButtonsWidth(handle, (uint)Math.Round(96 * scaling));
+        return pixelWidth > 0 ? pixelWidth / scaling + WindowChromeMetrics.Gap : 0;
+    }
+
+    private void TabWindow_OnLoadedChromeInsets(object? sender, RoutedEventArgs e)
+    {
+        Loaded -= TabWindow_OnLoadedChromeInsets;
+        UpdateChromeInsets();
+    }
+
     private void TabWindow_OnClosed(object? sender, EventArgs e)
     {
         // Stop detached multiplayer daemons (Terracotta) before the app exits.
@@ -289,6 +317,8 @@ public partial class TabWindow : TioTabWindowBase
 
 
         TabSelectionList.DisableTabDragDrop();
+
+        Loaded -= TabWindow_OnLoadedChromeInsets;
 
         RemoveHandler(DragDrop.DragLeaveEvent, OnLeaveHandler);
         RemoveHandler(DragDrop.DragOverEvent, OnDragHandler);
@@ -329,12 +359,18 @@ public partial class TabWindow : TioTabWindowBase
     private void TabWindow_OnWindowPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(WindowState))
+        {
             UpdateCompositionMaterialGeometry();
+            // 最大化 / 还原会改变系统按钮区的位置与宽度，重新量一次留白。
+            UpdateChromeInsets();
+        }
     }
 
     private void TabWindow_OnScalingChanged(object? sender, EventArgs e)
     {
         UpdateCompositionMaterialGeometry();
+        // 跨显示器拖动会改变 DPI，系统按钮宽度随之变化。
+        UpdateChromeInsets();
     }
 
     private void TabWindow_OnActualThemeVariantChanged(object? sender, EventArgs e)

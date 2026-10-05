@@ -842,16 +842,31 @@ public static class MinecraftLaunchService
                 await topLevel.Clipboard.SetTextAsync(string.Join(Environment.NewLine, process.ArgumentList));
             }
         });
+        // 游戏进程的 stdout / stderr 被重定向，但其中「不符合游戏日志格式」的行——典型如 JVM
+        // 未捕获异常的堆栈（Exception in thread "main" ... 及其 at 行）——不会进入 Minecraft
+        // 自己的日志文件。GUI 启动路径此前没有订阅该事件，这些行被直接丢弃，于是崩溃现场
+        // 只剩一句“已退出”。这里转存到启动器日志，保住现场供排查。
+        process.OutputLogReceived += (_, args) => RecordUnguardedGameOutput(args.Data);
+
         process.Exited += (_, _) =>
         {
             instance.StopPlayTimer();
-            Notice(topLevel, string.Format(CommonLanguageManager.Instance.launch_processExited.CurrentValue(), instance.InstanceName), NotificationType.Success);
+            var exitCode = TryGetProcessExitCode(process);
+
+            // 只有正常退出才报“已退出（Success）”；异常退出交给下面的诊断给出真实原因，
+            // 避免用户看到一句绿色的“已退出”却被蒙在鼓里。
+            if (exitCode == 0)
+                Notice(topLevel, string.Format(CommonLanguageManager.Instance.launch_processExited.CurrentValue(), instance.InstanceName), NotificationType.Success);
+            else
+                Logger.Warning($"游戏进程异常退出：{instance.InstanceName}，退出码 {exitCode}");
+
             if (options.GameExited != null)
                 Dispatcher.UIThread.Post(options.GameExited);
             processExit.TrySetResult();
 
-            // 异常退出（退出码非 0）时自动诊断：命中「Java 版本不匹配」等已知原因就明确告诉用户。
-            _ = DiagnoseAbnormalExitAsync(instance, topLevel, process);
+            // 异常退出（退出码非 0）时自动诊断：命中已知原因就明确告诉用户。
+            if (exitCode != 0)
+                _ = DiagnoseAbnormalExitAsync(instance, topLevel, exitCode);
         };
 
         if (!IsProcessRunning(process))
@@ -861,31 +876,60 @@ public static class MinecraftLaunchService
         }
     }
 
-    /// <summary>
-    /// 游戏进程异常退出（退出码非 0）时，抓取最近产生的崩溃报告做本地诊断：
-    /// 命中「Java 版本不合适」等已知原因，就明确告诉用户问题所在，而不是只提示一句“游戏已退出”。
-    /// </summary>
-    private static async Task DiagnoseAbnormalExitAsync(MinecraftInstance instance, TopLevel? topLevel,
-        MinecraftProcess process)
+    /// <summary>读取游戏进程退出码；进程信息已不可用时按 0 处理（不误报）。</summary>
+    private static int TryGetProcessExitCode(MinecraftProcess process)
     {
-        int exitCode;
         try
         {
-            exitCode = process.Process?.ExitCode ?? 0;
+            return process.Process?.ExitCode ?? 0;
         }
         catch (InvalidOperationException)
         {
-            return; // 进程信息已不可用
+            return 0;
         }
+    }
 
-        if (exitCode == 0)
-            return;
+    /// <summary>
+    /// 把游戏进程输出里「不会写进 Minecraft 日志文件」的关键行转存到启动器日志。
+    /// 只挑异常与堆栈特征行，避免与游戏自身已落盘的日志重复。
+    /// </summary>
+    private static void RecordUnguardedGameOutput(string? line)
+    {
+        if (string.IsNullOrWhiteSpace(line)) return;
 
-        var crashText = await TryReadLatestCrashReportAsync(instance);
+        var text = line.Trim();
+        if (!IsCrashRelevantLine(text)) return;
+
+        Logger.Warning($"[游戏输出] {text}");
+    }
+
+    /// <summary>判断一行游戏输出是否属于崩溃现场（异常 / 堆栈 / JVM 致命错误）。</summary>
+    private static bool IsCrashRelevantLine(string line)
+    {
+        if (line.StartsWith("at ", StringComparison.Ordinal) ||
+            line.StartsWith("Caused by:", StringComparison.Ordinal) ||
+            line.StartsWith("... ", StringComparison.Ordinal))
+            return true;
+
+        return line.Contains("Exception in thread", StringComparison.Ordinal) ||
+               line.Contains("java.lang.", StringComparison.Ordinal) ||
+               line.Contains("A fatal error has been detected", StringComparison.Ordinal) ||
+               line.Contains("SIGSEGV", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 游戏进程异常退出（退出码非 0）时，抓取最近的崩溃报告（没有则退而取游戏日志尾部）做本地诊断：
+    /// 命中「Java 版本不合适」「启动阶段模块冲突」等已知原因，就明确告诉用户问题所在，
+    /// 而不是只提示一句“游戏已退出”。
+    /// </summary>
+    private static async Task DiagnoseAbnormalExitAsync(MinecraftInstance instance, TopLevel? topLevel, int exitCode)
+    {
+        var logText = await TryReadLatestCrashReportAsync(instance)
+                      ?? await TryReadLatestGameLogTailAsync(instance);
         var requiredVersion = instance.MinecraftEntry is { } entry
             ? IridiumEntryHelper.GetAppropriateJavaVersion(entry)
             : 0;
-        var result = JavaCompatibilityDiagnostics.Analyse(crashText, requiredVersion);
+        var result = JavaCompatibilityDiagnostics.Analyse(logText, requiredVersion);
 
         if (result is not null)
             Notice(topLevel, $"{result.Title}：{result.Detail}", NotificationType.Error);
@@ -893,6 +937,42 @@ public static class MinecraftLaunchService
             Notice(topLevel,
                 string.Format(CommonLanguageManager.Instance.launch_abnormalExit.CurrentValue(), exitCode),
                 NotificationType.Warning);
+    }
+
+    /// <summary>
+    /// 读取实例 logs 目录中最新的游戏日志尾部：启动阶段就退出的崩溃（例如模块解析冲突）
+    /// 往往不生成崩溃报告，只会把线索留在日志里。
+    /// </summary>
+    private static async Task<string?> TryReadLatestGameLogTailAsync(MinecraftInstance instance)
+    {
+        try
+        {
+            var folder = instance.GetSpecialFolder(MinecraftSpecialFolder.LogsFolder);
+            if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
+                return null;
+
+            var newest = new DirectoryInfo(folder).EnumerateFiles("*.log")
+                .OrderByDescending(file => file.LastWriteTimeUtc)
+                .FirstOrDefault();
+
+            // 只认最近 10 分钟内写过的日志，避免把上一次的崩溃当成这次的原因。
+            if (newest is null || newest.LastWriteTimeUtc < DateTime.UtcNow.AddMinutes(-10))
+                return null;
+
+            await using var stream = new FileStream(newest.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            const int tailBytes = 64 * 1024;
+            var start = Math.Max(0, stream.Length - tailBytes);
+            stream.Seek(start, SeekOrigin.Begin);
+
+            using var reader = new StreamReader(stream);
+            var text = await reader.ReadToEndAsync();
+            return text.Length > 0 ? text : null;
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning($"读取游戏日志失败：{exception.Message}");
+            return null;
+        }
     }
 
     /// <summary>读取实例崩溃报告目录中“最近一次启动前后”产生的最新报告文本；无则返回 null。</summary>
