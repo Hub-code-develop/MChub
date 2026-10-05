@@ -86,7 +86,15 @@ public sealed partial class ArgumentParser : IArgumentParser {
 
         jvm.AddRange(JvmArgumentParser
             .Parse(entry, features)
-            .Select(argument => ReplacePlaceholders(argument, vmReplacements)));
+            // Forge / NeoForge 的 -DignoreList 用 ${version_name}.jar 来忽略「原版客户端 jar」。
+            // 但该 jar 是按【基础游戏版本】命名的（如 1.20.1.jar），并非实例/修改版 id；
+            // 若按 entry.Id 替换（例如 “Zombie Invade 100 Days.jar”），真正的 1.20.1.jar 就没被忽略，
+            // 会被当作自动模块（1.20.1.jar → 模块 _1._20_1），与 Forge 的 minecraft 模块同时导出
+            // net.minecraft.client，触发 java.lang.module.ResolutionException 而启动失败。
+            // 这里把 ${version_name}.jar 归一到实际客户端 jar 文件名（primary_jar_name）。
+            .Select(argument => ReplacePlaceholders(
+                argument.Replace("${version_name}.jar", "${primary_jar_name}", StringComparison.Ordinal),
+                vmReplacements)));
 
         return jvm;
     }
