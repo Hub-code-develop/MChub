@@ -436,7 +436,10 @@ jobs:
           mkdir -p "$APP/Contents/MacOS/mcbe-macos"
           # MChub.Bedrock.MacOS 在 AppContext.BaseDirectory/mcbe-macos 下探测运行时。
           cp -R ./.runtime/. "$APP/Contents/MacOS/mcbe-macos/"
+          # 工件往返会丢失可执行位。ntdll.so 实际 exec 的是 unix 侧 loader
+          # (lib/wine/x86_64-unix/wine)，缺 x 位时报 "could not exec the wine loader"。
           chmod +x "$APP/Contents/MacOS/mcbe-macos/wine/bin/"* || true
+          chmod +x "$APP/Contents/MacOS/mcbe-macos/wine/lib/wine/x86_64-unix/wine"
           chmod +x "$APP/Contents/MacOS/mcbe-macos/xodus/xodus-service"
           ls -l "$APP/Contents/MacOS/mcbe-macos"
 
