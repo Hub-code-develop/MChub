@@ -1,9 +1,10 @@
 name: bedrock-macos-runtime
 
 # macOS 上运行 Windows GDK 版基岩版所需的运行时:
-#   wine/    —— WineGDK 分支的 Wine(x86_64),含 xgameruntime.dll(PE) 与 xgameruntime.so(unix)
-#   xodus/   —— 原生 xodus-service,负责 MSA/XSTS/许可,监听 /tmp/xodus.sock
-#   render/  —— MoltenVK、DXVK、vkd3d-proton
+#   wine/       —— WineGDK 分支的 Wine(x86_64),含 xgameruntime.dll(PE) 与 xgameruntime.so(unix)
+#   xodus/      —— 原生 xodus-service,负责 MSA/XSTS/许可,监听 /tmp/xodus.sock
+#   render/     —— MoltenVK、DXVK、vkd3d-proton,以及 Wine 运行期需要的 Vulkan loader / FreeType
+#   winappsdk/  —— WinAppSDK 引导器桩(替换实例内那个在 Wine 下必然失败的 Bootstrap DLL)
 #
 # 由 mac-dmg 通过 workflow_call 调用,产物以 mcbe-macos-runtime 工件上传,
 # 打包时解到 MChub.app/Contents/MacOS/mcbe-macos(MChub.Bedrock.MacOS 会在该路径下探测)。
@@ -74,10 +75,29 @@ jobs:
           path: artifacts/runtime/render
           if-no-files-found: error
 
+  winappsdk-stub:
+    name: WinAppSDK bootstrapper stub (windows x64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 安装 mingw-w64 交叉编译器
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq gcc-mingw-w64-x86-64
+
+      - name: 编译引导器桩
+        run: ./scripts/mcbe-macos/build-winappsdk-stub.sh
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v7
+        with:
+          name: mcbe-macos-winappsdk-stub
+          path: artifacts/runtime/winappsdk
+          if-no-files-found: error
+
   runtime:
     name: runtime (Wine x86_64 + xodus + 渲染栈)
     runs-on: macos-15-intel
-    needs: [ xodus-service, render-stack ]
+    needs: [ xodus-service, render-stack, winappsdk-stub ]
     steps:
       - uses: actions/checkout@v7
 
@@ -93,7 +113,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: artifacts/runtime/wine
-          key: wine-gdk-${{ env.WINE_GDK_REF }}-${{ runner.os }}-${{ runner.arch }}-v1
+          # v2:Wine 需带 Vulkan 支持,旧的缓存产物不含,必须重编。
+          key: wine-gdk-${{ env.WINE_GDK_REF }}-${{ runner.os }}-${{ runner.arch }}-v2
 
       - name: 构建 Wine(WineGDK,x86_64)
         if: steps.wine-cache.outputs.cache-hit != 'true'
@@ -105,6 +126,10 @@ jobs:
           test -x artifacts/runtime/wine/bin/wine
           test -f artifacts/runtime/wine/lib/wine/x86_64-windows/xgameruntime.dll
           test -f artifacts/runtime/wine/lib/wine/x86_64-unix/xgameruntime.so
+          if strings artifacts/runtime/wine/lib/wine/x86_64-unix/win32u.so | grep -q "built without Vulkan"; then
+            echo "::error::缓存的 Wine 不含 Vulkan 支持,请删除缓存后重编"
+            exit 1
+          fi
           artifacts/runtime/wine/bin/wine --version || true
 
       - name: 下载 xodus-service
@@ -118,6 +143,12 @@ jobs:
         with:
           name: mcbe-macos-render-stack
           path: artifacts/runtime/render
+
+      - name: 下载 WinAppSDK Bootstrapper 桩
+        uses: actions/download-artifact@v7
+        with:
+          name: mcbe-macos-winappsdk-stub
+          path: artifacts/runtime/winappsdk
 
       - name: 确保可执行位
         run: chmod +x artifacts/runtime/xodus/xodus-service

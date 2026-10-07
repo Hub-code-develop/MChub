@@ -22,7 +22,14 @@ public static class WineEnvironment
             ["WINEPREFIX"] = Path.GetFullPath(prefixPath),
             ["WINELOADER"] = runtime.WineBinary,
             ["WINESERVER"] = runtime.WineServerBinary,
-            ["WINEDLLPATH"] = runtime.WineWindowsLibraryDirectory,
+            // DXVK / vkd3d-proton 的 DLL 不在 Wine 自己的模块目录里;把它们的目录一并
+            // 列进 WINEDLLPATH,Wine 才能在 native 覆盖生效时找到这些模块。
+            ["WINEDLLPATH"] = string.Join(Path.PathSeparator, new[]
+            {
+                runtime.WineWindowsLibraryDirectory,
+                runtime.DxvkDirectory,
+                runtime.Vkd3dProtonDirectory,
+            }),
             ["WINEDLLOVERRIDES"] = DllOverrides,
             // MoltenVK 只在 unix 侧使用;指向 ICD 清单即可让 winevulkan 找到它。
             ["VK_ICD_FILENAMES"] = runtime.VulkanIcdManifest,

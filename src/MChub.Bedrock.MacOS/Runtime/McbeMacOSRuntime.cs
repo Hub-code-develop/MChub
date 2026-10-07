@@ -44,6 +44,14 @@ public sealed class McbeMacOSRuntime
 
     public string XodusServiceBinary => Path.Combine(Root, "xodus", "xodus-service");
 
+    /// <summary>
+    /// WinAppSDK 引导器桩。Minecraft.Windows.exe 静态导入
+    /// <c>MddBootstrapInitialize2</c>,真实引导器依赖 Wine 不具备的 MSIX 包管理,
+    /// 因此启动前用这个桩替换实例目录内的同名 DLL。
+    /// </summary>
+    public string WinAppSdkStubLibrary =>
+        Path.Combine(Root, "winappsdk", "Microsoft.WindowsAppRuntime.Bootstrap.dll");
+
     public string RenderRoot => Path.Combine(Root, "render");
 
     public string MoltenVkLibrary => Path.Combine(RenderRoot, "lib", "libMoltenVK.dylib");

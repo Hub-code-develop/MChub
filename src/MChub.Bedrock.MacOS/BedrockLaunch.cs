@@ -52,6 +52,7 @@ public sealed class BedrockLaunch : IBedrockLaunch
         }
 
         await EnsurePrefixAsync(runtime, cancellationToken).ConfigureAwait(false);
+        EnsureWinAppSdkBootstrapStub(runtime);
         if (Authentication != null)
             await SetRefreshTokenAsync(runtime, Authentication.RefreshToken, cancellationToken).ConfigureAwait(false);
         else
@@ -123,6 +124,35 @@ public sealed class BedrockLaunch : IBedrockLaunch
         startInfo.Environment["MICROSOFT_WINDOWSAPPRUNTIME_BOOTSTRAP_INITIALIZE_SHOWUI"] = "0";
         startInfo.Environment["MICROSOFT_WINDOWSAPPRUNTIME_BOOTSTRAP_INITIALIZE_FAILFAST"] = "0";
         startInfo.Environment["MICROSOFT_WINDOWSAPPRUNTIME_DEPLOYMENT_INITIALIZE_ONERRORSHOWUI"] = "0";
+    }
+
+    /// <summary>
+    /// 用运行时自带的桩替换实例目录里的 WinAppSDK 引导器。Minecraft.Windows.exe 静态导入
+    /// <c>MddBootstrapInitialize2</c>，而真实实现要在 MSIX 包管理器里查找
+    /// "Microsoft.WindowsAppRuntime.1.8" 框架包；Wine 的 appx 是空壳，于是以
+    /// 0x80004001 失败并让主程序直接退出。实例目录内的 WinAppSDK 本就是自包含布局，
+    /// 引导器不需要做任何包查找。
+    /// </summary>
+    private void EnsureWinAppSdkBootstrapStub(MacBedrockRuntime runtime)
+    {
+        if (runtime.Bundled is not { } bundled) return;
+        var stub = bundled.WinAppSdkStubLibrary;
+        if (!File.Exists(stub)) return;
+
+        var target = Path.Combine(_instanceConfig.InstancePath,
+            "Microsoft.WindowsAppRuntime.Bootstrap.dll");
+        try
+        {
+            File.Copy(stub, target, true);
+            Log(BedrockLogLevel.Information,
+                CommonLanguageManager.Instance.bedrockLaunch_macWinAppSdkStubDeployed.CurrentValue());
+        }
+        catch (IOException exception)
+        {
+            Log(BedrockLogLevel.Warning, string.Format(
+                CommonLanguageManager.Instance.bedrockLaunch_macWinAppSdkStubFailed.CurrentValue(),
+                exception.Message));
+        }
     }
 
     private async Task EnsurePrefixAsync(MacBedrockRuntime runtime, CancellationToken cancellationToken)

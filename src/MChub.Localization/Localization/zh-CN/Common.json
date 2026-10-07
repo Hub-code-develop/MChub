@@ -358,7 +358,9 @@
     "macGameInputInstallCancelled": "GameInput 安装已取消。",
     "macGameInputInstallTimeout": "GameInput 安装超时，继续启动游戏。",
     "macGameInputInstallFailedContinue": "GameInput 安装失败（退出码 {0}），继续启动游戏。{1}",
-    "macGameInputInstalled": "GameInput 运行组件已安装。"
+    "macGameInputInstalled": "GameInput 运行组件已安装。",
+    "macWinAppSdkStubDeployed": "已用 Wine 兼容桩替换 Windows App SDK 引导器。",
+    "macWinAppSdkStubFailed": "无法替换 Windows App SDK 引导器（{0}），游戏可能启动后立即退出。"
   },
   "config": {
     "noAccount": "无账户"

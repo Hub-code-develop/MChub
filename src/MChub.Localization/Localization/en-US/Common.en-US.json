@@ -358,7 +358,9 @@
     "macGameInputInstallCancelled": "The GameInput installation was cancelled.",
     "macGameInputInstallTimeout": "The GameInput installation timed out; continuing to launch the game.",
     "macGameInputInstallFailedContinue": "The GameInput installation failed (exit code {0}); continuing to launch the game. {1}",
-    "macGameInputInstalled": "The GameInput runtime has been installed."
+    "macGameInputInstalled": "The GameInput runtime has been installed.",
+    "macWinAppSdkStubDeployed": "Replaced the Windows App SDK bootstrapper with the Wine-compatible stub.",
+    "macWinAppSdkStubFailed": "Could not replace the Windows App SDK bootstrapper ({0}); the game may exit immediately."
   },
   "config": {
     "noAccount": "No Account"

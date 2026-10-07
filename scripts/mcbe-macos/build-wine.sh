@@ -29,8 +29,12 @@ log "Homebrew 根目录:$BREW"
 
 if [ "${SKIP_DEPS:-0}" != "1" ]; then
   log "安装构建依赖"
+  # vulkan-headers/vulkan-loader 让 configure 打开 HAVE_VULKAN;不装的话
+  # win32u 会编译成 "Wine was built without Vulkan support",DXVK/vkd3d-proton
+  # 无法创建设备。freetype/fontconfig 供字体渲染(运行期 dylib 由
+  # assemble-runtime.sh 收进 render/lib)。
   brew install --quiet mingw-w64 autoconf automake libtool bison pkg-config \
-    freetype fontconfig gnutls gettext zstd
+    freetype fontconfig gnutls gettext zstd vulkan-headers vulkan-loader
 fi
 
 MINGW="$BREW/opt/mingw-w64"
@@ -41,7 +45,7 @@ log "检查 mingw-w64 交叉编译器"
 "$MINGW/bin/x86_64-w64-mingw32-g++" --version | head -1
 
 export PATH="$MINGW/bin:$BREW/opt/bison/bin:$BREW/bin:$PATH"
-export PKG_CONFIG_PATH="$BREW/opt/freetype/lib/pkgconfig:$BREW/opt/fontconfig/lib/pkgconfig:$BREW/opt/gnutls/lib/pkgconfig:$BREW/lib/pkgconfig:$BREW/share/pkgconfig"
+export PKG_CONFIG_PATH="$BREW/opt/freetype/lib/pkgconfig:$BREW/opt/fontconfig/lib/pkgconfig:$BREW/opt/gnutls/lib/pkgconfig:$BREW/opt/vulkan-loader/lib/pkgconfig:$BREW/opt/vulkan-headers/lib/pkgconfig:$BREW/lib/pkgconfig:$BREW/share/pkgconfig"
 
 log "获取源码 WineGDK@$WINE_GDK_REF"
 mkdir -p "$WORKDIR"
@@ -79,13 +83,16 @@ mkdir -p "$BUILD"
 cd "$BUILD"
 ../configure -C --enable-win64 --with-mingw \
   --prefix=/usr/local \
+  --with-vulkan \
   --disable-tests \
   --without-alsa --without-capi --without-cups --without-dbus --without-gphoto \
   --without-gssapi --without-gstreamer --without-hwloc --without-inotify \
   --without-krb5 --without-netapi --without-opencl --without-oss --without-pcap \
   --without-pcsclite --without-pulse --without-sane --without-sdl --without-udev \
   --without-usb --without-v4l2 --without-wayland \
-  BISON="$BISON_BIN"
+  BISON="$BISON_BIN" \
+  CPPFLAGS="-I$BREW/include" \
+  LDFLAGS="-L$BREW/lib"
 
 log "make -j$(sysctl -n hw.activecpu)"
 make -s -j"$(sysctl -n hw.activecpu)"
@@ -97,6 +104,17 @@ make -s install DESTDIR="$STAGE"
 log "校验关键产物"
 test -f "$STAGE/usr/local/lib/wine/x86_64-windows/xgameruntime.dll"
 test -f "$STAGE/usr/local/lib/wine/x86_64-unix/xgameruntime.so"
+
+if command -v strings >/dev/null 2>&1; then
+  log "校验 Vulkan 支持已编入(DXVK/vkd3d-proton 依赖)"
+  if strings "$STAGE/usr/local/lib/wine/x86_64-unix/win32u.so" | grep -q "built without Vulkan"; then
+    echo "错误:Wine 未启用 Vulkan 支持(确认 vulkan-loader/vulkan-headers 已安装且 configure 未被跳过)" >&2
+    exit 1
+  fi
+  # unix 侧按 soname dlopen,assemble-runtime.sh 会据此把对应 dylib 收进 render/lib。
+  strings "$STAGE/usr/local/lib/wine/x86_64-unix/win32u.so" | grep -E '^libvulkan.*\.dylib$' | sort -u || true
+  strings "$STAGE/usr/local/lib/wine/x86_64-unix/win32u.so" | grep -E '^libfreetype.*\.dylib$' | sort -u || true
+fi
 
 log "裁剪并组装到 $OUT"
 rm -rf "$OUT"
