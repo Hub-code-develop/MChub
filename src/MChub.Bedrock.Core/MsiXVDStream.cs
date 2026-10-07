@@ -271,7 +271,10 @@ public class MsiXVDStream : IDisposable
 		while (Segments.Length > num5 && pageOffset > num6 && !cts.IsCancellationRequested)
 		{
 			ulong fileSize = Segments[num5].FileSize;
-			string text = _segmentPaths[num5];
+			// 段元数据里的路径是 Windows 风格(反斜杠)。在 Windows 上反斜杠本身就是分隔符,
+			// 但在 macOS/Linux 上它只是普通字符,直接拼接会把整棵树摊平成带反斜杠的文件名,
+			// 导致 data/、Installers/ 等目录缺失、游戏找不到资源。此处统一转为平台分隔符。
+			string text = _segmentPaths[num5].Replace('\\', Path.DirectorySeparatorChar);
 			string path = Path.Join(outputDirectory, text);
 			string directoryName = Path.GetDirectoryName(path);
 			if (!string.IsNullOrEmpty(directoryName))
