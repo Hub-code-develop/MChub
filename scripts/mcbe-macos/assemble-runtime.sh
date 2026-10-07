@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# 汇总三个来源的产物为统一的运行时树,并对整棵树做自检。
-#
+# 汇总各来源的产物为统一的运行时树,并对整棵树做自检。
 # 输入(默认均位于 <repo>/artifacts/runtime 之下):
-#   wine/      由 scripts/build-wine.sh 产出
-#   xodus/     由 scripts/build-xodus-service.sh 产出
-#   render/    由 scripts/fetch-render-stack.sh 产出
-#   winappsdk/ 由 scripts/build-winappsdk-stub.sh 产出
+#   wine/         由 scripts/build-wine.sh 产出
+#   xodus/        由 scripts/build-xodus-service.sh 产出
+#   render/       由 scripts/fetch-render-stack.sh 产出
+#   winappsdk/    由 scripts/build-winappsdk-stub.sh 产出
+#   vulkan-loader/由 scripts/build-vulkan-loader.sh 产出
 #
 # 产物:<repo>/artifacts/runtime/
 #   wine/{bin,lib,share}            Wine(WineGDK) 安装树
@@ -38,8 +38,8 @@ log "收集 Wine 运行期依赖的 macOS dylib(Vulkan loader / FreeType)"
 RENDER_LIB="$RUNTIME/render/lib"
 mkdir -p "$RENDER_LIB"
 
-# build-wine.sh 命中缓存时不会安装依赖,这里补一次(已安装则秒过)。
-brew install --quiet vulkan-loader vulkan-headers freetype
+# vulkan-loader 在 macOS Intel 上没有 bottle,由 build-vulkan-loader.sh 自建。
+brew install --quiet freetype
 BREW="$(brew --prefix)"
 
 # Wine 的 unix 侧按 soname dlopen(win32u.so 里能看到确切名字)。把 dylib 及其
@@ -79,10 +79,10 @@ soname_of() { # soname_of <dylib 名正则>;从 wine 的 unix 侧模块里找出
 
 VULKAN_SONAME="$(soname_of 'libvulkan[.0-9]*\.dylib')"
 VULKAN_SONAME="${VULKAN_SONAME:-libvulkan.1.dylib}"
-VULKAN_SRC="$(ls "$BREW"/opt/vulkan-loader/lib/libvulkan.*.dylib 2>/dev/null | head -1 || true)"
-[ -n "$VULKAN_SRC" ] || fail "找不到 Vulkan loader(brew vulkan-loader)"
-bundle_dylib "$VULKAN_SRC"
-[ -f "$RENDER_LIB/$VULKAN_SONAME" ] || cp -f "$VULKAN_SRC" "$RENDER_LIB/$VULKAN_SONAME"
+VULKAN_SRC="$(ls "$RUNTIME"/vulkan-loader/lib/libvulkan.*.dylib 2>/dev/null | head -1 || true)"
+[ -n "$VULKAN_SRC" ] || fail "找不到自建 Vulkan loader(build-vulkan-loader.sh 产物)"
+cp -f "$VULKAN_SRC" "$RENDER_LIB/$VULKAN_SONAME"
+chmod u+w "$RENDER_LIB/$VULKAN_SONAME"
 echo "Vulkan loader:$VULKAN_SONAME"
 
 FREETYPE_SONAME="$(soname_of 'libfreetype[.0-9]*\.dylib')"

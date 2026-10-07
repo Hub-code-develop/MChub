@@ -29,12 +29,16 @@ log "Homebrew 根目录:$BREW"
 
 if [ "${SKIP_DEPS:-0}" != "1" ]; then
   log "安装构建依赖"
-  # vulkan-headers/vulkan-loader 让 configure 打开 HAVE_VULKAN;不装的话
-  # win32u 会编译成 "Wine was built without Vulkan support",DXVK/vkd3d-proton
-  # 无法创建设备。freetype/fontconfig 供字体渲染(运行期 dylib 由
-  # assemble-runtime.sh 收进 render/lib)。
+  # vulkan-headers 让 configure 打开 HAVE_VULKAN;不装的话 win32u 会编译成
+  # "Wine was built without Vulkan support",DXVK/vkd3d-proton 无法创建设备。
+  # macOS 上 Wine 不链接 loader(SONAME_LIBVULKAN 硬编码为 libvulkan.1.dylib,
+  # 运行期 dlopen),所以 loader 由 build-vulkan-loader.sh 自建并随运行时分发。
+  # freetype/fontconfig 供字体渲染(运行期 dylib 由 assemble-runtime.sh 收进 render/lib)。
   brew install --quiet mingw-w64 autoconf automake libtool bison pkg-config \
-    freetype fontconfig gnutls gettext zstd vulkan-headers vulkan-loader
+    freetype fontconfig gnutls gettext zstd vulkan-headers
+  # vulkan-loader 在 macOS Intel 上没有 bottle,brew 会源码构建;装不上也不影响
+  # (vulkan-headers 是纯头文件,loader 由我们自建)。
+  brew install --quiet vulkan-loader || echo "提示:vulkan-loader 未能从 brew 安装,将使用自建 loader"
 fi
 
 MINGW="$BREW/opt/mingw-w64"

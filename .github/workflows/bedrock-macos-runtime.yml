@@ -5,6 +5,7 @@ name: bedrock-macos-runtime
 #   xodus/      —— 原生 xodus-service,负责 MSA/XSTS/许可,监听 /tmp/xodus.sock
 #   render/     —— MoltenVK、DXVK、vkd3d-proton,以及 Wine 运行期需要的 Vulkan loader / FreeType
 #   winappsdk/  —— WinAppSDK 引导器桩(替换实例内那个在 Wine 下必然失败的 Bootstrap DLL)
+#   vulkan-loader/ —— 自建 Khronos Vulkan loader(brew 无 macOS Intel bottle),汇总时并入 render/lib
 #
 # 由 mac-dmg 通过 workflow_call 调用,产物以 mcbe-macos-runtime 工件上传,
 # 打包时解到 MChub.app/Contents/MacOS/mcbe-macos(MChub.Bedrock.MacOS 会在该路径下探测)。
@@ -94,10 +95,29 @@ jobs:
           path: artifacts/runtime/winappsdk
           if-no-files-found: error
 
+  vulkan-loader:
+    name: Vulkan loader (macOS x86_64, 自建)
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 安装 CMake
+        run: brew install --quiet cmake
+
+      - name: 构建 Vulkan-Loader
+        run: ./scripts/mcbe-macos/build-vulkan-loader.sh
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v7
+        with:
+          name: mcbe-macos-vulkan-loader
+          path: artifacts/runtime/vulkan-loader
+          if-no-files-found: error
+
   runtime:
     name: runtime (Wine x86_64 + xodus + 渲染栈)
     runs-on: macos-15-intel
-    needs: [ xodus-service, render-stack, winappsdk-stub ]
+    needs: [ xodus-service, render-stack, winappsdk-stub, vulkan-loader ]
     steps:
       - uses: actions/checkout@v7
 
@@ -149,6 +169,12 @@ jobs:
         with:
           name: mcbe-macos-winappsdk-stub
           path: artifacts/runtime/winappsdk
+
+      - name: 下载 Vulkan loader
+        uses: actions/download-artifact@v7
+        with:
+          name: mcbe-macos-vulkan-loader
+          path: artifacts/runtime/vulkan-loader
 
       - name: 确保可执行位
         run: chmod +x artifacts/runtime/xodus/xodus-service
