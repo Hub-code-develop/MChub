@@ -1,0 +1,170 @@
+<UserControl
+    x:Class="MChub.Mobile.Views.Pages.MobileLauncherPage"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:fa="using:FluentAvalonia.UI.Controls"
+    xmlns:loc="using:MChub.Localization"
+    xmlns:classes="using:MChub.Core.Minecraft.Classes">
+
+    <!-- 主页布局参照 ZL2 的 LauncherScreen：内容区 + 一张「操作卡片」。
+         ZL2 的卡片自上而下是 账户 → 版本选择 → 启动按钮，这里按同一顺序用 MChub 的实例概念落地。 -->
+    <ScrollViewer>
+        <StackPanel Margin="12" Spacing="12">
+
+            <Border
+                Padding="14"
+                CornerRadius="10"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1">
+                <StackPanel Spacing="12">
+
+                    <!-- 账户行 -->
+                    <Grid ColumnDefinitions="Auto,*">
+                        <Border
+                            Width="40"
+                            Height="40"
+                            CornerRadius="20"
+                            Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                            <fa:FASymbolIcon
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="20"
+                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                Symbol="Contact" />
+                        </Border>
+                        <StackPanel
+                            Grid.Column="1"
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center"
+                            Spacing="2">
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherAccount}}" />
+                            <TextBlock
+                                x:Name="AccountText"
+                                FontSize="15"
+                                FontWeight="SemiBold"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Height="1" Background="{DynamicResource CardStrokeColorDefaultBrush}" />
+
+                    <!-- 当前实例 -->
+                    <StackPanel Spacing="6">
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherCurrentInstance}}" />
+                        <ComboBox
+                            x:Name="InstancePicker"
+                            HorizontalAlignment="Stretch"
+                            SelectionChanged="InstancePicker_OnSelectionChanged">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="classes:MinecraftInstance">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock
+                                            FontWeight="SemiBold"
+                                            TextTrimming="CharacterEllipsis"
+                                            Text="{Binding InstanceName}" />
+                                        <TextBlock
+                                            FontSize="12"
+                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                            Text="{Binding ShortDisplay}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- 启动 -->
+                    <Button
+                        x:Name="LaunchButton"
+                        Classes="accent"
+                        Height="46"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Click="Launch_OnClick">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <fa:FASymbolIcon Symbol="Play" FontSize="16" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherLaunchGame}}" />
+                        </StackPanel>
+                    </Button>
+
+                    <TextBlock
+                        x:Name="StatusText"
+                        FontSize="12"
+                        TextWrapping="Wrap"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+            </Border>
+
+            <!-- 我的实例（ZL2 主页的内容区） -->
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="15"
+                    FontWeight="SemiBold"
+                    Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherInstances}}" />
+                <Button
+                    Grid.Column="1"
+                    Padding="10,4"
+                    Content="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_instancesRefresh}}"
+                    Click="Refresh_OnClick" />
+            </Grid>
+
+            <TextBlock
+                x:Name="EmptyHint"
+                IsVisible="False"
+                FontSize="13"
+                TextWrapping="Wrap"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherNoInstance}}" />
+
+            <ListBox
+                x:Name="InstanceList"
+                Background="Transparent"
+                SelectionChanged="InstanceList_OnSelectionChanged">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="classes:MinecraftInstance">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                            <fa:FASymbolIcon
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                FontSize="20"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Symbol="Games" />
+                            <StackPanel
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Spacing="2">
+                                <TextBlock
+                                    FontWeight="SemiBold"
+                                    TextTrimming="CharacterEllipsis"
+                                    Text="{Binding InstanceName}" />
+                                <TextBlock
+                                    FontSize="12"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding ShortDisplay}" />
+                            </StackPanel>
+                            <Button
+                                Grid.Column="2"
+                                Padding="10,6"
+                                VerticalAlignment="Center"
+                                Click="LaunchInstance_OnClick">
+                                <fa:FASymbolIcon
+                                    FontSize="14"
+                                    Foreground="{DynamicResource AccentFillColorDefaultBrush}"
+                                    Symbol="Play" />
+                            </Button>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

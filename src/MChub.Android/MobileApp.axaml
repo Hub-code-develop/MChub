@@ -2,11 +2,12 @@
     x:Class="MChub.Mobile.MobileApp"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:fa="using:FluentAvalonia.Styling"
     RequestedThemeVariant="Dark">
     <Application.Styles>
-        <FluentTheme />
-        <!-- OreUI 主题必须位于 FluentTheme 之后，依赖其基础控件模板。 -->
-        <StyleInclude Source="avares://OreUI/Themes/OreUITheme.axaml" />
+        <!-- UI = CodeHub-FluentUI（FluentAvalonia 的 CodeHub 分支），与桌面端 MChub 同栈。
+             该主题自包含基础控件模板，因此这里不再引入 FluentTheme / OreUI 主题。 -->
+        <fa:FluentAvaloniaTheme />
         <StyleInclude Source="avares://Irihi.Lingua.Core/Themes/Generic.axaml" />
     </Application.Styles>
 </Application>

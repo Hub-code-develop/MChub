@@ -2,31 +2,74 @@
     x:Class="MChub.Mobile.Views.MobileShellView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:ore="using:OreUI.Controls"
+    xmlns:fa="using:FluentAvalonia.UI.Controls"
     xmlns:loc="using:MChub.Localization"
-    Background="#101010">
-    <Grid RowDefinitions="Auto,*,Auto">
-        <ore:OreHeader Grid.Row="0" Title="MChub" />
+    Background="{DynamicResource SolidBackgroundFillColorBaseBrush}">
 
-        <ContentControl x:Name="PageHost" Grid.Row="1" />
+    <!-- 布局参照 Zalith Launcher 2（ZL2）：顶部一条工具栏，左侧页面标题，右侧图标功能项；
+         内容区占满剩余空间。ZL2 的功能项是「图标 + 选中时才展开的文字」（TextRailItem），
+         文字显隐与配色在 code-behind 里切换。 -->
+    <UserControl.Styles>
+        <Style Selector="Button.railItem">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Styles>
 
-        <Border Grid.Row="2" Background="#1A1A1A" Padding="8" BorderThickness="0,1,0,0" BorderBrush="#2A2A2A">
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                <Button
-                    x:Name="InstancesNavButton"
+    <Grid RowDefinitions="Auto,*">
+        <Border
+            Grid.Row="0"
+            Padding="12,6"
+            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock
+                    x:Name="PageTitle"
                     Grid.Column="0"
-                    Classes="ore primary"
-                    HorizontalAlignment="Stretch"
-                    Content="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_navInstances}}"
-                    Click="InstancesNav_OnClick" />
-                <Button
-                    x:Name="SettingsNavButton"
+                    VerticalAlignment="Center"
+                    FontSize="17"
+                    FontWeight="SemiBold"
+                    TextTrimming="CharacterEllipsis" />
+
+                <StackPanel
                     Grid.Column="1"
-                    Classes="ore secondary"
-                    HorizontalAlignment="Stretch"
-                    Content="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_navSettings}}"
-                    Click="SettingsNav_OnClick" />
+                    Orientation="Horizontal"
+                    Spacing="2">
+                    <Button
+                        x:Name="HomeNavButton"
+                        Classes="railItem"
+                        Click="HomeNav_OnClick">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <fa:FASymbolIcon x:Name="HomeNavIcon" Symbol="Home" FontSize="16" />
+                            <TextBlock
+                                x:Name="HomeNavLabel"
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_navHome}}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button
+                        x:Name="SettingsNavButton"
+                        Classes="railItem"
+                        Click="SettingsNav_OnClick">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <fa:FASymbolIcon x:Name="SettingsNavIcon" Symbol="Settings" FontSize="16" />
+                            <TextBlock
+                                x:Name="SettingsNavLabel"
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_navSettings}}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
+
+        <ContentControl x:Name="PageHost" Grid.Row="1" />
     </Grid>
 </UserControl>

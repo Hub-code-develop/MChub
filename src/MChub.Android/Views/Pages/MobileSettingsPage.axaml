@@ -2,58 +2,87 @@
     x:Class="MChub.Mobile.Views.Pages.MobileSettingsPage"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:ore="using:OreUI.Controls"
+    xmlns:fa="using:FluentAvalonia.UI.Controls"
     xmlns:loc="using:MChub.Localization">
     <ScrollViewer>
-        <StackPanel Margin="12" Spacing="4">
-            <TextBlock
-                Margin="0,0,0,8"
-                FontSize="20"
-                FontWeight="SemiBold"
-                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsTitle}}" />
+        <StackPanel Margin="12" Spacing="12">
 
-            <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
-                <TextBlock Grid.Row="0" Grid.Column="0" Opacity="0.6"
-                           Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsLanguage}}" />
-                <TextBlock x:Name="LanguageValue" Grid.Row="0" Grid.Column="1" TextWrapping="Wrap" />
+            <Border
+                Padding="14"
+                CornerRadius="10"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1">
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsGeneral}}" />
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Opacity="0.6"
-                           Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsTheme}}" />
-                <TextBlock x:Name="ThemeValue" Grid.Row="1" Grid.Column="1" TextWrapping="Wrap" />
+                    <Grid
+                        ColumnDefinitions="140,*"
+                        RowDefinitions="Auto,Auto,Auto,Auto"
+                        RowSpacing="10">
+                        <TextBlock
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsLanguage}}" />
+                        <TextBlock
+                            x:Name="LanguageValue"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            TextWrapping="Wrap" />
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Opacity="0.6"
-                           Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsVersion}}" />
-                <TextBlock x:Name="VersionValue" Grid.Row="2" Grid.Column="1" TextWrapping="Wrap" />
+                        <TextBlock
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsTheme}}" />
+                        <TextBlock
+                            x:Name="ThemeValue"
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            TextWrapping="Wrap" />
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Opacity="0.6"
-                           Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsStorageTitle}}" />
-                <TextBlock x:Name="StorageValue" Grid.Row="3" Grid.Column="1" TextWrapping="Wrap" />
-            </Grid>
+                        <TextBlock
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsVersion}}" />
+                        <TextBlock
+                            x:Name="VersionValue"
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            TextWrapping="Wrap" />
 
-            <ore:OreDivider Classes="horizontal" Margin="0,12" />
+                        <TextBlock
+                            Grid.Row="3"
+                            Grid.Column="0"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsStorageTitle}}" />
+                        <TextBlock
+                            x:Name="StorageValue"
+                            Grid.Row="3"
+                            Grid.Column="1"
+                            TextWrapping="Wrap" />
+                    </Grid>
+                </StackPanel>
+            </Border>
 
-            <TextBlock
-                FontSize="16"
-                FontWeight="SemiBold"
-                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsRuntimeTitle}}" />
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <ore:OreTag x:Name="RuntimeTag"
-                            Content="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsRuntimePending}}" />
-            </StackPanel>
-            <TextBlock
-                x:Name="RuntimeHint"
-                FontSize="12"
-                Opacity="0.6"
-                TextWrapping="Wrap"
-                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsRuntimePlanned}}" />
+            <!-- 运行时状态：用 Fluent 的 FAInfoBar 表达严重程度，状态本身取自真实的探测结果。 -->
+            <fa:FAInfoBar
+                x:Name="RuntimeInfoBar"
+                IsClosable="False"
+                IsOpen="True"
+                Severity="Informational" />
 
             <TextBlock
                 x:Name="CoreStatusText"
-                Margin="0,12,0,0"
+                IsVisible="False"
                 FontSize="12"
-                Opacity="0.6"
                 TextWrapping="Wrap"
-                IsVisible="False" />
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

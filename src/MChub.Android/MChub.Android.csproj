@@ -32,9 +32,10 @@
         <PackageReference Include="Avalonia"/>
         <PackageReference Include="Avalonia.Android"/>
         <PackageReference Include="Avalonia.Fonts.Inter"/>
-        <!-- OreUI 主题以 FluentTheme 为基础，Avalonia 12 需显式引用该主题包。 -->
-        <PackageReference Include="Avalonia.Themes.Fluent"/>
-        <PackageReference Include="CodeHub-OreUI"/>
+        <!-- UI 主题 = CodeHub-FluentUI（CodeHub 维护的 FluentAvalonia 分支，程序集名仍为 FluentAvalonia.dll），
+             与桌面端 MChub 同栈。该主题自带基础控件模板（ControlThemes/Controls.axaml 覆盖 Button/ListBox/
+             ScrollViewer 等），因此不再需要 Avalonia.Themes.Fluent，也不再引 CodeHub-OreUI。 -->
+        <PackageReference Include="CodeHub-FluentUI"/>
         <PackageReference Include="CommunityToolkit.Mvvm"/>
         <!-- 显式引用：{Translate} 标记扩展由 Irihi.Lingua.Core 注册进 Avalonia 默认 xmlns。 -->
         <PackageReference Include="Irihi.Lingua"/>
@@ -43,6 +44,13 @@
     <ItemGroup>
         <ProjectReference Include="..\MChub.Core\MChub.Core.csproj"/>
         <ProjectReference Include="..\MChub.Localization\MChub.Localization.csproj"/>
+    </ItemGroup>
+
+    <!-- Java 后端（hub.code.mchub.runtime.*）：运行时校验与启动编排，随 APK 编译为 dex 供 C# 经 JNI 调用。
+         创建 JVM 的 native 层（libmchubjvm.so）需 Android NDK 构建；
+         未接入时 LauncherBridge 会明确报错，不静默失败。 -->
+    <ItemGroup>
+        <AndroidJavaSource Include="Java\**\*.java"/>
     </ItemGroup>
 
     <ItemGroup>
