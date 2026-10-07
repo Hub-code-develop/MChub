@@ -5,7 +5,9 @@ name: bedrock-macos-runtime
 #   xodus/      —— 原生 xodus-service,负责 MSA/XSTS/许可,监听 /tmp/xodus.sock
 #   render/     —— MoltenVK、DXVK、vkd3d-proton,以及 Wine 运行期需要的 Vulkan loader / FreeType
 #   winappsdk/  —— WinAppSDK 引导器桩(替换实例内那个在 Wine 下必然失败的 Bootstrap DLL)
-#   vulkan-loader/ —— 自建 Khronos Vulkan loader(brew 无 macOS Intel bottle),汇总时并入 render/lib
+#   vulkan-loader/ —— 自建 Khronos Vulkan loader(brew 无 macOS Intel bottle)。
+#                    构建 Wine 时要先下载它,configure 的 vulkan 检测是 -lvulkan 链接检查;
+#                    汇总时再并入 render/lib,供运行期 dlopen。
 #
 # 由 mac-dmg 通过 workflow_call 调用,产物以 mcbe-macos-runtime 工件上传,
 # 打包时解到 MChub.app/Contents/MacOS/mcbe-macos(MChub.Bedrock.MacOS 会在该路径下探测)。
@@ -128,16 +130,25 @@ jobs:
           sudo rm -rf /usr/local/Homebrew/Library/Taps || true
           df -h /
 
+      - name: 下载 Vulkan loader(configure 检测 -lvulkan 需要,必须先于 Wine 构建)
+        uses: actions/download-artifact@v7
+        with:
+          name: mcbe-macos-vulkan-loader
+          path: artifacts/runtime/vulkan-loader
+
       - name: 缓存 Wine 构建结果
         id: wine-cache
         uses: actions/cache@v4
         with:
           path: artifacts/runtime/wine
-          # v2:Wine 需带 Vulkan 支持,旧的缓存产物不含,必须重编。
-          key: wine-gdk-${{ env.WINE_GDK_REF }}-${{ runner.os }}-${{ runner.arch }}-v2
+          # v3:Wine 需带 Vulkan 支持(configure 的 -lvulkan 链接检查),且构建时
+          # 额外传入了 VULKAN_LOADER_DIR;旧缓存产物不含 Vulkan,必须重编。
+          key: wine-gdk-${{ env.WINE_GDK_REF }}-${{ runner.os }}-${{ runner.arch }}-v3
 
       - name: 构建 Wine(WineGDK,x86_64)
         if: steps.wine-cache.outputs.cache-hit != 'true'
+        env:
+          VULKAN_LOADER_DIR: ${{ github.workspace }}/artifacts/runtime/vulkan-loader
         run: ./scripts/mcbe-macos/build-wine.sh
 
       - name: Wine 缓存命中,校验产物
@@ -169,12 +180,6 @@ jobs:
         with:
           name: mcbe-macos-winappsdk-stub
           path: artifacts/runtime/winappsdk
-
-      - name: 下载 Vulkan loader
-        uses: actions/download-artifact@v7
-        with:
-          name: mcbe-macos-vulkan-loader
-          path: artifacts/runtime/vulkan-loader
 
       - name: 确保可执行位
         run: chmod +x artifacts/runtime/xodus/xodus-service

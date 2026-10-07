@@ -6,7 +6,10 @@
 # bottle(只有 arm64 与 Linux),而 Wine 的 winevulkan 在运行期要 dlopen
 # libvulkan.1.dylib。MoltenVK 只提供 ICD(驱动),不含 loader,因此必须自建。
 #
-# 产物:$OUT/lib/libvulkan.1.dylib(以及同一实体的 libvulkan.dylib)
+# 产物:$OUT/lib/libvulkan.1.dylib 与它的一份拷贝 $OUT/lib/libvulkan.dylib。
+# 后者是给 Wine 的 configure 用的:那里做的是无头链接检查(conftest 只声明
+# vkGetInstanceProcAddr 再 -lvulkan),而 -l 只认无版本号的文件名。
+# 用拷贝而不是符号链接,避免 upload-artifact 处理符号链接时丢文件。
 #
 # 环境变量:
 #   WORKDIR      工作目录(默认 <repo>/.work)
@@ -91,6 +94,8 @@ rm -rf "$OUT"
 mkdir -p "$OUT/lib"
 cp "$LOADER" "$OUT/lib/libvulkan.1.dylib"
 chmod u+w "$OUT/lib/libvulkan.1.dylib"
+# 无版本号的拷贝供 Wine 的 configure 做 -lvulkan 链接检查(见文件头说明)。
+cp "$OUT/lib/libvulkan.1.dylib" "$OUT/lib/libvulkan.dylib"
 
 log "校验依赖(只应依赖系统库)"
 otool -L "$OUT/lib/libvulkan.1.dylib"

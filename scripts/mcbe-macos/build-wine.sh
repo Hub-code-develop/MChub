@@ -29,16 +29,16 @@ log "Homebrew 根目录:$BREW"
 
 if [ "${SKIP_DEPS:-0}" != "1" ]; then
   log "安装构建依赖"
-  # vulkan-headers 让 configure 打开 HAVE_VULKAN;不装的话 win32u 会编译成
-  # "Wine was built without Vulkan support",DXVK/vkd3d-proton 无法创建设备。
-  # macOS 上 Wine 不链接 loader(SONAME_LIBVULKAN 硬编码为 libvulkan.1.dylib,
-  # 运行期 dlopen),所以 loader 由 build-vulkan-loader.sh 自建并随运行时分发。
+  # Vulkan:configure 对 vulkan 的检测是一次"无头链接检查"——它只编译一个声明了
+  # vkGetInstanceProcAddr 的 conftest 再链接 -lvulkan(Wine 源码里所有 include 都走
+  # 自带的 include/wine/vulkan.h,不需要系统头文件)。链接不上就转而试 -lMoltenVK;
+  # 两者都没有时,因为传了 --with-vulkan,configure 会直接报错退出。
+  # macOS 上 Wine 只在运行期 dlopen(darwin 分支把 SONAME_LIBVULKAN 定义成检测到的
+  # soname,并不真的链接它),所以 loader 由 build-vulkan-loader.sh 自建,构建前通过
+  # VULKAN_LOADER_DIR 提供,再随运行时分发。
   # freetype/fontconfig 供字体渲染(运行期 dylib 由 assemble-runtime.sh 收进 render/lib)。
   brew install --quiet mingw-w64 autoconf automake libtool bison pkg-config \
-    freetype fontconfig gnutls gettext zstd vulkan-headers
-  # vulkan-loader 在 macOS Intel 上没有 bottle,brew 会源码构建;装不上也不影响
-  # (vulkan-headers 是纯头文件,loader 由我们自建)。
-  brew install --quiet vulkan-loader || echo "提示:vulkan-loader 未能从 brew 安装,将使用自建 loader"
+    freetype fontconfig gnutls gettext zstd
 fi
 
 MINGW="$BREW/opt/mingw-w64"
@@ -49,7 +49,19 @@ log "检查 mingw-w64 交叉编译器"
 "$MINGW/bin/x86_64-w64-mingw32-g++" --version | head -1
 
 export PATH="$MINGW/bin:$BREW/opt/bison/bin:$BREW/bin:$PATH"
-export PKG_CONFIG_PATH="$BREW/opt/freetype/lib/pkgconfig:$BREW/opt/fontconfig/lib/pkgconfig:$BREW/opt/gnutls/lib/pkgconfig:$BREW/opt/vulkan-loader/lib/pkgconfig:$BREW/opt/vulkan-headers/lib/pkgconfig:$BREW/lib/pkgconfig:$BREW/share/pkgconfig"
+export PKG_CONFIG_PATH="$BREW/opt/freetype/lib/pkgconfig:$BREW/opt/fontconfig/lib/pkgconfig:$BREW/opt/gnutls/lib/pkgconfig:$BREW/lib/pkgconfig:$BREW/share/pkgconfig"
+
+# configure 的 vulkan 检测要求能链接到 libvulkan.dylib(见上面依赖段说明)。
+# 自建 loader 由 CI 提前下载到这里;缺失就让 configure 立刻失败,而不是编译完才发现。
+VULKAN_LDFLAGS=""
+if [ -n "${VULKAN_LOADER_DIR:-}" ]; then
+  [ -f "$VULKAN_LOADER_DIR/lib/libvulkan.dylib" ] || {
+    echo "错误:VULKAN_LOADER_DIR=$VULKAN_LOADER_DIR 下缺少 lib/libvulkan.dylib" >&2; exit 1; }
+  VULKAN_LDFLAGS="-L$VULKAN_LOADER_DIR/lib"
+  log "Vulkan loader 参与 configure 检测:$VULKAN_LOADER_DIR/lib"
+else
+  log "警告:未提供 VULKAN_LOADER_DIR,configure 需自行找到 libvulkan/libMoltenVK"
+fi
 
 log "获取源码 WineGDK@$WINE_GDK_REF"
 mkdir -p "$WORKDIR"
@@ -96,7 +108,17 @@ cd "$BUILD"
   --without-usb --without-v4l2 --without-wayland \
   BISON="$BISON_BIN" \
   CPPFLAGS="-I$BREW/include" \
-  LDFLAGS="-L$BREW/lib"
+  LDFLAGS="-L$BREW/lib $VULKAN_LDFLAGS"
+
+# 尽早确认 SONAME_LIBVULKAN 已定义。没定义的话 win32u 会编成
+# "built without Vulkan support",而此时 make 还没跑,失败成本最低。
+if ! grep -q '^#define SONAME_LIBVULKAN' "$BUILD/include/config.h"; then
+  echo "错误:configure 未定义 SONAME_LIBVULKAN,说明 vulkan 检测失败。" >&2
+  echo "      确认 VULKAN_LOADER_DIR 指向含 lib/libvulkan.dylib 的目录。" >&2
+  grep -n -i 'vulkan' "$BUILD/config.log" | tail -20 >&2 || true
+  exit 1
+fi
+log "configure 已定义 SONAME_LIBVULKAN:$(grep '^#define SONAME_LIBVULKAN' "$BUILD/include/config.h")"
 
 log "make -j$(sysctl -n hw.activecpu)"
 make -s -j"$(sysctl -n hw.activecpu)"
