@@ -36,7 +36,10 @@ public partial class ChangeSkin : UserControl
         SkinViewer.PointerReleased += OnPointerReleased;
         SkinViewer.PointerWheelChanged += OnPointerWheelChanged;
         SkinViewer.RenderingFailed += OnSkinViewerRenderingFailed;
-        SkinViewer.RenderMode = SkinRenderMode.MSAA;
+        // 用 FXAA 而不是 MSAA：MSAA 走的是「离屏多重采样 framebuffer → blit resolve」这条路，
+        // 是该预览区域「一片空白」的首要嫌疑（LiteSkinViewer 官方示例的默认值也是 FXAA）。
+        // 先用最稳的路径，保证任何设备都能渲染出画面。
+        SkinViewer.RenderMode = SkinRenderMode.FXAA;
         SkinViewer.IsTopLayer3D = true;
     }
 
