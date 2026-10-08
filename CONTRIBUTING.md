@@ -80,14 +80,14 @@ git grep -nE '\$2a\$10\$|client_id\s*=\s*"?[0-9a-f]{8}-'
 UI 基座库 `CodeHub-FluentUI` 发布在 GitHub Packages，**不在 nuget.org 上**：
 
 ```
-https://nuget.pkg.github.com/CodeHub-develop/index.json
+https://nuget.pkg.github.com/hub-code-develop/index.json
 ```
 
 **这个源即使包是公开的也要求认证** —— 匿名请求直接 401（实测：服务索引与包下载均如此），
 所以本地首次还原前必须先配一次凭据。需要一个带 `read:packages` 的 Classic PAT：
 
 ```bash
-dotnet nuget add source "https://nuget.pkg.github.com/CodeHub-develop/index.json" \
+dotnet nuget add source "https://nuget.pkg.github.com/hub-code-develop/index.json" \
   --username <你的 GitHub 用户名> \
   --password <带 read:packages 的 PAT> \
   --store-password-in-clear-text \
@@ -98,7 +98,7 @@ CI 侧不需要你手动做任何事：各构建作业里已有 `Configure NuGet
 用工作流自带的 `GITHUB_TOKEN` 完成同一步配置。
 
 > 若仓库没有该包的读取权限，CI 会以 401/403 失败。此时到
-> `https://github.com/orgs/CodeHub-develop/packages/nuget/CodeHub-FluentUI/settings`
+> `https://github.com/orgs/hub-code-develop/packages/nuget/CodeHub-FluentUI/settings`
 > 的 **Manage Actions access** 里把本仓库加进去（Read 角色）。
 
 > 完整的凭据与安全策略见 [SECURITY.md](SECURITY.md)，其中包括「客户端二进制内含可提取凭据」

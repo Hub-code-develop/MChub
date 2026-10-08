@@ -42,7 +42,7 @@ public sealed class PlayitState
 public sealed class PlayitMultiplayerService
 {
     public const string ApiBase = "https://api.playit.gg";
-    public const string ReleaseBase = "https://github.com/CodeHub-develop/playit-connect-for-sl/releases/latest/download";
+    public const string ReleaseBase = "https://github.com/hub-code-develop/playit-connect-for-sl/releases/latest/download";
     public const string DashboardUrl = "https://playit.gg/account/agents";
 
     private static readonly HttpClient Client = new() { Timeout = TimeSpan.FromMinutes(5) };

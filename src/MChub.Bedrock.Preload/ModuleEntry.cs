@@ -124,7 +124,7 @@ internal static unsafe class ModuleEntry
                 PrintBanner();
                 VersionInfo.Print();
                 Logger.Success("MChub is free software licensed under GPLv3");
-                Logger.Success("Submit issues and submit PR: https://github.com/CodeHub-develop/MChub");
+                Logger.Success("Submit issues and submit PR: https://github.com/hub-code-develop/MChub");
             }
             PreloadLoader.Run();
         }

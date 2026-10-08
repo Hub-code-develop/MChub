@@ -22,14 +22,14 @@
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <HotAvaloniaAutoEnable>false</HotAvaloniaAutoEnable>
         <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-        <RepositoryUrl>https://github.com/CodeHub-develop/MChub</RepositoryUrl>
+        <RepositoryUrl>https://github.com/hub-code-develop/MChub</RepositoryUrl>
         <Description>MChub</Description>
         <PackageIcon>..\..\assets\MChub.png</PackageIcon>
-        <PackageProjectUrl>https://github.com/CodeHub-develop/MChub</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/hub-code-develop/MChub</PackageProjectUrl>
         <PackageTags>MChub</PackageTags>
         <PackageVersion>0.0.0</PackageVersion>
-        <Copyright>https://github.com/CodeHub-develop/MChub</Copyright>
-        <Authors>github.com/CodeHub-develop/MChub</Authors>
+        <Copyright>https://github.com/hub-code-develop/MChub</Copyright>
+        <Authors>github.com/hub-code-develop/MChub</Authors>
         <ApplicationIcon>..\..\assets\MChub.ico</ApplicationIcon>
         <Title>MChub</Title>
 

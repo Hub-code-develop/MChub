@@ -28,7 +28,7 @@ jobs:
       - name: Configure NuGet (GitHub Packages)
         shell: bash
         run: |-
-          dotnet nuget add source "https://nuget.pkg.github.com/CodeHub-develop/index.json" --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name codehub-gh
+          dotnet nuget add source "https://nuget.pkg.github.com/hub-code-develop/index.json" --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name codehub-gh
 
       - name: Checkout code
         uses: actions/checkout@v7
@@ -83,8 +83,17 @@ jobs:
             cp -r /tmp/mobile-runtime/lwjgl-natives "$dest/lwjgl-natives"
           fi
           cp -r /tmp/mobile-runtime/jre "$dest/jre"
+          # LWJGL jar 必须先打成 zip 再进 assets：.NET Android 会把 assets 里的 .jar 当作
+          # AndroidJavaLibrary（要参与 dex），而 3.3.3 与 3.4.1 有同名 jar、内容不同 → XA1014。
+          # 这些 jar 只是 JVM classpath 上的条目，不需要进 dex，打包成 zip 由运行时解压即可。
           if [ -d /tmp/mobile-runtime/lwjgl ]; then
-            cp -r /tmp/mobile-runtime/lwjgl "$dest/lwjgl"
+            mkdir -p "$dest/lwjgl"
+            root=$(pwd)
+            for d in /tmp/mobile-runtime/lwjgl/*/; do
+              ver=$(basename "$d")
+              (cd "$d" && zip -qr "$root/$dest/lwjgl/$ver.zip" .)
+            done
+            ls -la "$dest/lwjgl"
           fi
           cp /tmp/mobile-runtime/manifest.json "$dest/manifest.json"
 

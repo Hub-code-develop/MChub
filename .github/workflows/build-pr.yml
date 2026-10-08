@@ -63,7 +63,7 @@ jobs:
       - name: Configure NuGet (GitHub Packages)
         shell: bash
         run: |-
-          dotnet nuget add source "https://nuget.pkg.github.com/CodeHub-develop/index.json" --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name codehub-gh
+          dotnet nuget add source "https://nuget.pkg.github.com/hub-code-develop/index.json" --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name codehub-gh
 
       - name: Checkout code
         uses: actions/checkout@v7
@@ -113,7 +113,7 @@ jobs:
       - name: Configure NuGet (GitHub Packages)
         shell: bash
         run: |-
-          dotnet nuget add source "https://nuget.pkg.github.com/CodeHub-develop/index.json" --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name codehub-gh
+          dotnet nuget add source "https://nuget.pkg.github.com/hub-code-develop/index.json" --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name codehub-gh
 
       - name: Checkout code
         uses: actions/checkout@v7

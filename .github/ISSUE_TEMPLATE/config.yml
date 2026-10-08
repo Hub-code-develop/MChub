@@ -1,13 +1,13 @@
 blank_issues_enabled: true
 contact_links:
   - name: "📦 下载 / 历史版本"
-    url: https://github.com/CodeHub-develop/MChub/releases
+    url: https://github.com/hub-code-develop/MChub/releases
     about: 最新发布和过往版本都在这里下载
   - name: "💬 加 QQ 群（545716736）"
     url: https://qm.qq.com/q/iU5DvgYclq
     about: 想即时交流就加这个 QQ 群
   - name: "🌐 项目仓库"
-    url: https://github.com/CodeHub-develop/MChub
+    url: https://github.com/hub-code-develop/MChub
     about: 源码、文档和反馈都在本仓库
   - name: "🌐 项目网站"
     url: https://codehub-develop.github.io/MChub/#features

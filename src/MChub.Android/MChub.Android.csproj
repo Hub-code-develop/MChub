@@ -79,8 +79,10 @@
 
         <AndroidAsset Include="RuntimeAssets/jre/**/*.tar.xz"
                       Link="Assets/runtime/jre/%(RecursiveDir)%(Filename)%(Extension)"/>
-        <AndroidAsset Include="RuntimeAssets/lwjgl/**/*"
-                      Link="Assets/runtime/lwjgl/%(RecursiveDir)%(Filename)%(Extension)"/>
+        <!-- LWJGL jar 以 zip 形式预置：assets 里的 .jar 会被 .NET Android 当成
+             AndroidJavaLibrary 参与 dex，两套版本同名即报 XA1014（见 build-android.yml）。 -->
+        <AndroidAsset Include="RuntimeAssets/lwjgl/*.zip"
+                      Link="Assets/runtime/lwjgl/%(Filename)%(Extension)"/>
         <!-- LWJGL 原生库按版本分目录：3.3.3 与 3.4.1 有同名 .so，不能同时进 lib/，
              运行时按实例需要的版本解压到私有目录。 -->
         <AndroidAsset Include="RuntimeAssets/lwjgl-natives/**/*"

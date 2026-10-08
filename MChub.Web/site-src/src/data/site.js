@@ -12,7 +12,7 @@ import { icons } from './icons.js'
  */
 
 // MChub GitHub 仓库
-export const GITHUB_REPO = 'https://github.com/CodeHub-develop/MChub'
+export const GITHUB_REPO = 'https://github.com/hub-code-develop/MChub'
 const RELEASES = `${GITHUB_REPO}/releases/latest`
 // 正式版资产直链
 const DL = `${RELEASES}/download`

@@ -22,7 +22,7 @@ public sealed record UpdateRelease(string Title, long Sequence, IReadOnlyList<Up
 
 public static class UpdateChecker
 {
-    private const string GithubReleasesUrl = "https://api.github.com/repos/CodeHub-develop/MChub/releases?per_page=100";
+    private const string GithubReleasesUrl = "https://api.github.com/repos/hub-code-develop/MChub/releases?per_page=100";
     private static readonly Regex StableTagPattern = new(@"^v?(\d+)\.(\d+)\.(\d+)$", RegexOptions.Compiled);
 
     public static async Task<string?> Check(TopLevel? sender, bool noreply = false)
@@ -93,7 +93,7 @@ public static class UpdateChecker
         var channel = NormalizeChannel(configuredChannel);
         var apiUrl = channel == "release"
             ? GithubReleasesUrl
-            : $"https://api.github.com/repos/CodeHub-develop/MChub/releases/tags/publish-{channel}";
+            : $"https://api.github.com/repos/hub-code-develop/MChub/releases/tags/publish-{channel}";
         Logger.Info($"Checking update from GitHub: {apiUrl}");
 
         var text = await HttpUtil.Request(apiUrl).GetStringAsync();

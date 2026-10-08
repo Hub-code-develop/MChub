@@ -53,9 +53,15 @@ internal static class MobileRuntimePaths
     public static string BundledJreAssetPath(int majorVersion)
         => $"{BundledAssetRoot}/jre/{majorVersion}/jre{majorVersion}-android-{MobileRuntimeCatalog.Abi}.tar.xz";
 
-    /// <summary>预置 LWJGL jar 在 assets 里的目录（相对 assets 根）。</summary>
-    public static string BundledJwjglAssetDirectory(string lwjglVersion)
-        => $"{BundledAssetRoot}/lwjgl/{lwjglVersion}";
+    /// <summary>
+    /// 预置 LWJGL jar 归档（zip）在 assets 里的路径。
+    ///
+    /// <p>不能直接把 <c>.jar</c> 放进 assets：.NET Android 会把它们当成
+    /// <c>AndroidJavaLibrary</c> 参与 dex，而两套 LWJGL 版本有同名 jar、内容不同 → 报 XA1014。
+    /// 这些 jar 只是 JVM classpath 上的条目，不需要进 dex，所以打 zip 由运行时解压。</p>
+    /// </summary>
+    public static string BundledJwjglArchivePath(string lwjglVersion)
+        => $"{BundledAssetRoot}/lwjgl/{lwjglVersion}.zip";
 
     /// <summary>
     /// 预置的 LWJGL 原生库在 assets 里的目录（按版本分放）。

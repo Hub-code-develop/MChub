@@ -66,9 +66,9 @@ internal static class MobileRuntimeInstaller
         => AssetExists(MobileRuntimePaths.BundledJreAssetPath(
             MobileRuntimeCatalog.NormalizeRuntimeMajor(majorVersion)));
 
-    /// <summary>APK 内是否预置了移动端 LWJGL jar。</summary>
+    /// <summary>APK 内是否预置了移动端 LWJGL jar（以 zip 形式预置）。</summary>
     public static bool HasBundledJars
-        => AssetExists(MobileRuntimePaths.BundledJwjglAssetDirectory(MobileRuntimeCatalog.LwjglVersion));
+        => AssetExists(MobileRuntimePaths.BundledJwjglArchivePath(MobileRuntimeCatalog.LwjglVersion));
 
     /// <summary>
     /// 从 APK 内预置资产安装 JRE（**不需要联网**）：把归档解出到私有目录。
@@ -103,26 +103,45 @@ internal static class MobileRuntimeInstaller
     public static async Task InstallBundledJarsAsync(string lwjglVersion,
         IProgress<MobileInstallProgress>? progress = null, CancellationToken cancellationToken = default)
     {
-        var assetDirectory = MobileRuntimePaths.BundledJwjglAssetDirectory(lwjglVersion);
-        var names = ListAssets(assetDirectory)
-            .Where(name => name.EndsWith(".jar", StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-
-        if (names.Length == 0)
+        var assetPath = MobileRuntimePaths.BundledJwjglArchivePath(lwjglVersion);
+        if (!AssetExists(assetPath))
             throw new InvalidOperationException(
-                $"APK 内没有预置 LWJGL jar（assets/{assetDirectory}），运行组件不完整");
+                $"APK 内没有预置 LWJGL jar 归档（assets/{assetPath}），运行组件不完整");
 
         var destination = MobileRuntimePaths.NativesJarDirectory;
         Directory.CreateDirectory(destination);
 
-        var done = 0;
-        foreach (var name in names)
+        progress?.Report(new MobileInstallProgress($"解出 LWJGL {lwjglVersion} jar…", 0));
+
+        // asset 流未必可随机访问，ZipArchive 顺序读更稳：先落到临时文件。
+        var temp = Path.Combine(Path.GetTempPath(), $"lwjgl-{lwjglVersion}.zip");
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            progress?.Report(new MobileInstallProgress($"解出 {name}…", Progress(done, names.Length)));
-            await CopyAssetToFileAsync($"{assetDirectory}/{name}",
-                Path.Combine(destination, name), cancellationToken);
-            done++;
+            await CopyAssetToFileAsync(assetPath, temp, cancellationToken);
+
+            using var archive = ZipFile.OpenRead(temp);
+            var entries = archive.Entries
+                .Where(entry => entry.Name.EndsWith(".jar", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (entries.Length == 0)
+                throw new InvalidOperationException($"LWJGL 归档里没有 jar：{assetPath}");
+
+            var done = 0;
+            foreach (var entry in entries)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                progress?.Report(new MobileInstallProgress(
+                    $"解出 {entry.Name}…", Progress(done, entries.Length)));
+
+                await using var output = File.Create(Path.Combine(destination, entry.Name));
+                await using var input = entry.Open();
+                await input.CopyToAsync(output, cancellationToken);
+                done++;
+            }
+        }
+        finally
+        {
+            TryDelete(temp);
         }
     }
 
