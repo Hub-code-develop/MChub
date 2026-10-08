@@ -128,28 +128,34 @@ public final class LauncherBridge {
             return fail("缺少实例工作目录（gameDir）");
         }
 
-        List<String> command = new ArrayList<>();
-        command.add(mainClass);
+        List<String> jvm = new ArrayList<>();
         if (jvmArgs != null) {
             for (String argument : jvmArgs) {
                 if (!isBlank(argument)) {
-                    command.add(argument);
+                    jvm.add(argument);
                 }
             }
         }
+
+        List<String> game = new ArrayList<>();
         if (gameArgs != null) {
             for (String argument : gameArgs) {
                 if (argument != null) {
-                    command.add(argument);
+                    game.add(argument);
                 }
             }
         }
 
         try {
-            int exitCode = nativeLaunch(runtimeDir,
-                    command.toArray(new String[0]), new File(gameDir).getAbsolutePath());
+            int exitCode = nativeLaunch(runtimeDir, mainClass,
+                    jvm.toArray(new String[0]), game.toArray(new String[0]),
+                    new File(gameDir).getAbsolutePath());
             if (exitCode != 0) {
-                lastError = "游戏进程以退出码 " + exitCode + " 结束";
+                // 原生层拿到的 Java 异常文本（找不到主类 / 主类抛异常）比"退出码 1"有用得多。
+                String nativeReason = NativeJvmLoader.takeNativeError();
+                lastError = nativeReason != null
+                        ? nativeReason
+                        : "游戏进程以退出码 " + exitCode + " 结束";
             }
             return exitCode;
         } catch (UnsatisfiedLinkError error) {
@@ -157,6 +163,11 @@ public final class LauncherBridge {
         } catch (Exception exception) {
             return fail("启动游戏失败：" + exception);
         }
+    }
+
+    /** 原生启动层（libmchubjvm.so）是否已随 APK 打包并可加载。 */
+    public static boolean isNativeLayerLoaded() {
+        return NativeJvmLoader.isLibraryLoaded();
     }
 
     /** 是否有游戏进程在运行。 */
@@ -167,6 +178,11 @@ public final class LauncherBridge {
     /** 请求停止当前游戏进程。 */
     public static void abort() {
         NativeJvmLoader.requestAbort();
+        try {
+            nativeAbort();
+        } catch (UnsatisfiedLinkError ignored) {
+            // 原生层未接入：仅置位中止标记，由调用方按 IsRunning 继续观察。
+        }
     }
 
     /** 取走最近一次错误信息（取后清空，避免旧错误被重复展示）。 */
@@ -177,14 +193,25 @@ public final class LauncherBridge {
     }
 
     /**
-     * native 入口：加载 libjvm.so、创建 JVM、驱动 LWJGL 与图形翻译层运行游戏。
+     * native 入口：加载运行时里的 libjvm.so、创建 JVM、再反射调用主类的
+     * {@code main(String[])} 运行游戏。
      *
-     * <p>{@code args[0]} 为主类，其余为 JVM 参数与游戏参数（顺序与 {@code JVM_CreateJavaVM} 的
-     * {@code JavaVMOption} 约定一致，便于 native 侧直接消费）。
+     * <p><b>为什么 JVM 参数与游戏参数要分开传</b>：{@code JNI_CreateJavaVM} 只吃
+     * {@code JavaVMOption[]}（即 JVM 参数），而 {@code --username} 这类是给主类 {@code main}
+     * 的实参。两者混在一个数组里 native 侧无法区分，会把游戏参数当成 JVM 选项而创建失败。</p>
      *
+     * @param runtimeDir 运行时根目录（含 libjvm.so）
+     * @param mainClass  启动主类
+     * @param jvmArgs    JVM 参数（含 {@code -cp}、{@code -Djava.library.path}、{@code -Xmx} 等）
+     * @param gameArgs   传给主类 main 的实参
+     * @param gameDir    实例工作目录（作为进程工作目录）
      * @return 进程退出码
      */
-    private static native int nativeLaunch(String runtimeDir, String[] args, String gameDir);
+    private static native int nativeLaunch(String runtimeDir, String mainClass, String[] jvmArgs,
+                                           String[] gameArgs, String gameDir);
+
+    /** native 入口：请求结束当前游戏（调用 {@code System.exit}）。 */
+    private static native void nativeAbort();
 
     private static int fail(String message) {
         lastError = message;

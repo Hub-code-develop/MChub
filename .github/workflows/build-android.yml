@@ -48,6 +48,14 @@ jobs:
       - name: Install Android workload
         run: dotnet workload install android
 
+      # native 启动层（创建 JVM 的 libmchubjvm.so）必须先用 NDK 构建，
+      # 否则随 APK 打包时这一步会跳过，装到手机上会如实提示"原生启动层未提供"。
+      - name: Build native launch layer
+        shell: bash
+        run: |
+          chmod +x src/MChub.Android/Native/build-android.sh
+          src/MChub.Android/Native/build-android.sh arm64-v8a
+
       - name: Build Android (arm64)
         run: >
           dotnet build ./src/MChub.Android/MChub.Android.csproj

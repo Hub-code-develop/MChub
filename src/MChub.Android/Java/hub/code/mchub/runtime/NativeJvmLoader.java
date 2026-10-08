@@ -21,6 +21,9 @@ final class NativeJvmLoader {
     private static final AtomicBoolean gameRunning = new AtomicBoolean(false);
     private static final AtomicBoolean abortRequested = new AtomicBoolean(false);
 
+    /** 原生层回传的失败原因（见 {@link #setNativeError}）。 */
+    private static volatile String nativeError;
+
     static {
         loadLibrary();
     }
@@ -56,6 +59,23 @@ final class NativeJvmLoader {
     /** 供 native 侧回调：游戏已结束。 */
     static void notifyGameStopped() {
         gameRunning.set(false);
+    }
+
+    /**
+     * 供 native 侧回调：记录原生层的失败原因。
+     *
+     * <p>原生层直接拿到的是 Java 异常文本（找不到主类 / 主类抛异常等），比"退出码 1"
+     * 有用得多，因此单独回传一条，由 {@link LauncherBridge#launch} 优先展示。</p>
+     */
+    static void setNativeError(String message) {
+        nativeError = message;
+    }
+
+    /** 取走原生层的失败原因（取后清空）。 */
+    static String takeNativeError() {
+        String message = nativeError;
+        nativeError = null;
+        return message;
     }
 
     private static void loadLibrary() {

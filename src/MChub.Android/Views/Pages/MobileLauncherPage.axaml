@@ -88,8 +88,9 @@
                         HorizontalContentAlignment="Center"
                         Click="Launch_OnClick">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fa:FASymbolIcon Symbol="Play" FontSize="16" />
+                            <fa:FASymbolIcon x:Name="LaunchIcon" Symbol="Play" FontSize="16" />
                             <TextBlock
+                                x:Name="LaunchLabel"
                                 VerticalAlignment="Center"
                                 Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherLaunchGame}}" />
                         </StackPanel>

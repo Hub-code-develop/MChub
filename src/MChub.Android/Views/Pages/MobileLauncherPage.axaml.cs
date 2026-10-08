@@ -1,5 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
+using FluentAvalonia.UI.Controls;
 using MChub.Core.Const;
 using MChub.Core.Minecraft.Classes;
 using MChub.Core.Minecraft.Instance;
@@ -18,6 +20,11 @@ public partial class MobileLauncherPage : UserControl
 {
     /// <summary>实例下拉与实例列表指向同一份选中项，防止互相触发形成回环。</summary>
     private bool _syncingSelection;
+
+    /// <summary>一次启动调用是否还在进行（游戏跑起来期间一直为 true）。</summary>
+    private bool _launching;
+
+    private DispatcherTimer? _runningTimer;
 
     public MobileLauncherPage()
     {
@@ -59,7 +66,8 @@ public partial class MobileLauncherPage : UserControl
         if (InstancePicker.SelectedItem is null && instances.Count > 0)
             SetCurrent(instances[0]);
 
-        StatusText.Text = string.Empty;
+        // 有阻塞项（缺运行时 / 缺原生层）就明说，别让用户点了才发现。
+        StatusText.Text = MobileGameLauncher.DescribeBlocker() ?? string.Empty;
     }
 
     private void InstancePicker_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -90,15 +98,59 @@ public partial class MobileLauncherPage : UserControl
         }
     }
 
-    private void Launch_OnClick(object? sender, RoutedEventArgs e)
+    /// <summary>
+    /// 同一个按钮两种语义：空闲时启动，启动中时请求停止（ZL2 也是一个启动按钮）。
+    /// </summary>
+    private async void Launch_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (InstancePicker.SelectedItem is not MinecraftInstance instance)
+        var language = MobileLanguageManager.Instance;
+
+        if (_launching)
         {
-            StatusText.Text = MobileLanguageManager.Instance.mobile_launcherNoInstance.CurrentValue();
+            StatusText.Text = language.mobile_launcherStopping.CurrentValue();
+            MobileGameLauncher.Abort();
             return;
         }
 
-        ReportLaunch(instance);
+        if (InstancePicker.SelectedItem is not MinecraftInstance instance)
+        {
+            StatusText.Text = language.mobile_launcherNoInstance.CurrentValue();
+            return;
+        }
+
+        var blocker = MobileGameLauncher.DescribeBlocker();
+        if (blocker is not null)
+        {
+            StatusText.Text = blocker;
+            return;
+        }
+
+        _launching = true;
+        SetLaunchButton(running: true);
+        StatusText.Text = language.mobile_launcherLaunching.CurrentValue();
+        StartRunningTimer();
+
+        try
+        {
+            var result = await MobileGameLauncher.LaunchAsync(instance);
+            StatusText.Text = result switch
+            {
+                { Launched: false } => string.Format(
+                    language.mobile_launcherFailed.CurrentValue(), result.Message),
+                { Message: not null } => result.Message,
+                _ => string.Format(language.mobile_launcherExitCode.CurrentValue(), result.ExitCode)
+            };
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = string.Format(language.mobile_launcherFailed.CurrentValue(), exception.Message);
+        }
+        finally
+        {
+            StopRunningTimer();
+            _launching = false;
+            SetLaunchButton(running: false);
+        }
     }
 
     private void LaunchInstance_OnClick(object? sender, RoutedEventArgs e)
@@ -107,39 +159,41 @@ public partial class MobileLauncherPage : UserControl
             return;
 
         SetCurrent(instance);
-        ReportLaunch(instance);
+        Launch_OnClick(sender, e);
     }
 
-    private void ReportLaunch(MinecraftInstance instance)
-        => StatusText.Text = $"{instance.InstanceName} · {DescribeLaunchReadiness()}";
-
-    /// <summary>
-    /// 启动前的就绪情况。
-    ///
-    /// <p>移动端启动链路分三层：C# 侧准备资源（复用 MChub.Core）→ Java 后端校验运行时 →
-    /// native 层创建 JVM 并驱动 LWJGL 与图形翻译层。这里如实反馈前两层的真实状态：
-    /// 缺运行时就说缺运行时，缺原生层就说缺原生层，不做"点了没反应"。</p>
-    /// </summary>
-    private static string DescribeLaunchReadiness()
+    private void SetLaunchButton(bool running)
     {
         var language = MobileLanguageManager.Instance;
+        LaunchIcon.Symbol = running ? FASymbol.Stop : FASymbol.Play;
+        LaunchLabel.Text = running
+            ? language.mobile_launcherStopGame.CurrentValue()
+            : language.mobile_launcherLaunchGame.CurrentValue();
+    }
 
-        if (!MobileBootstrap.CoreReady)
-            return MobileBootstrap.FailureReason ?? language.mobile_instancesEmpty.CurrentValue();
+    /// <summary>
+    /// 游戏跑起来后，启动调用会一直阻塞在等待游戏退出的地方；用定时器把「运行中」如实显示出来。
+    /// </summary>
+    private void StartRunningTimer()
+    {
+        _runningTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _runningTimer.Tick -= RunningTimer_OnTick;
+        _runningTimer.Tick += RunningTimer_OnTick;
+        _runningTimer.Start();
+    }
 
-        if (!JavaRuntimeBridge.IsAvailable)
-            return string.Format(language.mobile_instancesJavaBackendUnavailable.CurrentValue(),
-                JavaRuntimeBridge.UnavailableReason ?? language.mobile_settingsRuntimePending.CurrentValue());
+    private void RunningTimer_OnTick(object? sender, EventArgs e)
+    {
+        if (MobileGameLauncher.IsRunning)
+            StatusText.Text = MobileLanguageManager.Instance.mobile_launcherRunning.CurrentValue();
+    }
 
-        var runtimeDir = MobileRuntimePaths.JavaRuntimeDirectory;
-        if (!JavaRuntimeBridge.TryIsRuntimeReady(runtimeDir, out var ready, out var failure))
-            return string.Format(language.mobile_instancesJavaBackendUnavailable.CurrentValue(),
-                failure ?? language.mobile_settingsRuntimePending.CurrentValue());
+    private void StopRunningTimer()
+    {
+        if (_runningTimer is null)
+            return;
 
-        if (!ready)
-            return language.mobile_instancesRuntimeMissing.CurrentValue();
-
-        var version = JavaRuntimeBridge.ReadRuntimeVersion(runtimeDir) ?? "?";
-        return string.Format(language.mobile_instancesRuntimeReady.CurrentValue(), version);
+        _runningTimer.Stop();
+        _runningTimer.Tick -= RunningTimer_OnTick;
     }
 }

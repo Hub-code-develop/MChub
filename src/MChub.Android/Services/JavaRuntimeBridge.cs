@@ -91,6 +91,10 @@ internal static class JavaRuntimeBridge
     public static bool IsGameRunning()
         => TryCallBoolean("isRunning", "()Z", [], out var running, out _) && running;
 
+    /// <summary>native 启动层（libmchubjvm.so）是否已随 APK 打包并可加载。</summary>
+    public static bool IsNativeLayerLoaded()
+        => TryCallBoolean("isNativeLayerLoaded", "()Z", [], out var loaded, out _) && loaded;
+
     /// <summary>请求停止当前游戏进程。</summary>
     public static void Abort()
         => TryCallVoid("abort", "()V", []);

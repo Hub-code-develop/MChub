@@ -37,6 +37,8 @@
              ScrollViewer 等），因此不再需要 Avalonia.Themes.Fluent，也不再引 CodeHub-OreUI。 -->
         <PackageReference Include="CodeHub-FluentUI"/>
         <PackageReference Include="CommunityToolkit.Mvvm"/>
+        <!-- 移动端要解压 Amethyst/Pojav 系的运行时归档（.tar.xz）：XZStream 来自 SharpCompress。 -->
+        <PackageReference Include="SharpCompress"/>
         <!-- 显式引用：{Translate} 标记扩展由 Irihi.Lingua.Core 注册进 Avalonia 默认 xmlns。 -->
         <PackageReference Include="Irihi.Lingua"/>
     </ItemGroup>
@@ -47,10 +49,16 @@
     </ItemGroup>
 
     <!-- Java 后端（hub.code.mchub.runtime.*）：运行时校验与启动编排，随 APK 编译为 dex 供 C# 经 JNI 调用。
-         创建 JVM 的 native 层（libmchubjvm.so）需 Android NDK 构建；
-         未接入时 LauncherBridge 会明确报错，不静默失败。 -->
+         创建 JVM 的 native 层由 Native/ 下的 C++ 实现、用 Android NDK 构建（见 Native/build-android.sh）；
+         未构建时 LauncherBridge 会明确报错，不静默失败。 -->
     <ItemGroup>
         <AndroidJavaSource Include="Java\**\*.java"/>
+    </ItemGroup>
+
+    <!-- native 启动层产物：存在就随 APK 打进 lib/arm64-v8a/，不存在则跳过（界面仍可用，只如实提示未接入）。 -->
+    <ItemGroup>
+        <AndroidNativeLibrary Include="Native\out\arm64-v8a\libmchubjvm.so"
+                              Condition="Exists('Native\out\arm64-v8a\libmchubjvm.so')"/>
     </ItemGroup>
 
     <ItemGroup>

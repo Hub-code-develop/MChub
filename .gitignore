@@ -473,3 +473,6 @@ MChub.Release/
 # macOS 基岩版运行时构建(scripts/mcbe-macos)的中间目录与产物
 .work/
 
+
+# native 启动层构建产物（由 src/MChub.Android/Native/build-android.sh 生成）
+src/MChub.Android/Native/out/
