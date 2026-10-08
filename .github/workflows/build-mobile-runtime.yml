@@ -97,26 +97,44 @@ jobs:
       - name: Collect native libraries
         run: |
           set -euo pipefail
-          mkdir -p staging/libs
-          # 1) 自建的 native（ndk-build 产物）
-          find amethyst -type f -path '*arm64-v8a/*.so' -print -exec cp -v {} staging/libs/ \;
-          # 2) 上游 AAR 里预编译的 native（LWJGL natives / OpenAL / ANGLE / SDL / GL 翻译层）
+          # 1) 自建 native（ndk-build / cmake 产物）与「非 LWJGL」的上游原生库放一起，
+          #    它们文件名互不冲突，会直接进 APK 的 lib/arm64-v8a/。
+          mkdir -p staging/natives
+          find amethyst -type f -path '*arm64-v8a/*.so' -print -exec cp -v {} staging/natives/ \;
+
+          # 2) LWJGL natives **必须按版本分目录**：3.3.3 与 3.4.1 的同名 .so
+          #    （liblwjgl.so / liblwjgl_stb.so ...）若混放会互相覆盖，让其中一版的实例
+          #    加载到不匹配的原生库。运行时由应用按实例需要的版本解压使用。
           for aar in $NATIVE_AARS; do
+            case "$aar" in
+              lwjgl-3.3.3-natives-*) slot="lwjgl-natives/3.3.3" ;;
+              lwjgl-3.4.1-natives-*) slot="lwjgl-natives/3.4.1" ;;
+              *)                     slot="natives" ;;
+            esac
+            mkdir -p "staging/$slot"
             curl -sSL --retry 3 -o "/tmp/$aar" "$AAR_BASE/$aar"
             rm -rf /tmp/aar && mkdir -p /tmp/aar
             unzip -qo "/tmp/$aar" -d /tmp/aar
-            find /tmp/aar -type f -path '*arm64-v8a/*.so' -print -exec cp -v {} staging/libs/ \;
+            find /tmp/aar -type f -path '*arm64-v8a/*.so' -print -exec cp -v {} "staging/$slot/" \;
           done
-          echo "=== staging/libs ==="
-          ls -la staging/libs
+
+          echo "=== staging/natives ===" && ls -1 staging/natives
+          echo "=== staging/lwjgl-natives ===" && find staging/lwjgl-natives -type f -printf '%P\n' | sort
 
       - name: Fail if native set is incomplete
         run: |
           set -euo pipefail
           # 这几个是自建产物，缺任何一个都说明构建没真正成功。
-          for required in libpojavexec.so libexithook.so libglxshim.so; do
-            if [ ! -f "staging/libs/$required" ]; then
+          for required in libpojavexec.so libexithook.so libglxshim.so liblinkerhook.so; do
+            if [ ! -f "staging/natives/$required" ]; then
               echo "::error::缺少自建 native 库 $required —— native 构建未成功"
+              exit 1
+            fi
+          done
+          # 两套 LWJGL natives 各自成组，缺一不可（同名的 .so 不能靠互相顶替）。
+          for ver in 3.3.3 3.4.1; do
+            if [ ! -f "staging/lwjgl-natives/$ver/liblwjgl.so" ]; then
+              echo "::error::缺少 LWJGL $ver 的原生库"
               exit 1
             fi
           done
@@ -167,12 +185,21 @@ jobs:
             echo '{'
             echo '  "abi": "arm64-v8a",'
             echo '  "source": "AngelAuraMC/Amethyst-Android@v3_openjdk (native+AAR), angelauramc-openjdk-build (JRE)",'
-            printf '  "libs": ['
+            printf '  "natives": ['
             first=1
-            for f in staging/libs/*.so; do
+            for f in staging/natives/*.so; do
               [ -f "$f" ] || continue
               [ $first -eq 1 ] || printf ', '
               printf '"%s"' "$(basename "$f")"
+              first=0
+            done
+            echo '],'
+            printf '  "lwjglNativesVersions": ['
+            first=1
+            for d in staging/lwjgl-natives/*/; do
+              [ -d "$d" ] || continue
+              [ $first -eq 1 ] || printf ', '
+              printf '"%s"' "$(basename "$d")"
               first=0
             done
             echo '],'
