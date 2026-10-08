@@ -15,8 +15,8 @@ namespace MChub.Mobile.Services;
 /// </summary>
 internal static class MobileJavaRuntime
 {
-    /// <summary>运行时根目录（应用私有目录）。</summary>
-    public static string RootDirectory => MobileRuntimePaths.JavaRuntimeDirectory;
+    /// <summary>运行时根目录（各主版本以子目录并存于此）。</summary>
+    public static string RootDirectory => MobileRuntimePaths.JavaRuntimesRootDirectory;
 
     /// <summary>libjvm.so 的候选相对路径（与 Java / native 侧的探测顺序一致）。</summary>
     private static readonly string[] JvmLibraryCandidates =
@@ -28,29 +28,49 @@ internal static class MobileJavaRuntime
 
     private const string ReleaseFileName = "release";
 
-    /// <summary>
-    /// 找到可用的运行时根目录（含 <c>release</c> 与 <c>libjvm.so</c>）。
-    ///
-    /// <p>归档解压后往往多一层顶层目录（如 <c>jre17/</c>），所以先看根目录本身，
-    /// 再往下找一层。</p>
-    /// </summary>
-    public static string? FindRuntimeRoot()
+    /// <summary>已安装的运行时（Java 主版本 → 目录）。</summary>
+    public static IReadOnlyDictionary<int, string> GetInstalledRuntimes()
     {
-        var root = RootDirectory;
-        if (IsRuntimeRoot(root))
-            return root;
+        var result = new Dictionary<int, string>();
+        if (!Directory.Exists(RootDirectory))
+            return result;
 
-        if (!Directory.Exists(root))
-            return null;
-
-        foreach (var directory in Directory.EnumerateDirectories(root))
+        foreach (var directory in Directory.EnumerateDirectories(RootDirectory))
         {
-            if (IsRuntimeRoot(directory))
-                return directory;
+            if (!IsRuntimeRoot(directory))
+                continue;
+
+            if (int.TryParse(Path.GetFileName(directory), out var majorVersion) && majorVersion > 0)
+                result[majorVersion] = directory;
         }
 
-        return null;
+        return result;
     }
+
+    /// <summary>
+    /// 取满足要求的运行时：主版本 ≥ 要求里最小的那个。
+    ///
+    /// <p>不满足要求时返回 null（让上层去装对应版本），**不拿低版本硬跑** ——
+    /// 拿 JRE 17 跑要求 21 的 MC 会在类加载阶段直接崩。</p>
+    /// </summary>
+    public static string? FindRuntimeRoot(int requiredMajorVersion)
+    {
+        var installed = GetInstalledRuntimes();
+        var candidate = installed.Keys
+            .Where(majorVersion => majorVersion >= requiredMajorVersion)
+            .OrderBy(majorVersion => majorVersion)
+            .Cast<int?>()
+            .FirstOrDefault();
+
+        return candidate is { } major ? installed[major] : null;
+    }
+
+    /// <summary>随便取一个已安装的运行时（仅用于状态展示，不用于启动）。</summary>
+    public static string? FindAnyRuntimeRoot()
+        => GetInstalledRuntimes()
+            .OrderByDescending(pair => pair.Key)
+            .Select(pair => pair.Value)
+            .FirstOrDefault();
 
     /// <summary>某个目录是否是运行时根（有 release 且有 libjvm.so）。</summary>
     public static bool IsRuntimeRoot(string directory)
@@ -120,16 +140,18 @@ internal static class MobileJavaRuntime
     /// <summary>
     /// 导入运行时归档：<c>.tar.xz</c> / <c>.xz</c> / <c>.tar</c> / <c>.zip</c>。
     ///
-    /// <p>归档先解压到临时目录，再整体搬到运行时根目录，避免中途失败留下半个运行时
-    /// 被误判成"已安装"。</p>
+    /// <p>归档先解压到临时目录，再整体搬到 <c>Runtimes/Java/&lt;主版本&gt;</c>，
+    /// 避免中途失败留下半个运行时被误判成"已安装"。</p>
     /// </summary>
-    public static async Task<string> ImportArchiveAsync(string archivePath, IProgress<string>? progress,
-        CancellationToken cancellationToken = default)
+    /// <param name="majorVersion">
+    /// 安装到哪个主版本目录；传 <c>0</c>（或负数）表示按归档里的 <c>release</c> 自动判定。
+    /// </param>
+    public static async Task<string> ImportArchiveAsync(string archivePath, int majorVersion,
+        IProgress<string>? progress = null, CancellationToken cancellationToken = default)
     {
         if (!File.Exists(archivePath))
             throw new FileNotFoundException("归档不存在", archivePath);
 
-        var root = RootDirectory;
         var staging = Path.Combine(Path.GetTempPath(), "mchub-runtime-" + Guid.NewGuid().ToString("N"));
 
         try
@@ -142,7 +164,11 @@ internal static class MobileJavaRuntime
             var stagedRoot = FindRuntimeRootIn(staging)
                              ?? throw new InvalidOperationException("归档里找不到 release 与 libjvm.so，可能不是可用的移动端运行时");
 
-            progress?.Report("正在安装运行时…");
+            // 手动导入的归档不一定会告诉我们版本，按 release 里的 JAVA_VERSION 判定更可靠。
+            var targetMajor = majorVersion > 0 ? majorVersion : DetectMajorVersion(stagedRoot, archivePath);
+            var root = MobileRuntimePaths.JavaRuntimeDirectoryFor(targetMajor);
+
+            progress?.Report($"正在安装 Java {targetMajor} 运行时…");
             if (Directory.Exists(root))
                 Directory.Delete(root, recursive: true);
             Directory.CreateDirectory(Path.GetDirectoryName(root)!);
@@ -165,6 +191,20 @@ internal static class MobileJavaRuntime
                 // 临时目录清理失败不影响导入结果。
             }
         }
+    }
+
+    /// <summary>判定归档里的 Java 主版本：优先 release，其次文件名里的数字，最后兜底 21。</summary>
+    private static int DetectMajorVersion(string stagedRoot, string archivePath)
+    {
+        if (TryReadJavaVersion(stagedRoot, out _, out var majorVersion) && majorVersion > 0)
+            return majorVersion;
+
+        var digits = new string(Path.GetFileName(archivePath).TakeWhile(char.IsLetterOrDigit).ToArray());
+        var match = System.Text.RegularExpressions.Regex.Match(digits, @"(1[0-9]|2[0-9])");
+        if (match.Success && int.TryParse(match.Value, out var fromName) && fromName > 0)
+            return fromName;
+
+        return 21;
     }
 
     private static string? FindRuntimeRootIn(string directory)

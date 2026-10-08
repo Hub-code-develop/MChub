@@ -67,7 +67,9 @@ public partial class MobileLauncherPage : UserControl
             SetCurrent(instances[0]);
 
         // 有阻塞项（缺运行时 / 缺原生层）就明说，别让用户点了才发现。
-        StatusText.Text = MobileGameLauncher.DescribeBlocker() ?? string.Empty;
+        // 有阻塞项（缺运行时 / 缺运行组件 / 缺原生层）就明说，别让用户点了才发现。
+        StatusText.Text = MobileGameLauncher.DescribeBlocker(InstancePicker.SelectedItem as MinecraftInstance)
+                          ?? string.Empty;
     }
 
     private void InstancePicker_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -118,20 +120,36 @@ public partial class MobileLauncherPage : UserControl
             return;
         }
 
-        var blocker = MobileGameLauncher.DescribeBlocker();
-        if (blocker is not null)
+        var blocker = MobileGameLauncher.DescribeBlocker(instance);
+        var needsInstall = MobileGameLauncher.NeedsInstall(instance);
+        if (blocker is not null && !needsInstall)
         {
+            // 原生层缺失、后端不可用这类问题没法自愈，如实报告即可。
             StatusText.Text = blocker;
             return;
         }
 
         _launching = true;
         SetLaunchButton(running: true);
-        StatusText.Text = language.mobile_launcherLaunching.CurrentValue();
-        StartRunningTimer();
 
         try
         {
+            // 首次使用：缺运行时 / 运行组件就直接装上，不用让用户自己去翻包。
+            if (needsInstall)
+            {
+                await InstallEnvironmentAsync(instance);
+
+                var afterInstall = MobileGameLauncher.DescribeBlocker(instance);
+                if (afterInstall is not null)
+                {
+                    StatusText.Text = afterInstall;
+                    return;
+                }
+            }
+
+            StatusText.Text = language.mobile_launcherLaunching.CurrentValue();
+            StartRunningTimer();
+
             var result = await MobileGameLauncher.LaunchAsync(instance);
             StatusText.Text = result switch
             {
@@ -151,6 +169,24 @@ public partial class MobileLauncherPage : UserControl
             _launching = false;
             SetLaunchButton(running: false);
         }
+    }
+
+    /// <summary>下载安装 Java 运行时与运行组件，进度直接反映在状态文本上。</summary>
+    private async Task InstallEnvironmentAsync(MinecraftInstance instance)
+    {
+        var language = MobileLanguageManager.Instance;
+        var requiredMajor = MobileGameLauncher.GetRequiredJavaMajorVersion(instance);
+
+        StatusText.Text = string.Format(language.mobile_launcherInstalling.CurrentValue(), requiredMajor);
+
+        var progress = new Progress<MobileInstallProgress>(report =>
+        {
+            var percentage = report.Fraction > 0 ? $" {report.Fraction:P0}" : string.Empty;
+            StatusText.Text = report.Stage + percentage;
+        });
+
+        await MobileGameLauncher.EnsureReadyAsync(requiredMajor, progress);
+        StatusText.Text = language.mobile_launcherInstallDone.CurrentValue();
     }
 
     private void LaunchInstance_OnClick(object? sender, RoutedEventArgs e)

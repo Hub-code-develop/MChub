@@ -1,3 +1,4 @@
+using MChub.Core.Minecraft;
 using MChub.Core.Minecraft.Classes;
 
 namespace MChub.Mobile.Services;
@@ -22,8 +23,11 @@ internal static class MobileGameLauncher
     /// <summary>请求停止游戏。</summary>
     public static void Abort() => JavaRuntimeBridge.Abort();
 
-    /// <summary>启动前把能提前发现的问题一次性说清楚；返回 null 表示可以启动。</summary>
-    public static string? DescribeBlocker()
+    /// <summary>
+    /// 启动前把能提前发现的问题一次性说清楚；返回 null 表示可以启动。
+    /// 传入实例时会按该实例要求的 Java 版本判断运行时是否够用。
+    /// </summary>
+    public static string? DescribeBlocker(MinecraftInstance? instance = null)
     {
         if (!JavaRuntimeBridge.IsAvailable)
             return JavaRuntimeBridge.UnavailableReason ?? "Java 后端不可用";
@@ -31,21 +35,63 @@ internal static class MobileGameLauncher
         if (!JavaRuntimeBridge.IsNativeLayerLoaded())
             return "原生启动层未随本安装包提供（libmchubjvm.so 缺失）";
 
-        var runtimeRoot = MobileJavaRuntime.FindRuntimeRoot();
-        if (runtimeRoot is null)
-            return "未安装移动端 Java 运行时";
+        var requiredMajor = instance is null ? 0 : GetRequiredJavaMajorVersion(instance);
+        if (instance is null)
+        {
+            if (MobileJavaRuntime.FindAnyRuntimeRoot() is null)
+                return "尚未安装 Java 运行时";
+        }
+        else if (MobileJavaRuntime.FindRuntimeRoot(requiredMajor) is null)
+        {
+            return $"尚未安装 Java {requiredMajor} 运行时";
+        }
+
+        if (!MobileRuntimeInstaller.AreNativesInstalled)
+            return "尚未安装运行组件（LWJGL / GL 翻译层）";
 
         return null;
     }
 
+    /// <summary>是否缺运行环境（缺了可以一键安装，与"原生层缺失"这类不可自愈的阻塞区分开）。</summary>
+    public static bool NeedsInstall(MinecraftInstance? instance = null)
+    {
+        if (!JavaRuntimeBridge.IsAvailable || !JavaRuntimeBridge.IsNativeLayerLoaded())
+            return false;
+
+        var runtimeMissing = instance is null
+            ? MobileJavaRuntime.FindAnyRuntimeRoot() is null
+            : MobileJavaRuntime.FindRuntimeRoot(GetRequiredJavaMajorVersion(instance)) is null;
+
+        return runtimeMissing || !MobileRuntimeInstaller.AreNativesInstalled;
+    }
+
+    /// <summary>
+    /// 一键补齐缺失的运行环境：JRE（按实例要求的 Java 版本自动选 8/17/21/25）+ 运行组件。
+    /// 已装的部分会跳过，可重复调用。
+    /// </summary>
+    public static async Task EnsureReadyAsync(int requiredJavaMajorVersion,
+        IProgress<MobileInstallProgress>? progress = null, CancellationToken cancellationToken = default)
+    {
+        if (!MobileRuntimeInstaller.IsRuntimeInstalled(requiredJavaMajorVersion))
+            await MobileRuntimeInstaller.InstallRuntimeAsync(requiredJavaMajorVersion, progress, cancellationToken);
+
+        if (!MobileRuntimeInstaller.AreNativesInstalled)
+            await MobileRuntimeInstaller.InstallNativesAsync(progress, cancellationToken);
+    }
+
+    /// <summary>实例要求的 Java 主版本（MC 26.x → 25，1.21 → 21，1.18~1.20.4 → 17，≤1.16 → 8）。</summary>
+    public static int GetRequiredJavaMajorVersion(MinecraftInstance instance)
+        => MinecraftInstallationTasks.GetRecommendedJavaVersion(instance.VersionId);
+
     public static async Task<MobileLaunchResult> LaunchAsync(MinecraftInstance instance,
         CancellationToken cancellationToken = default)
     {
-        var blocker = DescribeBlocker();
+        var blocker = DescribeBlocker(instance);
         if (blocker is not null)
             throw new InvalidOperationException(blocker);
 
-        var runtimeRoot = MobileJavaRuntime.FindRuntimeRoot()!;
+        var runtimeRoot = MobileJavaRuntime.FindRuntimeRoot(GetRequiredJavaMajorVersion(instance))
+                          ?? throw new InvalidOperationException("没有满足该实例要求的 Java 运行时");
         var plan = await MobileLaunchPlanBuilder.BuildAsync(instance, runtimeRoot, cancellationToken);
 
         await AppendLaunchLogAsync(runtimeRoot, plan);

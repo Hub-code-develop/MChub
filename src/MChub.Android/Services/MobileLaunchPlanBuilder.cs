@@ -59,10 +59,77 @@ internal static class MobileLaunchPlanBuilder
 
         return new MobileLaunchPlan(
             arguments.MainClass,
-            NormalizeForJni(arguments.JvmArguments),
+            ApplyMobileRuntime(NormalizeForJni(arguments.JvmArguments)),
             arguments.GameArguments.ToArray(),
             arguments.Natives.ToArray(),
             gameDirectory);
+    }
+
+    /// <summary>
+    /// 把移动端运行组件接进 JVM 参数。
+    ///
+    /// <p>两处必须改，否则游戏会加载桌面版 LWJGL 然后失败：</p>
+    /// <ol>
+    ///   <li><b>classpath 前置移动端 LWJGL jar</b>：实例目录里的 <c>org/lwjgl/**</c> 是桌面构建，
+    ///       必须让移动端补丁版先命中（classpath 前者优先）；</li>
+    ///   <li><b>java.library.path / org.lwjgl.librarypath 指向本地运行组件目录</b>：原生库从
+    ///       实例的 natives 目录换成本地目录（liblwjgl / libgl4es / ANGLE 等都在这里）。</li>
+    /// </ol>
+    ///
+    /// <p>缺运行组件时不在这里报错 —— 由 <see cref="MobileGameLauncher.DescribeBlocker"/> 统一提示，
+    /// 免得同一件事两处各说一遍。</p>
+    /// </summary>
+    private static IReadOnlyList<string> ApplyMobileRuntime(IReadOnlyList<string> jvmArguments)
+    {
+        var jarDirectory = MobileRuntimePaths.NativesJarDirectory;
+        var libraryDirectory = MobileRuntimePaths.NativesLibraryDirectory;
+
+        var jarFiles = Directory.Exists(jarDirectory)
+            ? Directory.GetFiles(jarDirectory, "*.jar").OrderBy(path => path, StringComparer.Ordinal).ToArray()
+            : [];
+        var hasLibraries = Directory.Exists(libraryDirectory);
+
+        var result = new List<string>(jvmArguments.Count + 4);
+        var classPathApplied = false;
+        var libraryPathApplied = false;
+        var lwjglPathApplied = false;
+
+        foreach (var argument in jvmArguments)
+        {
+            if (jarFiles.Length > 0 && argument.StartsWith("-Djava.class.path=", StringComparison.Ordinal))
+            {
+                result.Add("-Djava.class.path=" + string.Join(Path.PathSeparator, jarFiles) +
+                           Path.PathSeparator + argument["-Djava.class.path=".Length..]);
+                classPathApplied = true;
+                continue;
+            }
+
+            if (hasLibraries && argument.StartsWith("-Djava.library.path=", StringComparison.Ordinal))
+            {
+                // 桌面端那份 natives 目录仍保留（老版本会用到其中的 java 侧原生库），只在其后追加。
+                result.Add(argument + Path.PathSeparator + libraryDirectory);
+                libraryPathApplied = true;
+                continue;
+            }
+
+            if (hasLibraries && argument.StartsWith("-Dorg.lwjgl.librarypath=", StringComparison.Ordinal))
+                lwjglPathApplied = true;
+
+            result.Add(argument);
+        }
+
+        if (hasLibraries && !libraryPathApplied)
+            result.Add("-Djava.library.path=" + libraryDirectory);
+
+        // LWJGL 自己也按这个属性找原生库，显式给上更稳。
+        if (hasLibraries && !lwjglPathApplied)
+            result.Add("-Dorg.lwjgl.librarypath=" + libraryDirectory);
+
+        // 实例里没有 LWJGL 时（极少数），至少把移动端 jar 加上，别把 classpath 丢了。
+        if (jarFiles.Length > 0 && !classPathApplied)
+            result.Add("-Djava.class.path=" + string.Join(Path.PathSeparator, jarFiles));
+
+        return result;
     }
 
     /// <summary>

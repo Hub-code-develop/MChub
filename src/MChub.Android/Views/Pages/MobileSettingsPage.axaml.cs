@@ -10,6 +10,12 @@ namespace MChub.Mobile.Views.Pages;
 
 public partial class MobileSettingsPage : UserControl
 {
+    /// <summary>
+    /// 设置页没有实例上下文，"一键安装"按 MC 1.21 的需求装 Java 21（覆盖面最广的现代版本）。
+    /// 具体实例需要 8 / 17 / 25 时，启动该实例会自动补齐对应版本。
+    /// </summary>
+    private const int DefaultJavaMajorVersion = 21;
+
     public MobileSettingsPage()
     {
         InitializeComponent();
@@ -60,28 +66,68 @@ public partial class MobileSettingsPage : UserControl
             return;
         }
 
-        var runtimeRoot = MobileJavaRuntime.FindRuntimeRoot();
-        if (runtimeRoot is null)
+        var installed = MobileJavaRuntime.GetInstalledRuntimes();
+        if (installed.Count == 0)
         {
             RuntimeInfoBar.Severity = FAInfoBarSeverity.Warning;
             RuntimeInfoBar.Message = language.mobile_instancesRuntimeMissing.CurrentValue();
             return;
         }
 
-        if (!MobileJavaRuntime.TryReadJavaVersion(runtimeRoot, out var version, out _))
-            version = "?";
+        var versions = string.Join(" / ",
+            installed.Keys.OrderBy(major => major).Select(major => major.ToString()));
 
         if (!JavaRuntimeBridge.IsNativeLayerLoaded())
         {
             // 运行时有了但原生层没打进包：界面可用，但启动必然失败，这里如实说明。
             RuntimeInfoBar.Severity = FAInfoBarSeverity.Warning;
             RuntimeInfoBar.Message = language.mobile_settingsRuntimeNativeMissing.CurrentValue() +
-                                     " · " + string.Format(language.mobile_instancesRuntimeReady.CurrentValue(), version);
+                                     " · " + string.Format(language.mobile_instancesRuntimeReady.CurrentValue(), versions);
             return;
         }
 
-        RuntimeInfoBar.Severity = FAInfoBarSeverity.Success;
-        RuntimeInfoBar.Message = string.Format(language.mobile_instancesRuntimeReady.CurrentValue(), version);
+        RuntimeInfoBar.Severity = MobileRuntimeInstaller.AreNativesInstalled
+            ? FAInfoBarSeverity.Success
+            : FAInfoBarSeverity.Warning;
+
+        RuntimeInfoBar.Message = string.Format(language.mobile_instancesRuntimeReady.CurrentValue(), versions) +
+                                 (MobileRuntimeInstaller.AreNativesInstalled
+                                     ? string.Empty
+                                     : " · " + language.mobile_settingsRuntimeComponentsMissing.CurrentValue());
+    }
+
+    /// <summary>
+    /// 一键安装：按需下载 Java 运行时（公开源，arm64）+ 运行组件（LWJGL / GL 翻译层）。
+    /// 这里没有实例上下文，按 MC 1.21 的需求装 Java 21；具体实例需要别的版本时，启动时会自动补齐。
+    /// </summary>
+    private async void InstallAll_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var language = MobileLanguageManager.Instance;
+
+        InstallAllButton.IsEnabled = false;
+        ImportStatusText.IsVisible = true;
+
+        try
+        {
+            var progress = new Progress<MobileInstallProgress>(report =>
+            {
+                var percentage = report.Fraction > 0 ? $" {report.Fraction:P0}" : string.Empty;
+                ImportStatusText.Text = report.Stage + percentage;
+            });
+
+            await MobileGameLauncher.EnsureReadyAsync(DefaultJavaMajorVersion, progress);
+            ImportStatusText.Text = language.mobile_settingsInstallDone.CurrentValue();
+        }
+        catch (Exception exception)
+        {
+            ImportStatusText.Text = string.Format(
+                language.mobile_settingsRuntimeImportFailed.CurrentValue(), exception.Message);
+        }
+        finally
+        {
+            InstallAllButton.IsEnabled = true;
+            ApplyRuntimeState();
+        }
     }
 
     /// <summary>
@@ -130,7 +176,8 @@ public partial class MobileSettingsPage : UserControl
             }
 
             var progress = new Progress<string>(message => ImportStatusText.Text = message);
-            var runtimeRoot = await MobileJavaRuntime.ImportArchiveAsync(localArchive, progress);
+            // 0 = 按归档里的 release 自动判定主版本。
+            var runtimeRoot = await MobileJavaRuntime.ImportArchiveAsync(localArchive, 0, progress);
 
             MobileJavaRuntime.TryReadJavaVersion(runtimeRoot, out var version, out _);
             ImportStatusText.Text = string.Format(

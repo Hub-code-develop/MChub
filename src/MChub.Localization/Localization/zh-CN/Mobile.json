@@ -39,6 +39,11 @@
     "settingsRuntimeImported": "运行时已导入：Java {0}",
     "settingsRuntimeImportFailed": "导入失败：{0}",
     "settingsRuntimeNativeMissing": "原生启动层未随本安装包提供（libmchubjvm.so 缺失）",
+    "settingsInstallAll": "一键安装（Java 运行时 + 运行组件）",
+    "settingsInstallDone": "安装完成，可以启动了",
+    "settingsRuntimeComponentsMissing": "运行组件未安装",
+    "launcherInstalling": "正在准备 Java {0} 运行环境…",
+    "launcherInstallDone": "运行环境已就绪",
     "settingsStorageTitle": "数据目录",
     "settingsStorageUnknown": "未就绪"
   }

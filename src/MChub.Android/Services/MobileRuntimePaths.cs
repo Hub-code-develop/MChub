@@ -12,18 +12,30 @@ internal static class MobileRuntimePaths
     public static string AppDataDirectory =>
         Android.App.Application.Context.FilesDir!.AbsolutePath;
 
-    /// <summary>
-    /// Java 运行时根目录。
-    ///
-    /// <p>移动端需要的不是桌面 JDK，而是 Amethyst(AngelAuraMC) / PojavLauncher 系
-    /// 的 android-openjdk-build-multiarch 产物（携带 arm64 的 libjvm.so）。
-    /// 这类运行时只随其 APK 分发或在 GitHub Actions 产物里（需登录），**没有稳定的公开下载地址**，
-    /// 因此由用户在设置页导入归档（.tar.xz / .zip），解压到本目录。</p>
-    /// </summary>
-    public static string JavaRuntimeDirectory =>
+    /// <summary>Java 运行时根目录（各主版本按子目录分开放，可并存）。</summary>
+    public static string JavaRuntimesRootDirectory =>
         Path.Combine(AppDataDirectory, "Runtimes", "Java");
+
+    /// <summary>
+    /// 某个主版本的运行时目录。
+    ///
+    /// <p>按版本分目录是必须的：MC 1.16 要 Java 8、1.21 要 21、26.x 要 25，
+    /// 同一台设备上经常要并存多个运行时；共用一个目录会导致"装了 21 就再也装不上 25"。</p>
+    /// </summary>
+    public static string JavaRuntimeDirectoryFor(int majorVersion)
+        => Path.Combine(JavaRuntimesRootDirectory, majorVersion.ToString());
 
     /// <summary>实例根目录（与桌面端保持同样的 instances 布局约定）。</summary>
     public static string InstancesDirectory =>
         Path.Combine(AppDataDirectory, "instances");
+
+    /// <summary>运行组件根目录（LWJGL + GL 翻译层）。</summary>
+    public static string NativesDirectory =>
+        Path.Combine(AppDataDirectory, "Runtimes", "Natives");
+
+    /// <summary>原生库目录（.so，作为 java.library.path / LWJGL librarypath）。</summary>
+    public static string NativesLibraryDirectory => Path.Combine(NativesDirectory, "lib");
+
+    /// <summary>移动端 LWJGL jar 目录（启动时前置到 classpath）。</summary>
+    public static string NativesJarDirectory => Path.Combine(NativesDirectory, "jars");
 }

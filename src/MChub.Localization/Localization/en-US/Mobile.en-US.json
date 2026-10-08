@@ -39,6 +39,11 @@
     "settingsRuntimeImported": "Runtime imported: Java {0}",
     "settingsRuntimeImportFailed": "Import failed: {0}",
     "settingsRuntimeNativeMissing": "The native launch layer is missing from this build (libmchubjvm.so)",
+    "settingsInstallAll": "Install everything (Java runtime + components)",
+    "settingsInstallDone": "Installed — ready to launch",
+    "settingsRuntimeComponentsMissing": "Runtime components not installed",
+    "launcherInstalling": "Preparing the Java {0} runtime…",
+    "launcherInstallDone": "Runtime ready",
     "settingsStorageTitle": "Data directory",
     "settingsStorageUnknown": "Not ready"
   }

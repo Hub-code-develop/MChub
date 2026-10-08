@@ -78,6 +78,14 @@
                 Severity="Informational" />
 
             <Button
+                x:Name="InstallAllButton"
+                Classes="accent"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                Content="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_settingsInstallAll}}"
+                Click="InstallAll_OnClick" />
+
+            <Button
                 x:Name="ImportRuntimeButton"
                 HorizontalAlignment="Stretch"
                 HorizontalContentAlignment="Center"
