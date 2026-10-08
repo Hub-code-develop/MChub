@@ -78,28 +78,31 @@ jobs:
           # 目录名带 arm64-v8a，AndroidNativeLibrary 才能推断出目标 ABI。
           # natives/ = 不区分 LWJGL 版本的那批（自建 Pojav 系 native + OpenAL/ANGLE/SDL/GL 层）。
           cp /tmp/mobile-runtime/natives/*.so "$dest/libs/arm64-v8a/"
-          # LWJGL natives 分版本存放（3.3.3 与 3.4.1 有同名 .so，不能合并），运行期按需解压。
+          # LWJGL natives 打 zip 再进 assets：.NET Android 会检查 assets 里 .so 的 ABI
+          # （路径里没有 ABI 名就报 XA4301），且两套版本有同名 .so（不能同目录）。打 zip 由运行时解压。
+          root=$(pwd)
           if [ -d /tmp/mobile-runtime/lwjgl-natives ]; then
-            cp -r /tmp/mobile-runtime/lwjgl-natives "$dest/lwjgl-natives"
+            mkdir -p "$dest/lwjgl-natives"
+            for d in /tmp/mobile-runtime/lwjgl-natives/*/; do
+              ver=$(basename "$d")
+              (cd "$d" && zip -qr "$root/$dest/lwjgl-natives/$ver.zip" .)
+            done
           fi
           cp -r /tmp/mobile-runtime/jre "$dest/jre"
-          # LWJGL jar 必须先打成 zip 再进 assets：.NET Android 会把 assets 里的 .jar 当作
-          # AndroidJavaLibrary（要参与 dex），而 3.3.3 与 3.4.1 有同名 jar、内容不同 → XA1014。
-          # 这些 jar 只是 JVM classpath 上的条目，不需要进 dex，打包成 zip 由运行时解压即可。
+          # LWJGL jar 同理：.NET Android 会把 assets 里的 .jar 当作 AndroidJavaLibrary（要参与 dex），
+          # 两套版本同名 jar 内容不同 → XA1014。这些 jar 只是 classpath 条目，不需要进 dex。
           if [ -d /tmp/mobile-runtime/lwjgl ]; then
             mkdir -p "$dest/lwjgl"
-            root=$(pwd)
             for d in /tmp/mobile-runtime/lwjgl/*/; do
               ver=$(basename "$d")
               (cd "$d" && zip -qr "$root/$dest/lwjgl/$ver.zip" .)
             done
-            ls -la "$dest/lwjgl"
           fi
           cp /tmp/mobile-runtime/manifest.json "$dest/manifest.json"
 
           echo "=== 预置运行时 ==="
           echo "natives: $(ls -1 "$dest/libs/arm64-v8a" | wc -l) 个"
-          echo "LWJGL natives: $(ls -1 "$dest/lwjgl-natives" 2>/dev/null | tr '\n' ' ')"
+          echo "LWJGL natives zip: $(ls -1 "$dest/lwjgl-natives" 2>/dev/null | tr '\n' ' ')"
           echo "JRE: $(ls -1 "$dest/jre" | tr '\n' ' ')"
           du -sh "$dest"
 
@@ -122,7 +125,8 @@ jobs:
           unzip -l "$apk" | grep -E 'assets/runtime/' | awk '{print $4}'
           for must in libpojavexec.so \
                       assets/runtime/manifest.json \
-                      assets/runtime/lwjgl-natives/3.3.3/liblwjgl.so; do
+                      assets/runtime/lwjgl-natives/3.3.3.zip \
+                      assets/runtime/lwjgl/3.3.3.zip; do
             if unzip -l "$apk" | grep -q "$must"; then
               echo "ok: $must"
             else

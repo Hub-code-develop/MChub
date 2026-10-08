@@ -145,16 +145,18 @@ internal static class MobileRuntimeInstaller
         }
     }
 
-    /// <summary>APK 内预置了哪些 LWJGL 原生库版本。</summary>
+    /// <summary>APK 内预置了哪些 LWJGL 原生库版本（从 assets 下的 <c>&lt;ver&gt;.zip</c> 推断）。</summary>
     public static IReadOnlyList<string> BundledLwjglNativesVersions =>
-        ListAssets($"{MobileRuntimePaths.BundledAssetRoot}/lwjgl-natives")
-            .Where(name => !string.IsNullOrWhiteSpace(name))
+        ListAssets(MobileRuntimePaths.BundledLwjglNativesAssetRoot)
+            .Where(name => name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            .Select(name => name[..^".zip".Length])
+            .Where(name => name.Length > 0)
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToArray();
 
     /// <summary>APK 内是否预置了该版本的 LWJGL 原生库。</summary>
     public static bool HasBundledLwjglNatives(string lwjglVersion)
-        => AssetExists($"{MobileRuntimePaths.BundledLwjglNativesDirectory(lwjglVersion)}/liblwjgl.so");
+        => AssetExists(MobileRuntimePaths.BundledLwjglNativesArchivePath(lwjglVersion));
 
     /// <summary>
     /// 把 APK 内预置的**各版本** LWJGL 原生库解到私有目录的对应版本子目录，返回成功解出的版本。
@@ -173,33 +175,50 @@ internal static class MobileRuntimeInstaller
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var assetDirectory = MobileRuntimePaths.BundledLwjglNativesDirectory(version);
-            var names = ListAssets(assetDirectory)
-                .Where(name => name.EndsWith(".so", StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-            if (names.Length == 0)
+            var assetPath = MobileRuntimePaths.BundledLwjglNativesArchivePath(version);
+            if (!AssetExists(assetPath))
                 continue;
 
             var destination = MobileRuntimePaths.LwjglNativesDirectoryFor(version);
             Directory.CreateDirectory(destination);
 
-            var extracted = 0;
-            foreach (var name in names)
+            // asset 流未必可随机访问，先落临时文件让 ZipArchive 顺序读。
+            var temp = Path.Combine(Path.GetTempPath(), $"lwjgl-natives-{version}.zip");
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var target = Path.Combine(destination, name);
-                if (File.Exists(target))
-                    continue; // 已解过，重复调用不必再写
+                await CopyAssetToFileAsync(assetPath, temp, cancellationToken);
 
-                await CopyAssetToFileAsync($"{assetDirectory}/{name}", target, cancellationToken);
-                extracted++;
+                using var archive = ZipFile.OpenRead(temp);
+                var entries = archive.Entries
+                    .Where(entry => entry.Name.EndsWith(".so", StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+                if (entries.Length == 0)
+                    continue;
+
+                var extracted = 0;
+                foreach (var entry in entries)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var target = Path.Combine(destination, entry.Name);
+                    if (File.Exists(target))
+                        continue; // 已解过，重复调用不必再写
+
+                    await using var output = File.Create(target);
+                    await using var input = entry.Open();
+                    await input.CopyToAsync(output, cancellationToken);
+                    extracted++;
+                }
+
+                installed.Add(version);
+                progress?.Report(new MobileInstallProgress(
+                    $"解出 LWJGL {version} 原生库（{extracted}/{entries.Length}）…",
+                    Progress(done, versions.Count)));
+                done++;
             }
-
-            installed.Add(version);
-            progress?.Report(new MobileInstallProgress(
-                $"解出 LWJGL {version} 原生库（{extracted}/{names.Length}）…",
-                Progress(done, versions.Count)));
-            done++;
+            finally
+            {
+                TryDelete(temp);
+            }
         }
 
         return installed;

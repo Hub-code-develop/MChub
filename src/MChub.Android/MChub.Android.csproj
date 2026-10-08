@@ -83,10 +83,10 @@
              AndroidJavaLibrary 参与 dex，两套版本同名即报 XA1014（见 build-android.yml）。 -->
         <AndroidAsset Include="RuntimeAssets/lwjgl/*.zip"
                       Link="Assets/runtime/lwjgl/%(Filename)%(Extension)"/>
-        <!-- LWJGL 原生库按版本分目录：3.3.3 与 3.4.1 有同名 .so，不能同时进 lib/，
-             运行时按实例需要的版本解压到私有目录。 -->
-        <AndroidAsset Include="RuntimeAssets/lwjgl-natives/**/*"
-                      Link="Assets/runtime/lwjgl-natives/%(RecursiveDir)%(Filename)%(Extension)"/>
+        <!-- LWJGL 原生库同样以 zip 预置：assets 里的 .so 会被 .NET Android 检查 ABI（报 XA4301），
+             且两套版本有同名 .so。运行时按实例需要的版本解压到私有目录。 -->
+        <AndroidAsset Include="RuntimeAssets/lwjgl-natives/*.zip"
+                      Link="Assets/runtime/lwjgl-natives/%(Filename)%(Extension)"/>
         <AndroidAsset Include="RuntimeAssets/manifest.json"
                       Link="Assets/runtime/manifest.json"
                       Condition="Exists('RuntimeAssets/manifest.json')"/>

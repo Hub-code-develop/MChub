@@ -64,13 +64,17 @@ internal static class MobileRuntimePaths
         => $"{BundledAssetRoot}/lwjgl/{lwjglVersion}.zip";
 
     /// <summary>
-    /// 预置的 LWJGL 原生库在 assets 里的目录（按版本分放）。
+    /// 预置 LWJGL 原生库的归档（zip）在 assets 里的路径（按版本分放）。
     ///
-    /// <p>3.3.3 与 3.4.1 有同名 .so（<c>liblwjgl.so</c> 等），不能同时进 APK 的
-    /// <c>lib/arm64-v8a/</c>（会互相覆盖），所以放 assets，由运行时按实例需要的版本解压。</p>
+    /// <p>必须打 zip，两个原因：① 3.3.3 与 3.4.1 有同名 .so（<c>liblwjgl.so</c> 等），
+    /// 放同一目录会互相覆盖；② assets 里直接放 .so 会被 .NET Android 检查 ABI，
+    /// 路径里没有 ABI 名就报 XA4301。运行时按实例需要的版本解压到私有目录。</p>
     /// </summary>
-    public static string BundledLwjglNativesDirectory(string lwjglVersion)
-        => $"{BundledAssetRoot}/lwjgl-natives/{lwjglVersion}";
+    public static string BundledLwjglNativesArchivePath(string lwjglVersion)
+        => $"{BundledAssetRoot}/lwjgl-natives/{lwjglVersion}.zip";
+
+    /// <summary>预置 LWJGL 原生库归档所在的 assets 目录。</summary>
+    public const string BundledLwjglNativesAssetRoot = "runtime/lwjgl-natives";
 
     /// <summary>某个 LWJGL 版本的原生库解压目标目录（私有目录下按版本分开）。</summary>
     public static string LwjglNativesDirectoryFor(string lwjglVersion)
