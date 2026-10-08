@@ -20,23 +20,155 @@ internal static class MobileRuntimeInstaller
     public static bool IsRuntimeInstalled(int requiredMajorVersion)
         => MobileJavaRuntime.FindRuntimeRoot(requiredMajorVersion) is not null;
 
-    /// <summary>运行组件（LWJGL / OpenAL / GL 翻译层 + 移动端 LWJGL jar）是否齐了。</summary>
-    public static bool AreNativesInstalled
+    /// <summary>
+    /// 运行组件（native 库 + 移动端 LWJGL jar）是否齐了。
+    /// </summary>
+    public static bool AreNativesInstalled =>
+        AreNativeLibrariesInstalled && AreLwjglJarsInstalled;
+
+    /// <summary>
+    /// native 库（LWJGL / OpenAL / GL 翻译层 / Pojav 系）是否就位。
+    ///
+    /// <p>预置方案（APK 自带）下，系统已把 APK 的 <c>lib/arm64-v8a/</c> 解压到
+    /// <see cref="MobileRuntimePaths.NativeLibraryDirectory"/>，直接查那里即可；
+    /// 只有预置缺失时（本地自行构建、未装配 RuntimeAssets 的包）才回退到私有目录里
+    /// 找早期联网下载的那份。</p>
+    /// </summary>
+    public static bool AreNativeLibrariesInstalled
     {
         get
         {
-            var libraries = MobileRuntimePaths.NativesLibraryDirectory;
-            var jars = MobileRuntimePaths.NativesJarDirectory;
+            string[] required = ["libpojavexec.so", "liblwjgl.so", "libopenal.so"];
 
-            return File.Exists(Path.Combine(libraries, "liblwjgl.so"))
-                   && File.Exists(Path.Combine(libraries, "libopenal.so"))
-                   && File.Exists(Path.Combine(libraries, "libgl4es_114.so"))
-                   && File.Exists(Path.Combine(jars, $"lwjgl-{MobileRuntimeCatalog.LwjglVersion}-merged-modules.jar"));
+            var bundled = MobileRuntimePaths.NativeLibraryDirectory;
+            if (!string.IsNullOrEmpty(bundled) &&
+                required.All(name => File.Exists(Path.Combine(bundled, name))))
+                return true;
+
+            var downloaded = MobileRuntimePaths.NativesLibraryDirectory;
+            return required.All(name => File.Exists(Path.Combine(downloaded, name)));
         }
     }
 
     /// <summary>
+    /// 移动端 LWJGL jar 是否已落到私有目录。
+    ///
+    /// <p>jar 必须解成真实文件：它要进 <c>-Djava.class.path</c>，无法直接用 asset 流。
+    /// 注意必须用**移动端补丁版**（GLFW 由 Java 侧 CallbackBridge 实现），
+    /// 拿桌面原版会在加载原生库时失败。</p>
+    /// </summary>
+    public static bool AreLwjglJarsInstalled =>
+        File.Exists(Path.Combine(MobileRuntimePaths.NativesJarDirectory,
+            $"lwjgl-{MobileRuntimeCatalog.LwjglVersion}-merged-modules.jar"));
+
+    /// <summary>APK 内是否预置了该主版本的 JRE 归档。</summary>
+    public static bool HasBundledRuntime(int majorVersion)
+        => AssetExists(MobileRuntimePaths.BundledJreAssetPath(
+            MobileRuntimeCatalog.NormalizeRuntimeMajor(majorVersion)));
+
+    /// <summary>APK 内是否预置了移动端 LWJGL jar。</summary>
+    public static bool HasBundledJars
+        => AssetExists(MobileRuntimePaths.BundledJwjglAssetDirectory(MobileRuntimeCatalog.LwjglVersion));
+
+    /// <summary>
+    /// 从 APK 内预置资产安装 JRE（**不需要联网**）：把归档解出到私有目录。
+    /// </summary>
+    public static async Task<string> InstallBundledRuntimeAsync(int requiredMajorVersion,
+        IProgress<MobileInstallProgress>? progress = null, CancellationToken cancellationToken = default)
+    {
+        var majorVersion = MobileRuntimeCatalog.NormalizeRuntimeMajor(requiredMajorVersion);
+        var assetPath = MobileRuntimePaths.BundledJreAssetPath(majorVersion);
+
+        progress?.Report(new MobileInstallProgress($"解出 Java {majorVersion} 运行时…", 0));
+
+        // 解压器需要可随机访问的文件，先把 asset 落到私有临时文件再解。
+        var temp = Path.Combine(Path.GetTempPath(),
+            $"jre{majorVersion}-{MobileRuntimeCatalog.Abi}.tar.xz");
+        try
+        {
+            await CopyAssetToFileAsync(assetPath, temp, cancellationToken);
+            progress?.Report(new MobileInstallProgress("解压 Java 运行时…", 0.4));
+            return await MobileJavaRuntime.ImportArchiveAsync(temp, majorVersion, null, cancellationToken);
+        }
+        finally
+        {
+            TryDelete(temp);
+        }
+    }
+
+    /// <summary>
+    /// 把 APK 内预置的移动端 LWJGL jar 解到私有目录 —— classpath 需要真实文件路径，
+    /// 不能直接用 asset 流。
+    /// </summary>
+    public static async Task InstallBundledJarsAsync(string lwjglVersion,
+        IProgress<MobileInstallProgress>? progress = null, CancellationToken cancellationToken = default)
+    {
+        var assetDirectory = MobileRuntimePaths.BundledJwjglAssetDirectory(lwjglVersion);
+        var names = ListAssets(assetDirectory)
+            .Where(name => name.EndsWith(".jar", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        if (names.Length == 0)
+            throw new InvalidOperationException(
+                $"APK 内没有预置 LWJGL jar（assets/{assetDirectory}），运行组件不完整");
+
+        var destination = MobileRuntimePaths.NativesJarDirectory;
+        Directory.CreateDirectory(destination);
+
+        var done = 0;
+        foreach (var name in names)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            progress?.Report(new MobileInstallProgress($"解出 {name}…", Progress(done, names.Length)));
+            await CopyAssetToFileAsync($"{assetDirectory}/{name}",
+                Path.Combine(destination, name), cancellationToken);
+            done++;
+        }
+    }
+
+    private static Android.Content.Res.AssetManager Assets =>
+        Android.App.Application.Context.Assets!;
+
+    private static bool AssetExists(string assetPath)
+    {
+        try
+        {
+            using var stream = Assets.Open(assetPath);
+            return true;
+        }
+        catch (Java.IO.FileNotFoundException)
+        {
+            return false;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+    }
+
+    private static string[] ListAssets(string assetDirectory)
+    {
+        try
+        {
+            return Assets.List(assetDirectory) ?? [];
+        }
+        catch (IOException)
+        {
+            return [];
+        }
+    }
+
+    private static async Task CopyAssetToFileAsync(string assetPath, string target,
+        CancellationToken cancellationToken)
+    {
+        using var source = Assets.Open(assetPath);
+        await using var destination = File.Create(target);
+        await source.CopyToAsync(destination, cancellationToken);
+    }
+
+    /// <summary>
     /// 安装 JRE：按实例要求的 Java 版本自动选一个可下载的版本（8/17/21/25，arm64）。
+    /// （仅作预置方案缺失时的兜底，正常路径见 <see cref="InstallBundledRuntimeAsync"/>。）
     /// </summary>
     public static async Task<string> InstallRuntimeAsync(int requiredMajorVersion,
         IProgress<MobileInstallProgress>? progress = null, CancellationToken cancellationToken = default)

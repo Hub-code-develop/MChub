@@ -47,7 +47,7 @@ internal static class MobileGameLauncher
         }
 
         if (!MobileRuntimeInstaller.AreNativesInstalled)
-            return "尚未安装运行组件（LWJGL / GL 翻译层）";
+            return "运行组件不完整（native 库或移动端 LWJGL 缺失），请用官方发行包或联网补齐";
 
         return null;
     }
@@ -66,17 +66,35 @@ internal static class MobileGameLauncher
     }
 
     /// <summary>
-    /// 一键补齐缺失的运行环境：JRE（按实例要求的 Java 版本自动选 8/17/21/25）+ 运行组件。
-    /// 已装的部分会跳过，可重复调用。
+    /// 补齐缺失的运行环境：JRE（按实例要求的 Java 版本自动选 8/17/21/25）+ 运行组件。
+    /// 已就绪的部分会跳过，可重复调用。
+    ///
+    /// <p><b>优先走 APK 内预置</b>：发行包里已带 JRE 归档与移动端 LWJGL jar，直接从 assets
+    /// 解出即可，用户无需联网。只有在预置缺失时（本地自行构建的包）才回退到联网下载。</p>
     /// </summary>
     public static async Task EnsureReadyAsync(int requiredJavaMajorVersion,
         IProgress<MobileInstallProgress>? progress = null, CancellationToken cancellationToken = default)
     {
         if (!MobileRuntimeInstaller.IsRuntimeInstalled(requiredJavaMajorVersion))
-            await MobileRuntimeInstaller.InstallRuntimeAsync(requiredJavaMajorVersion, progress, cancellationToken);
+        {
+            if (MobileRuntimeInstaller.HasBundledRuntime(requiredJavaMajorVersion))
+                await MobileRuntimeInstaller.InstallBundledRuntimeAsync(
+                    requiredJavaMajorVersion, progress, cancellationToken);
+            else
+                await MobileRuntimeInstaller.InstallRuntimeAsync(
+                    requiredJavaMajorVersion, progress, cancellationToken);
+        }
 
-        if (!MobileRuntimeInstaller.AreNativesInstalled)
-            await MobileRuntimeInstaller.InstallNativesAsync(progress, cancellationToken);
+        // native 库在预置方案下由系统解压到 nativeLibraryDir，无需动作；
+        // 需要落盘的是 LWJGL jar（classpath 用的是文件路径）。
+        if (!MobileRuntimeInstaller.AreLwjglJarsInstalled)
+        {
+            if (MobileRuntimeInstaller.HasBundledJars)
+                await MobileRuntimeInstaller.InstallBundledJarsAsync(
+                    MobileRuntimeCatalog.LwjglVersion, progress, cancellationToken);
+            else if (!MobileRuntimeInstaller.AreNativeLibrariesInstalled)
+                await MobileRuntimeInstaller.InstallNativesAsync(progress, cancellationToken);
+        }
     }
 
     /// <summary>实例要求的 Java 主版本（MC 26.x → 25，1.21 → 21，1.18~1.20.4 → 17，≤1.16 → 8）。</summary>

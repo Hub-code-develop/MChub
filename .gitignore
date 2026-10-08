@@ -476,3 +476,6 @@ MChub.Release/
 
 # native 启动层构建产物（由 src/MChub.Android/Native/build-android.sh 生成）
 src/MChub.Android/Native/out/
+
+# 打包前从 release 装配的运行时资产（体积大，只在 CI 里生成）
+src/MChub.Android/RuntimeAssets/

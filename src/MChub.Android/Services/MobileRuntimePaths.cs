@@ -38,4 +38,31 @@ internal static class MobileRuntimePaths
 
     /// <summary>移动端 LWJGL jar 目录（启动时前置到 classpath）。</summary>
     public static string NativesJarDirectory => Path.Combine(NativesDirectory, "jars");
+
+    /// <summary>
+    /// APK 内预置资产的根目录。
+    ///
+    /// <p>运行时组件**随 APK 一起分发**（由 .github/workflows/build-android.yml 在打包前
+    /// 从本仓库 release 装配），用户装机即用，不需要再联网下载。与之对应：
+    /// native 库以 <c>AndroidNativeLibrary</c> 打进 <c>lib/arm64-v8a/</c>，
+    /// JRE 与 LWJGL jar 以 <c>AndroidAsset</c> 打进 <c>assets/runtime/</c>。</p>
+    /// </summary>
+    public const string BundledAssetRoot = "runtime";
+
+    /// <summary>预置 JRE 归档在 assets 里的相对路径。</summary>
+    public static string BundledJreAssetPath(int majorVersion)
+        => $"{BundledAssetRoot}/jre/{majorVersion}/jre{majorVersion}-android-{MobileRuntimeCatalog.Abi}.tar.xz";
+
+    /// <summary>预置 LWJGL jar 在 assets 里的目录（相对 assets 根）。</summary>
+    public static string BundledJwjglAssetDirectory(string lwjglVersion)
+        => $"{BundledAssetRoot}/lwjgl/{lwjglVersion}";
+
+    /// <summary>
+    /// 系统为本应用解压原生库的目录。
+    ///
+    /// <p>APK 里 <c>lib/arm64-v8a/*.so</c> 在安装时由系统解压到这里，可直接 dlopen，
+    /// 也可以拼进 <c>java.library.path</c> —— 预置方案下无需再往私有目录复制一份。</p>
+    /// </summary>
+    public static string NativeLibraryDirectory =>
+        Android.App.Application.Context.ApplicationInfo!.NativeLibraryDir!;
 }

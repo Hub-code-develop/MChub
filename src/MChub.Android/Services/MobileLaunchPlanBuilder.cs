@@ -82,12 +82,23 @@ internal static class MobileLaunchPlanBuilder
     private static IReadOnlyList<string> ApplyMobileRuntime(IReadOnlyList<string> jvmArguments)
     {
         var jarDirectory = MobileRuntimePaths.NativesJarDirectory;
-        var libraryDirectory = MobileRuntimePaths.NativesLibraryDirectory;
+
+        // 预置方案下 native 由系统解压到 nativeLibraryDir（随 APK 的 lib/arm64-v8a/）；
+        // 早期联网方案则落在私有目录。两者都带上，系统目录在前（优先命中随包版本）。
+        var libraryDirectories = new[]
+            {
+                MobileRuntimePaths.NativeLibraryDirectory,
+                MobileRuntimePaths.NativesLibraryDirectory
+            }
+            .Where(Directory.Exists)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        var libraryDirectory = string.Join(Path.PathSeparator, libraryDirectories);
 
         var jarFiles = Directory.Exists(jarDirectory)
             ? Directory.GetFiles(jarDirectory, "*.jar").OrderBy(path => path, StringComparer.Ordinal).ToArray()
             : [];
-        var hasLibraries = Directory.Exists(libraryDirectory);
+        var hasLibraries = libraryDirectories.Length > 0;
 
         var result = new List<string>(jvmArguments.Count + 4);
         var classPathApplied = false;

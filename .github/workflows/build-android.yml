@@ -56,11 +56,63 @@ jobs:
           chmod +x src/MChub.Android/Native/build-android.sh
           src/MChub.Android/Native/build-android.sh arm64-v8a
 
+      # 预置移动端运行时（JRE + Pojav 系 native + 移动端 LWJGL），让 APK 开箱即用、
+      # 装机后无需再联网下载。运行时包由 build/mobile-runtime workflow 构建并发布。
+      - name: Fetch prebuilt mobile runtime
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUNTIME_TAG: mobile-runtime-v1
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/mobile-runtime && mkdir -p /tmp/mobile-runtime
+          if ! gh release download "$RUNTIME_TAG" -p mobile-runtime-arm64.zip -D /tmp --clobber; then
+            echo "::error::取不到 mobile-runtime 包（tag=$RUNTIME_TAG）。请先跑 build/mobile-runtime workflow，否则 APK 不会带运行时。"
+            exit 1
+          fi
+          unzip -q /tmp/mobile-runtime-arm64.zip -d /tmp/mobile-runtime
+
+          dest=src/MChub.Android/RuntimeAssets
+          rm -rf "$dest"
+          mkdir -p "$dest/libs/arm64-v8a"
+          # 目录名带 arm64-v8a，AndroidNativeLibrary 才能推断出目标 ABI。
+          cp /tmp/mobile-runtime/libs/*.so "$dest/libs/arm64-v8a/"
+          cp -r /tmp/mobile-runtime/jre "$dest/jre"
+          if [ -d /tmp/mobile-runtime/lwjgl ]; then
+            cp -r /tmp/mobile-runtime/lwjgl "$dest/lwjgl"
+          fi
+          cp /tmp/mobile-runtime/manifest.json "$dest/manifest.json"
+
+          echo "=== 预置运行时 ==="
+          echo "natives: $(ls -1 "$dest/libs/arm64-v8a" | wc -l) 个"
+          echo "JRE: $(ls -1 "$dest/jre" | tr '\n' ' ')"
+          du -sh "$dest"
+
       - name: Build Android (arm64)
         run: >
           dotnet build ./src/MChub.Android/MChub.Android.csproj
           -c Release
           -p:Version=0.0.0
+
+      # 打包后核对：APK 里确实带了 native 与运行时资产，避免"看着成功其实空包"。
+      - name: Verify APK contains runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk=$(find src/MChub.Android/bin/Release/net10.0-android -name '*.apk' | head -1)
+          echo "APK: $apk ($(du -h "$apk" | cut -f1))"
+          echo "=== lib/arm64-v8a ==="
+          unzip -l "$apk" | grep -E 'lib/arm64-v8a/.*\.so' | awk '{print $4}' | sed 's|.*/||' | sort
+          echo "=== assets/runtime ==="
+          unzip -l "$apk" | grep -E 'assets/runtime/' | awk '{print $4}'
+          for must in libpojavexec.so assets/runtime/manifest.json; do
+            if unzip -l "$apk" | grep -q "$must"; then
+              echo "ok: $must"
+            else
+              echo "::error::APK 里缺少 $must"
+              exit 1
+            fi
+          done
 
       - name: Upload APK
         uses: actions/upload-artifact@v7

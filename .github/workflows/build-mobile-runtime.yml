@@ -53,6 +53,11 @@ jobs:
   mobile-runtime:
     runs-on: ubuntu-22.04
     steps:
+      # 必须 checkout 本仓库：最后要往本仓库的 release 发布，
+      # 而 gh 在没有 git 上下文时会直接报 "not a git repository"。
+      - name: Checkout
+        uses: actions/checkout@v7
+
       # androidnsbypass 在上游以 `git@github.com:...` 登记，CI 里没有部署密钥，
       # 必须先把 SSH 形式改写成 HTTPS，否则 submodule 拉取会失败。
       - name: Rewrite SSH submodule URLs to HTTPS
@@ -198,9 +203,10 @@ jobs:
           TAG: ${{ inputs.release_tag || 'mobile-runtime-v1' }}
         run: |
           set -euo pipefail
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" \
+          repo="$GITHUB_REPOSITORY"
+          if ! gh release view "$TAG" --repo "$repo" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$repo" \
               --title "Mobile runtime ($TAG)" \
               --notes "Android arm64 运行时组件：Pojav 系 native（自建）+ LWJGL natives / OpenAL / ANGLE / SDL / GL 翻译层（上游 AAR）+ JRE 8/17/21/25 + 移动端 LWJGL jar。由 .github/workflows/build-mobile-runtime.yml 生成。"
           fi
-          gh release upload "$TAG" mobile-runtime-arm64.zip --clobber
+          gh release upload "$TAG" mobile-runtime-arm64.zip --clobber --repo "$repo"
