@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 using Iridium.Minecraft;
 using Iridium.Models.Authentication;
 using Iridium.Models.Java;
@@ -24,7 +26,7 @@ internal sealed record MobileLaunchPlan(
 /// 加载器（Forge/NeoForge/Fabric）的参数差异、类路径拼装等逻辑与桌面端完全一致，
 /// 移动端只是把最终结果交给 native 层创建 JVM，而不是 exec 一个 java 进程。</p>
 /// </summary>
-internal static class MobileLaunchPlanBuilder
+internal static partial class MobileLaunchPlanBuilder
 {
     public static async Task<MobileLaunchPlan> BuildAsync(MinecraftInstance instance, string runtimeRoot,
         CancellationToken cancellationToken = default)
@@ -79,17 +81,48 @@ internal static class MobileLaunchPlanBuilder
     /// <p>缺运行组件时不在这里报错 —— 由 <see cref="MobileGameLauncher.DescribeBlocker"/> 统一提示，
     /// 免得同一件事两处各说一遍。</p>
     /// </summary>
+    /// <summary>从 classpath 里抓 LWJGL 版本号（版本 JSON 的 lwjgl 依赖会体现在 jar 路径/文件名）。</summary>
+    [GeneratedRegex(@"lwjgl[-_/](\d+\.\d+\.\d+)", RegexOptions.IgnoreCase)]
+    private static partial Regex LwjglVersionRegex();
+
+    /// <summary>
+    /// 找出实例实际使用的 LWJGL 版本对应的原生库目录（由预置资产按版本解出）。
+    /// 没有匹配版本时返回 null，调用方退回公共 native 目录。
+    /// </summary>
+    private static string? ResolveLwjglNativesDirectory(IReadOnlyList<string> jvmArguments)
+    {
+        foreach (var argument in jvmArguments)
+        {
+            if (!argument.StartsWith("-Djava.class.path=", StringComparison.Ordinal))
+                continue;
+
+            var match = LwjglVersionRegex().Match(argument);
+            if (!match.Success)
+                continue;
+
+            var directory = MobileRuntimePaths.LwjglNativesDirectoryFor(match.Groups[1].Value);
+            if (Directory.Exists(directory))
+                return directory;
+        }
+
+        return null;
+    }
+
     private static IReadOnlyList<string> ApplyMobileRuntime(IReadOnlyList<string> jvmArguments)
     {
         var jarDirectory = MobileRuntimePaths.NativesJarDirectory;
 
-        // 预置方案下 native 由系统解压到 nativeLibraryDir（随 APK 的 lib/arm64-v8a/）；
-        // 早期联网方案则落在私有目录。两者都带上，系统目录在前（优先命中随包版本）。
-        var libraryDirectories = new[]
-            {
-                MobileRuntimePaths.NativeLibraryDirectory,
-                MobileRuntimePaths.NativesLibraryDirectory
-            }
+        // library path 顺序 = 优先级：
+        //   1) 实例所用 LWJGL 版本对应的原生库（3.3.3 / 3.4.1 同名 .so 各放一处，必须选对）
+        //   2) 随 APK 打进 lib/ 的那批（自建 Pojav 系 native + OpenAL/ANGLE/SDL/GL 层）
+        //   3) 早期联网方案落在私有目录的副本
+        var candidateDirectories = new List<string>(3);
+        if (ResolveLwjglNativesDirectory(jvmArguments) is { } versionedNatives)
+            candidateDirectories.Add(versionedNatives);
+        candidateDirectories.Add(MobileRuntimePaths.NativeLibraryDirectory);
+        candidateDirectories.Add(MobileRuntimePaths.NativesLibraryDirectory);
+
+        var libraryDirectories = candidateDirectories
             .Where(Directory.Exists)
             .Distinct(StringComparer.Ordinal)
             .ToArray();

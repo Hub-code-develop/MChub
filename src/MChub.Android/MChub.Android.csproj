@@ -69,20 +69,25 @@
         RuntimeAssets/libs/arm64-v8a/*.so   → 打进 lib/arm64-v8a/（安装时系统解压到 nativeLibraryDir）
         RuntimeAssets/jre/<major>/*.tar.xz  → 打进 assets/runtime/jre/（首次启动解压到应用私有目录）
         RuntimeAssets/lwjgl/<ver>/*.jar     → 打进 assets/runtime/lwjgl/（移动端补丁版 LWJGL）
+        RuntimeAssets/lwjgl-natives/<ver>/*.so → 打进 assets/runtime/lwjgl-natives/（按实例版本解压）
 
       本地开发时该目录不存在，整组条目自动跳过（Condition），不影响普通构建。
       目录本身不入库（见 .gitignore），只在 CI 装配。
     -->
     <ItemGroup Condition="Exists('RuntimeAssets')">
-        <AndroidNativeLibrary Include="RuntimeAssets\libs\arm64-v8a\*.so"/>
+        <AndroidNativeLibrary Include="RuntimeAssets/libs/arm64-v8a/*.so"/>
 
-        <AndroidAsset Include="RuntimeAssets\jre\**\*.tar.xz"
-                      Link="Assets\runtime\jre\%(RecursiveDir)%(Filename)%(Extension)"/>
-        <AndroidAsset Include="RuntimeAssets\lwjgl\**\*"
-                      Link="Assets\runtime\lwjgl\%(RecursiveDir)%(Filename)%(Extension)"/>
-        <AndroidAsset Include="RuntimeAssets\manifest.json"
-                      Link="Assets\runtime\manifest.json"
-                      Condition="Exists('RuntimeAssets\manifest.json')"/>
+        <AndroidAsset Include="RuntimeAssets/jre/**/*.tar.xz"
+                      Link="Assets/runtime/jre/%(RecursiveDir)%(Filename)%(Extension)"/>
+        <AndroidAsset Include="RuntimeAssets/lwjgl/**/*"
+                      Link="Assets/runtime/lwjgl/%(RecursiveDir)%(Filename)%(Extension)"/>
+        <!-- LWJGL 原生库按版本分目录：3.3.3 与 3.4.1 有同名 .so，不能同时进 lib/，
+             运行时按实例需要的版本解压到私有目录。 -->
+        <AndroidAsset Include="RuntimeAssets/lwjgl-natives/**/*"
+                      Link="Assets/runtime/lwjgl-natives/%(RecursiveDir)%(Filename)%(Extension)"/>
+        <AndroidAsset Include="RuntimeAssets/manifest.json"
+                      Link="Assets/runtime/manifest.json"
+                      Condition="Exists('RuntimeAssets/manifest.json')"/>
     </ItemGroup>
 
     <ItemGroup>

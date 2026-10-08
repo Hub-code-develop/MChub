@@ -76,7 +76,12 @@ jobs:
           rm -rf "$dest"
           mkdir -p "$dest/libs/arm64-v8a"
           # 目录名带 arm64-v8a，AndroidNativeLibrary 才能推断出目标 ABI。
-          cp /tmp/mobile-runtime/libs/*.so "$dest/libs/arm64-v8a/"
+          # natives/ = 不区分 LWJGL 版本的那批（自建 Pojav 系 native + OpenAL/ANGLE/SDL/GL 层）。
+          cp /tmp/mobile-runtime/natives/*.so "$dest/libs/arm64-v8a/"
+          # LWJGL natives 分版本存放（3.3.3 与 3.4.1 有同名 .so，不能合并），运行期按需解压。
+          if [ -d /tmp/mobile-runtime/lwjgl-natives ]; then
+            cp -r /tmp/mobile-runtime/lwjgl-natives "$dest/lwjgl-natives"
+          fi
           cp -r /tmp/mobile-runtime/jre "$dest/jre"
           if [ -d /tmp/mobile-runtime/lwjgl ]; then
             cp -r /tmp/mobile-runtime/lwjgl "$dest/lwjgl"
@@ -85,6 +90,7 @@ jobs:
 
           echo "=== 预置运行时 ==="
           echo "natives: $(ls -1 "$dest/libs/arm64-v8a" | wc -l) 个"
+          echo "LWJGL natives: $(ls -1 "$dest/lwjgl-natives" 2>/dev/null | tr '\n' ' ')"
           echo "JRE: $(ls -1 "$dest/jre" | tr '\n' ' ')"
           du -sh "$dest"
 
@@ -105,7 +111,9 @@ jobs:
           unzip -l "$apk" | grep -E 'lib/arm64-v8a/.*\.so' | awk '{print $4}' | sed 's|.*/||' | sort
           echo "=== assets/runtime ==="
           unzip -l "$apk" | grep -E 'assets/runtime/' | awk '{print $4}'
-          for must in libpojavexec.so assets/runtime/manifest.json; do
+          for must in libpojavexec.so \
+                      assets/runtime/manifest.json \
+                      assets/runtime/lwjgl-natives/3.3.3/liblwjgl.so; do
             if unzip -l "$apk" | grep -q "$must"; then
               echo "ok: $must"
             else

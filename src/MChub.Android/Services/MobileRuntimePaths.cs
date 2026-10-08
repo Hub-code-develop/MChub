@@ -58,6 +58,19 @@ internal static class MobileRuntimePaths
         => $"{BundledAssetRoot}/lwjgl/{lwjglVersion}";
 
     /// <summary>
+    /// 预置的 LWJGL 原生库在 assets 里的目录（按版本分放）。
+    ///
+    /// <p>3.3.3 与 3.4.1 有同名 .so（<c>liblwjgl.so</c> 等），不能同时进 APK 的
+    /// <c>lib/arm64-v8a/</c>（会互相覆盖），所以放 assets，由运行时按实例需要的版本解压。</p>
+    /// </summary>
+    public static string BundledLwjglNativesDirectory(string lwjglVersion)
+        => $"{BundledAssetRoot}/lwjgl-natives/{lwjglVersion}";
+
+    /// <summary>某个 LWJGL 版本的原生库解压目标目录（私有目录下按版本分开）。</summary>
+    public static string LwjglNativesDirectoryFor(string lwjglVersion)
+        => Path.Combine(NativesDirectory, "lwjgl-natives", lwjglVersion);
+
+    /// <summary>
     /// 系统为本应用解压原生库的目录。
     ///
     /// <p>APK 里 <c>lib/arm64-v8a/*.so</c> 在安装时由系统解压到这里，可直接 dlopen，

@@ -95,6 +95,11 @@ internal static class MobileGameLauncher
             else if (!MobileRuntimeInstaller.AreNativeLibrariesInstalled)
                 await MobileRuntimeInstaller.InstallNativesAsync(progress, cancellationToken);
         }
+
+        // LWJGL 原生库按版本各解一份（3.3.3 / 3.4.1 有同名 .so，不能放同一目录），
+        // 启动时由 MobileLaunchPlanBuilder 按实例实际使用的版本挑目录。
+        if (MobileRuntimeInstaller.BundledLwjglNativesVersions.Count > 0)
+            await MobileRuntimeInstaller.InstallBundledLwjglNativesAsync(progress, cancellationToken);
     }
 
     /// <summary>实例要求的 Java 主版本（MC 26.x → 25，1.21 → 21，1.18~1.20.4 → 17，≤1.16 → 8）。</summary>

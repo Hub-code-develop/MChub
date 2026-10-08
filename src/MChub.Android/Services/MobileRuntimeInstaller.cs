@@ -126,6 +126,66 @@ internal static class MobileRuntimeInstaller
         }
     }
 
+    /// <summary>APK 内预置了哪些 LWJGL 原生库版本。</summary>
+    public static IReadOnlyList<string> BundledLwjglNativesVersions =>
+        ListAssets($"{MobileRuntimePaths.BundledAssetRoot}/lwjgl-natives")
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+    /// <summary>APK 内是否预置了该版本的 LWJGL 原生库。</summary>
+    public static bool HasBundledLwjglNatives(string lwjglVersion)
+        => AssetExists($"{MobileRuntimePaths.BundledLwjglNativesDirectory(lwjglVersion)}/liblwjgl.so");
+
+    /// <summary>
+    /// 把 APK 内预置的**各版本** LWJGL 原生库解到私有目录的对应版本子目录，返回成功解出的版本。
+    ///
+    /// <p>必须分版本解：不同 MC 版本用不同 LWJGL，而 3.3.3 与 3.4.1 有同名 .so，
+    /// 放同一目录会互相覆盖，所以各自一个目录，启动时按实例需要的版本前置到 library path。</p>
+    /// </summary>
+    public static async Task<IReadOnlyList<string>> InstallBundledLwjglNativesAsync(
+        IProgress<MobileInstallProgress>? progress = null, CancellationToken cancellationToken = default)
+    {
+        var versions = BundledLwjglNativesVersions;
+        var installed = new List<string>();
+        var done = 0;
+
+        foreach (var version in versions)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var assetDirectory = MobileRuntimePaths.BundledLwjglNativesDirectory(version);
+            var names = ListAssets(assetDirectory)
+                .Where(name => name.EndsWith(".so", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (names.Length == 0)
+                continue;
+
+            var destination = MobileRuntimePaths.LwjglNativesDirectoryFor(version);
+            Directory.CreateDirectory(destination);
+
+            var extracted = 0;
+            foreach (var name in names)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var target = Path.Combine(destination, name);
+                if (File.Exists(target))
+                    continue; // 已解过，重复调用不必再写
+
+                await CopyAssetToFileAsync($"{assetDirectory}/{name}", target, cancellationToken);
+                extracted++;
+            }
+
+            installed.Add(version);
+            progress?.Report(new MobileInstallProgress(
+                $"解出 LWJGL {version} 原生库（{extracted}/{names.Length}）…",
+                Progress(done, versions.Count)));
+            done++;
+        }
+
+        return installed;
+    }
+
     private static Android.Content.Res.AssetManager Assets =>
         Android.App.Application.Context.Assets!;
 
