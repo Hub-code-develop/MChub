@@ -1,0 +1,206 @@
+name: build/mobile-runtime
+
+# 构建 Android 端「开箱即用」运行时包：native 库 + JRE + 移动端 LWJGL jar。
+#
+# 为什么需要这个 workflow：
+#   Android 上跑 Minecraft Java 版需要一套**桌面 OpenJDK 移植版 + GL 翻译层 + 定制 LWJGL**。
+#   其中一部分上游有公开预编译产物（AAR / release 资产），可以直接取；
+#   另一部分**只有源码**（Pojav 系的 libpojavexec / exithook / glxshim / linkerhook，
+#   以及 LWJGL 的 GLFW stub 合并 jar），必须自己编 —— 本 workflow 就是干这个。
+#
+#   产物发布到本仓库 release（默认 tag `mobile-runtime-v1`），供：
+#     - build-android.yml 在打包 APK 时下载并预置（用户无需联网下载运行时）
+#
+# 上游来源：
+#   - native 源码 / AAR：AngelAuraMC/Amethyst-Android @ v3_openjdk
+#   - JRE（arm64）：AngelAuraMC/angelauramc-openjdk-build releases（8/17/21/25）
+#   - androidnsbypass 子模块：alexytomi/androidnsbypass（上游以 SSH URL 登记，需改写为 HTTPS）
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 发布到的 release tag
+        required: false
+        default: mobile-runtime-v1
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-mobile-runtime.yml'
+
+permissions:
+  contents: write
+
+env:
+  AMETHYST_REPO: https://github.com/AngelAuraMC/Amethyst-Android.git
+  AMETHYST_REF: v3_openjdk
+  JRE_REPO: AngelAuraMC/angelauramc-openjdk-build
+  AAR_BASE: https://raw.githubusercontent.com/AngelAuraMC/Amethyst-Android/v3_openjdk/app_pojavlauncher/libs
+  # 参与打包的 AAR（内部 arm64-v8a 的 .so 会被取出）。
+  NATIVE_AARS: >-
+    lwjgl-3.3.3-natives-release.aar
+    lwjgl-3.4.1-natives-release.aar
+    openal-soft-release.aar
+    angle-release.aar
+    SDL-release.aar
+    MobileGlues-release.aar
+    kopper-zink-release.aar
+    spirv-cross-natives.aar
+  # 打包进 APK 的 JRE 主版本（覆盖 1.16- 到 26.x，见 MChub.Core 的版本映射）。
+  JRE_MAJORS: '8 17 21 25'
+
+jobs:
+  mobile-runtime:
+    runs-on: ubuntu-22.04
+    steps:
+      # androidnsbypass 在上游以 `git@github.com:...` 登记，CI 里没有部署密钥，
+      # 必须先把 SSH 形式改写成 HTTPS，否则 submodule 拉取会失败。
+      - name: Rewrite SSH submodule URLs to HTTPS
+        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
+
+      - name: Clone Amethyst (with submodules)
+        run: |
+          git clone --depth 1 --branch "$AMETHYST_REF" \
+            --recurse-submodules --shallow-submodules \
+            "$AMETHYST_REPO" amethyst
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.1'
+
+      # pojavexec / exithook / glxshim / linkerhook 等只有源码，必须编。
+      # 用上游自己的 gradle 配置（ndk-build + prefab：bytehook 与 androidnsbypass）。
+      - name: Build native libraries
+        working-directory: amethyst
+        run: |
+          gradle :app_pojavlauncher:externalNativeBuildRelease --no-daemon --stacktrace
+
+      # LWJGL 的 GLFW stub（org.lwjgl.glfw 的纯 Java 实现 + 合并模块 jar）。
+      - name: Build LWJGL GLFW stub jars
+        working-directory: amethyst
+        run: |
+          gradle :jre_lwjgl3glfw:lwjgl-3.3.3:jar :jre_lwjgl3glfw:lwjgl-3.4.1:jar \
+            --no-daemon --stacktrace
+
+      - name: Collect native libraries
+        run: |
+          set -euo pipefail
+          mkdir -p staging/libs
+          # 1) 自建的 native（ndk-build 产物）
+          find amethyst -type f -path '*arm64-v8a/*.so' -print -exec cp -v {} staging/libs/ \;
+          # 2) 上游 AAR 里预编译的 native（LWJGL natives / OpenAL / ANGLE / SDL / GL 翻译层）
+          for aar in $NATIVE_AARS; do
+            curl -sSL --retry 3 -o "/tmp/$aar" "$AAR_BASE/$aar"
+            rm -rf /tmp/aar && mkdir -p /tmp/aar
+            unzip -qo "/tmp/$aar" -d /tmp/aar
+            find /tmp/aar -type f -path '*arm64-v8a/*.so' -print -exec cp -v {} staging/libs/ \;
+          done
+          echo "=== staging/libs ==="
+          ls -la staging/libs
+
+      - name: Fail if native set is incomplete
+        run: |
+          set -euo pipefail
+          # 这几个是自建产物，缺任何一个都说明构建没真正成功。
+          for required in libpojavexec.so libexithook.so libglxshim.so; do
+            if [ ! -f "staging/libs/$required" ]; then
+              echo "::error::缺少自建 native 库 $required —— native 构建未成功"
+              exit 1
+            fi
+          done
+
+      - name: Collect LWJGL jars
+        run: |
+          set -euo pipefail
+          mkdir -p staging/lwjgl
+          src=amethyst/app_pojavlauncher/src/main/assets/components/lwjgl3
+          if [ -d "$src" ]; then
+            cp -rv "$src/." staging/lwjgl/
+          fi
+          echo "=== staging/lwjgl ==="
+          find staging/lwjgl -type f | head -40
+
+      - name: Download JRE (arm64)
+        run: |
+          set -euo pipefail
+          got=0
+          for v in $JRE_MAJORS; do
+            mkdir -p "staging/jre/$v"
+            url="https://github.com/$JRE_REPO/releases/download/download_jre$v/jre$v-android-arm64.tar.xz"
+            echo "下载 $url"
+            if curl -sSL --retry 3 -o "staging/jre/$v/jre$v-android-arm64.tar.xz" "$url"; then
+              # 校验确实拿到了归档（HTTP 出错时常会落一个很小的错误页）。
+              if tar -tf "staging/jre/$v/jre$v-android-arm64.tar.xz" >/dev/null 2>&1; then
+                got=$((got + 1))
+                echo "  ok: $(du -h "staging/jre/$v/jre$v-android-arm64.tar.xz" | cut -f1)"
+                continue
+              fi
+              echo "::warning::jre$v 下载到的不是有效 tar.xz，已丢弃"
+              rm -f "staging/jre/$v/jre$v-android-arm64.tar.xz"
+            else
+              echo "::warning::jre$v 下载失败"
+            fi
+            rmdir "staging/jre/$v" 2>/dev/null || true
+          done
+          if [ "$got" -eq 0 ]; then
+            echo "::error::一个 JRE 都没拿到，运行时包不完整"
+            exit 1
+          fi
+          echo "共取得 $got 个 JRE"
+
+      - name: Write manifest
+        run: |
+          set -euo pipefail
+          {
+            echo '{'
+            echo '  "abi": "arm64-v8a",'
+            echo '  "source": "AngelAuraMC/Amethyst-Android@v3_openjdk (native+AAR), angelauramc-openjdk-build (JRE)",'
+            printf '  "libs": ['
+            first=1
+            for f in staging/libs/*.so; do
+              [ -f "$f" ] || continue
+              [ $first -eq 1 ] || printf ', '
+              printf '"%s"' "$(basename "$f")"
+              first=0
+            done
+            echo '],'
+            printf '  "jreMajors": ['
+            first=1
+            for d in staging/jre/*/; do
+              [ -d "$d" ] || continue
+              [ $first -eq 1 ] || printf ', '
+              printf '%s' "$(basename "$d")"
+              first=0
+            done
+            echo ']'
+            echo '}'
+          } > staging/manifest.json
+          cat staging/manifest.json
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          cd staging
+          zip -qr ../mobile-runtime-arm64.zip .
+          cd ..
+          ls -lh mobile-runtime-arm64.zip
+
+      - name: Publish to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.release_tag || 'mobile-runtime-v1' }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "Mobile runtime ($TAG)" \
+              --notes "Android arm64 运行时组件：Pojav 系 native（自建）+ LWJGL natives / OpenAL / ANGLE / SDL / GL 翻译层（上游 AAR）+ JRE 8/17/21/25 + 移动端 LWJGL jar。由 .github/workflows/build-mobile-runtime.yml 生成。"
+          fi
+          gh release upload "$TAG" mobile-runtime-arm64.zip --clobber
