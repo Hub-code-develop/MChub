@@ -48,7 +48,8 @@ public partial class MobileShellView : UserControl
             case NavItem.Home:
                 _launcherPage ??= new MobileLauncherPage();
                 PageHost.Content = _launcherPage;
-                PageTitle.Text = MobileLanguageManager.Instance.mobile_navHome.CurrentValue();
+                // ZL2 在启动器主屏幕上显示的是启动器标识（而不是「主页」这种页面名）。
+                PageTitle.Text = "MChub";
                 break;
             default:
                 _settingsPage ??= new MobileSettingsPage();

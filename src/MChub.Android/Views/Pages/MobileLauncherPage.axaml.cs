@@ -1,4 +1,6 @@
+using System.Collections.ObjectModel;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using FluentAvalonia.UI.Controls;
@@ -7,19 +9,23 @@ using MChub.Core.Minecraft.Classes;
 using MChub.Core.Minecraft.Instance;
 using MChub.Localization;
 using MChub.Mobile.Services;
+using MChub.Mobile.ViewModels;
 // Android 隐式全局 using 引入了 Android.Widget，Button 会与 Avalonia.Controls.Button 冲突。
 using Button = Avalonia.Controls.Button;
 
 namespace MChub.Mobile.Views.Pages;
 
 /// <summary>
-/// 移动端主页。布局参照 Zalith Launcher 2 的 LauncherScreen：
-/// 上方一张「操作卡片」（账户 → 当前实例 → 启动），下方是实例列表。
+/// 移动端主页。布局对齐 Zalith Launcher 2 的 LauncherScreen（横屏两列）：
+/// 左侧是实例卡片网格（卡片自带启动按钮，点卡片切换「当前实例」），
+/// 右侧是操作栏（账户 → 当前实例 → 启动按钮），与 ZL2 的 ActionMenu 同构。
 /// </summary>
 public partial class MobileLauncherPage : UserControl
 {
-    /// <summary>实例下拉与实例列表指向同一份选中项，防止互相触发形成回环。</summary>
-    private bool _syncingSelection;
+    private readonly ObservableCollection<MobileInstanceEntry> _entries = [];
+
+    /// <summary>当前实例（左侧卡片的选中项，右侧操作栏也读它）。</summary>
+    private MobileInstanceEntry? _current;
 
     /// <summary>一次启动调用是否还在进行（游戏跑起来期间一直为 true）。</summary>
     private bool _launching;
@@ -30,6 +36,7 @@ public partial class MobileLauncherPage : UserControl
     {
         InitializeComponent();
         AccountText.Text = Data.ConfigEntry.CurrentAccountDisplay;
+        InstanceGrid.ItemsSource = _entries;
         Refresh();
     }
 
@@ -37,68 +44,107 @@ public partial class MobileLauncherPage : UserControl
 
     private void Refresh()
     {
+        var language = MobileLanguageManager.Instance;
+
         if (!MobileBootstrap.CoreReady)
         {
-            StatusText.Text = MobileBootstrap.FailureReason ??
-                              MobileLanguageManager.Instance.mobile_instancesEmpty.CurrentValue();
-            EmptyHint.IsVisible = true;
+            Fail(MobileBootstrap.FailureReason ?? language.mobile_instancesEmpty.CurrentValue());
             return;
         }
 
-        StatusText.Text = MobileLanguageManager.Instance.mobile_instancesScanning.CurrentValue();
+        StatusText.Text = language.mobile_instancesScanning.CurrentValue();
+
         try
         {
             InstanceManager.Instance.RefreshAll(Data.ConfigEntry.MinecraftFolders);
         }
         catch (Exception exception)
         {
-            StatusText.Text = exception.Message;
-            EmptyHint.IsVisible = true;
+            Fail(exception.Message);
             return;
         }
 
         var instances = InstanceManager.Instance.Instances;
-        InstanceList.ItemsSource = instances;
-        InstancePicker.ItemsSource = instances;
-        EmptyHint.IsVisible = instances.Count == 0;
+        RebuildEntries(instances);
 
         // 进来就默认选中第一个实例，让「当前实例 + 启动」可以直接用。
-        if (InstancePicker.SelectedItem is null && instances.Count > 0)
-            SetCurrent(instances[0]);
+        if (_current is null && _entries.Count > 0)
+            SetCurrent(_entries[0]);
+        else
+            UpdateCurrentCard();
 
-        // 有阻塞项（缺运行时 / 缺原生层）就明说，别让用户点了才发现。
+        EmptyHint.Text = language.mobile_launcherNoInstance.CurrentValue();
+        EmptyHint.IsVisible = _entries.Count == 0;
+
         // 有阻塞项（缺运行时 / 缺运行组件 / 缺原生层）就明说，别让用户点了才发现。
-        StatusText.Text = MobileGameLauncher.DescribeBlocker(InstancePicker.SelectedItem as MinecraftInstance)
-                          ?? string.Empty;
+        UpdateBlockerStatus();
     }
 
-    private void InstancePicker_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    /// <summary>扫描失败或 Core 未就绪：清空网格并如实显示原因，不留一片空白。</summary>
+    private void Fail(string reason)
     {
-        if (_syncingSelection) return;
-        if (InstancePicker.SelectedItem is MinecraftInstance instance)
-            SetCurrent(instance);
+        _entries.Clear();
+        _current = null;
+        UpdateCurrentCard();
+        EmptyHint.Text = reason;
+        EmptyHint.IsVisible = true;
+        StatusText.Text = string.Empty;
     }
 
-    private void InstanceList_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    /// <summary>
+    /// 重建卡片。尽量保住当前选中项（按实例目录比），重扫之后不至于跳回第一个。
+    /// </summary>
+    private void RebuildEntries(IEnumerable<MinecraftInstance> instances)
     {
-        if (_syncingSelection) return;
-        if (InstanceList.SelectedItem is MinecraftInstance instance)
-            SetCurrent(instance);
-    }
+        var previousFolder = _current?.Instance.FolderPath;
 
-    private void SetCurrent(MinecraftInstance instance)
-    {
-        _syncingSelection = true;
-        try
+        _entries.Clear();
+        _current = null;
+
+        foreach (var instance in instances)
         {
-            InstancePicker.SelectedItem = instance;
-            InstanceList.SelectedItem = instance;
-        }
-        finally
-        {
-            _syncingSelection = false;
+            var entry = new MobileInstanceEntry(instance);
+            if (previousFolder is not null && instance.FolderPath == previousFolder)
+            {
+                entry.IsCurrent = true;
+                _current = entry;
+            }
+
+            _entries.Add(entry);
         }
     }
+
+    private void InstanceCard_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Border { DataContext: MobileInstanceEntry entry })
+            SetCurrent(entry);
+    }
+
+    private void SetCurrent(MobileInstanceEntry entry)
+    {
+        if (!ReferenceEquals(_current, entry))
+        {
+            _current = entry;
+            foreach (var item in _entries)
+                item.IsCurrent = ReferenceEquals(item, entry);
+        }
+
+        UpdateCurrentCard();
+        UpdateBlockerStatus();
+    }
+
+    /// <summary>右侧「当前实例」卡片与左侧选中态共用同一份状态。</summary>
+    private void UpdateCurrentCard()
+    {
+        var instance = _current?.Instance;
+        CurrentInstanceIcon.Source = instance?.Icon;
+        CurrentInstanceName.Text = instance?.InstanceName
+                                   ?? MobileLanguageManager.Instance.mobile_launcherPickInstance.CurrentValue();
+        CurrentInstanceInfo.Text = instance?.ShortDisplay ?? string.Empty;
+    }
+
+    private void UpdateBlockerStatus()
+        => StatusText.Text = MobileGameLauncher.DescribeBlocker(_current?.Instance) ?? string.Empty;
 
     /// <summary>
     /// 同一个按钮两种语义：空闲时启动，启动中时请求停止（ZL2 也是一个启动按钮）。
@@ -114,7 +160,7 @@ public partial class MobileLauncherPage : UserControl
             return;
         }
 
-        if (InstancePicker.SelectedItem is not MinecraftInstance instance)
+        if (_current?.Instance is not { } instance)
         {
             StatusText.Text = language.mobile_launcherNoInstance.CurrentValue();
             return;
@@ -171,6 +217,16 @@ public partial class MobileLauncherPage : UserControl
         }
     }
 
+    /// <summary>卡片里的启动按钮：先切到该实例，再走与右侧按钮同一条路径。</summary>
+    private void LaunchInstance_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: MobileInstanceEntry entry })
+            return;
+
+        SetCurrent(entry);
+        Launch_OnClick(sender, e);
+    }
+
     /// <summary>下载安装 Java 运行时与运行组件，进度直接反映在状态文本上。</summary>
     private async Task InstallEnvironmentAsync(MinecraftInstance instance)
     {
@@ -187,15 +243,6 @@ public partial class MobileLauncherPage : UserControl
 
         await MobileGameLauncher.EnsureReadyAsync(requiredMajor, progress);
         StatusText.Text = language.mobile_launcherInstallDone.CurrentValue();
-    }
-
-    private void LaunchInstance_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (sender is not Button { DataContext: MinecraftInstance instance })
-            return;
-
-        SetCurrent(instance);
-        Launch_OnClick(sender, e);
     }
 
     private void SetLaunchButton(bool running)
