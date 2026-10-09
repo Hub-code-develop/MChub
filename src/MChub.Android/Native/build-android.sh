@@ -53,3 +53,16 @@ echo "输出  : $BUILD_DIR/libmchubjvm.so"
 "$CMAKE" --build "$BUILD_DIR" -j "$JOBS"
 
 ls -l "$BUILD_DIR/libmchubjvm.so"
+
+# 自检：必须 16 KB 段对齐（Android 15+ 对 lib/<abi>/ 下 .so 的硬要求；不达标装机弹「页面大小兼容模式」警告）。
+# CMakeLists 已显式加 -Wl,-z,max-page-size=16384，这里再验一次，免得换 NDK 时静默退化。
+READELF="$(ls -d "$NDK"/toolchains/llvm/prebuilt/*/bin/llvm-readelf 2>/dev/null | head -1 || true)"
+if [ -n "${READELF:-}" ] && [ -x "$READELF" ]; then
+  BAD="$("$READELF" -l "$BUILD_DIR/libmchubjvm.so" | awk '$1=="LOAD" && $NF!="0x4000"{print}')"
+  if [ -n "$BAD" ]; then
+    echo "✗ libmchubjvm.so 的 LOAD 段不是 16 KB 对齐（Android 15+ 会把 App 判为不符合要求）：" >&2
+    echo "$BAD" >&2
+    exit 1
+  fi
+  echo "对齐  : 16 KB ok"
+fi
