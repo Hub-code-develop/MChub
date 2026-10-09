@@ -173,7 +173,43 @@ internal static partial class MobileLaunchPlanBuilder
         if (jarFiles.Length > 0 && !classPathApplied)
             result.Add("-Djava.class.path=" + string.Join(Path.PathSeparator, jarFiles));
 
+        // 补齐在 Android 上运行 MC 必需的一批 JVM 属性（实例/加载器已给同名属性则不覆盖）。
+        // 这是 Pojav 系启动器的既有做法，逐条都有具体原因，缺了会出各种怪问题。
+        foreach (var (key, value) in RequiredJvmProperties())
+        {
+            var flag = "-D" + key + "=";
+            if (!result.Any(argument => argument.StartsWith(flag, StringComparison.Ordinal)))
+                result.Add(flag + value);
+        }
+
         return result;
+    }
+
+    /// <summary>
+    /// Android 上运行 MC 需要的 JVM 属性。
+    /// </summary>
+    private static IEnumerable<(string Key, string Value)> RequiredJvmProperties()
+    {
+        var nativeLibraryDirectory = MobileRuntimePaths.NativeLibraryDirectory;
+        var cacheDirectory = Android.App.Application.Context.CacheDir?.AbsolutePath ?? Path.GetTempPath();
+
+        // MC 与各 loader 据此选平台分支（LWJGL natives 名、路径分隔符等）。
+        yield return ("os.name", "Linux");
+        yield return ("os.version", "Android-" + Android.OS.Build.VERSION.Release);
+        // 默认的 POSIX_SPAWN 依赖 jspawnhelper，Android 上跑不起来。
+        yield return ("jdk.lang.Process.launchMechanism", "FORK");
+        // 指向应用私有缓存目录，保证可写。
+        yield return ("java.io.tmpdir", cacheDirectory);
+        // JNA 依赖它找原生库（部分 mod 会用）。
+        yield return ("jna.boot.library.path", nativeLibraryDirectory);
+        yield return ("org.lwjgl.vulkan.libname", "libvulkan.so");
+        yield return ("glfwstub.initEgl", "false");
+        // Log4j2 远程加载缓解。
+        yield return ("log4j2.formatMsgNoLookups", "true");
+        // Forge 1.14+ 的早期进度弹窗在移动端会出问题。
+        yield return ("fml.earlyprogresswindow", "false");
+        yield return ("loader.disable_forked_guis", "true");
+        yield return ("net.minecraft.clientmodname", "MChub");
     }
 
     /// <summary>

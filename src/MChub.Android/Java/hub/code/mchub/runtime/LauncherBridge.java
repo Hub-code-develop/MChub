@@ -108,10 +108,12 @@ public final class LauncherBridge {
      * @param jvmArgs    JVM 参数（含 {@code -Xmx}、{@code -Djava.library.path} 等，由 C# 侧组装）
      * @param gameArgs   游戏参数（{@code --username} 等）
      * @param gameDir    实例工作目录
+     * @param nativeLibDir 应用原生库目录（{@code ApplicationInfo.nativeLibraryDir}），
+     *                    native 侧要靠它找 libpojavexec / GL 翻译层 / libopenal
      * @return {@code 0} 表示游戏正常退出；非 0 由调用方展示 {@link #takeLastError()}。
      */
     public static int launch(String runtimeDir, String mainClass, String[] jvmArgs, String[] gameArgs,
-                             String gameDir) {
+                             String gameDir, String nativeLibDir) {
         if (NativeJvmLoader.isGameRunning()) {
             return fail("已有游戏进程在运行");
         }
@@ -126,6 +128,10 @@ public final class LauncherBridge {
 
         if (isBlank(gameDir)) {
             return fail("缺少实例工作目录（gameDir）");
+        }
+
+        if (isBlank(nativeLibDir)) {
+            return fail("缺少原生库目录（nativeLibDir）");
         }
 
         List<String> jvm = new ArrayList<>();
@@ -147,6 +153,15 @@ public final class LauncherBridge {
         }
 
         try {
+            // 创建 JVM 之前必须先按 Pojav 的顺序准备好运行环境：
+            // env → LD_LIBRARY_PATH（含 linker 私有接口）→ hook → JRE 内部库 dlopen → GL 层 → chdir。
+            // 少了这步，JVM 即使建起来，MC 一碰 java.awt / 网络 / 音频就会缺库。
+            PojavRuntimeSupport.Result prepared = PojavRuntimeSupport.prepare(
+                    runtimeDir, nativeLibDir, new File(gameDir).getAbsolutePath(), null);
+            if (!prepared.ok()) {
+                return fail(prepared.failure);
+            }
+
             int exitCode = nativeLaunch(runtimeDir, mainClass,
                     jvm.toArray(new String[0]), game.toArray(new String[0]),
                     new File(gameDir).getAbsolutePath());

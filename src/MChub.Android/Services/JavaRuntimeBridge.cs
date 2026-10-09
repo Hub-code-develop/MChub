@@ -106,9 +106,11 @@ internal static class JavaRuntimeBridge
     /// <summary>
     /// 启动游戏。参数由 C# 侧依据版本 JSON 组装（与桌面端同一套逻辑）。
     /// </summary>
+    /// <param name="nativeLibDir">应用原生库目录（ApplicationInfo.nativeLibraryDir）：
+    /// Java/native 侧靠它找 libpojavexec、GL 翻译层与 libopenal。</param>
     /// <param name="exitCode">成功调用时 Java 侧返回的退出码；调用失败时为 -1。</param>
     public static bool TryLaunch(string runtimeDir, string mainClass, string[] jvmArgs, string[] gameArgs,
-        string gameDir, out int exitCode, out string? failure)
+        string gameDir, string nativeLibDir, out int exitCode, out string? failure)
     {
         exitCode = -1;
 
@@ -121,18 +123,20 @@ internal static class JavaRuntimeBridge
         IntPtr jvmArgsRef = IntPtr.Zero;
         IntPtr gameArgsRef = IntPtr.Zero;
         IntPtr gameDirRef = IntPtr.Zero;
+        IntPtr nativeLibDirRef = IntPtr.Zero;
 
         try
         {
             classRef = JNIEnv.FindClass(BridgeClassName);
             IntPtr methodId = JNIEnv.GetStaticMethodID(classRef, "launch",
-                "(Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)I");
+                "(Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I");
 
             runtimeDirRef = JNIEnv.NewString(runtimeDir);
             mainClassRef = JNIEnv.NewString(mainClass);
             jvmArgsRef = JNIEnv.NewArray(jvmArgs);
             gameArgsRef = JNIEnv.NewArray(gameArgs);
             gameDirRef = JNIEnv.NewString(gameDir);
+            nativeLibDirRef = JNIEnv.NewString(nativeLibDir);
 
             exitCode = JNIEnv.CallStaticIntMethod(classRef, methodId,
             [
@@ -140,7 +144,8 @@ internal static class JavaRuntimeBridge
                 new JValue(mainClassRef),
                 new JValue(jvmArgsRef),
                 new JValue(gameArgsRef),
-                new JValue(gameDirRef)
+                new JValue(gameDirRef),
+                new JValue(nativeLibDirRef)
             ]);
 
             failure = null;
@@ -153,6 +158,7 @@ internal static class JavaRuntimeBridge
         }
         finally
         {
+            DeleteLocalRef(nativeLibDirRef);
             DeleteLocalRef(gameDirRef);
             DeleteLocalRef(gameArgsRef);
             DeleteLocalRef(jvmArgsRef);

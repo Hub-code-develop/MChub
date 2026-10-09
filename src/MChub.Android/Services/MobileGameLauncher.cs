@@ -125,6 +125,7 @@ internal static class MobileGameLauncher
         {
             var invoked = JavaRuntimeBridge.TryLaunch(runtimeRoot, plan.MainClass,
                 plan.JvmArguments.ToArray(), plan.GameArguments.ToArray(), plan.GameDirectory,
+                MobileRuntimePaths.NativeLibraryDirectory,
                 out var exitCode, out var failure);
 
             if (!invoked)
