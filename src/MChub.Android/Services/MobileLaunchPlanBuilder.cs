@@ -114,13 +114,15 @@ internal static partial class MobileLaunchPlanBuilder
 
         // library path 顺序 = 优先级：
         //   1) 实例所用 LWJGL 版本对应的原生库（3.3.3 / 3.4.1 同名 .so 各放一处，必须选对）
-        //   2) 随 APK 打进 lib/ 的那批（自建 Pojav 系 native + OpenAL/ANGLE/SDL/GL 层）
-        //   3) 早期联网方案落在私有目录的副本
+        //   2) 运行时原生库的**私有目录**（随 APK 以 assets/runtime/natives.zip 预置，首次启动解到这里）
+        //   3) APK 的 lib/ 目录（现在只剩我们自己编的 libmchubjvm.so，留作兜底）
+        // 为什么不把运行时库放 lib/：平台会做 16 KB 页对齐检查，上游预编译产物是 4 KB 对齐
+        // （见 MobileRuntimePaths.BundledNativesArchivePath）。
         var candidateDirectories = new List<string>(3);
         if (ResolveLwjglNativesDirectory(jvmArguments) is { } versionedNatives)
             candidateDirectories.Add(versionedNatives);
-        candidateDirectories.Add(MobileRuntimePaths.NativeLibraryDirectory);
         candidateDirectories.Add(MobileRuntimePaths.NativesLibraryDirectory);
+        candidateDirectories.Add(MobileRuntimePaths.NativeLibraryDirectory);
 
         var libraryDirectories = candidateDirectories
             .Where(Directory.Exists)
@@ -190,7 +192,11 @@ internal static partial class MobileLaunchPlanBuilder
     /// </summary>
     private static IEnumerable<(string Key, string Value)> RequiredJvmProperties()
     {
-        var nativeLibraryDirectory = MobileRuntimePaths.NativeLibraryDirectory;
+        // 运行时原生库目录：Pojav 系 / OpenAL / GL 翻译层都在这里（jna 等要按目录找）。
+        // 还没解压时退回 APK 的 lib/ 目录，至少不给出一个不存在的路径。
+        var runtimeNativesDirectory = Directory.Exists(MobileRuntimePaths.NativesLibraryDirectory)
+            ? MobileRuntimePaths.NativesLibraryDirectory
+            : MobileRuntimePaths.NativeLibraryDirectory;
         var cacheDirectory = Android.App.Application.Context.CacheDir?.AbsolutePath ?? Path.GetTempPath();
 
         // MC 与各 loader 据此选平台分支（LWJGL natives 名、路径分隔符等）。
@@ -201,7 +207,7 @@ internal static partial class MobileLaunchPlanBuilder
         // 指向应用私有缓存目录，保证可写。
         yield return ("java.io.tmpdir", cacheDirectory);
         // JNA 依赖它找原生库（部分 mod 会用）。
-        yield return ("jna.boot.library.path", nativeLibraryDirectory);
+        yield return ("jna.boot.library.path", runtimeNativesDirectory);
         yield return ("org.lwjgl.vulkan.libname", "libvulkan.so");
         yield return ("glfwstub.initEgl", "false");
         // Log4j2 远程加载缓解。

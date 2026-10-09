@@ -66,16 +66,28 @@
       从本仓库 release（mobile-runtime-v1）下载并展开，因此**最终 APK 自带全部运行组件，
       用户装机即用、无需再联网下载**。
 
-        RuntimeAssets/libs/arm64-v8a/*.so   → 打进 lib/arm64-v8a/（安装时系统解压到 nativeLibraryDir）
-        RuntimeAssets/jre/<major>/*.tar.xz  → 打进 assets/runtime/jre/（首次启动解压到应用私有目录）
-        RuntimeAssets/lwjgl/<ver>/*.jar     → 打进 assets/runtime/lwjgl/（移动端补丁版 LWJGL）
+        RuntimeAssets/natives.zip          → 打进 assets/runtime/natives.zip（原生库，首次启动解到私有目录）
+        RuntimeAssets/jre/<major>/*.tar.xz → 打进 assets/runtime/jre/（首次启动解压到应用私有目录）
+        RuntimeAssets/lwjgl/<ver>/*.jar    → 打进 assets/runtime/lwjgl/（移动端补丁版 LWJGL）
         RuntimeAssets/lwjgl-natives/<ver>/*.so → 打进 assets/runtime/lwjgl-natives/（按实例版本解压）
 
+      ⚠ **原生库一律不进 APK 的 lib/<abi>/**：平台会对那里的每个 .so 做 16 KB 页对齐检查，
+      不达标就强制 App 跑「页面大小兼容模式」并在启动时弹警告。这批库多是上游预编译产物
+      （AAR / JRE 自带），ELF 段对齐是 4 KB 且无法重链接 —— 实测放进 lib/ 必弹窗。
+      另外放进 lib/ 还会被 .NET Android 在启动时全部 System.loadLibrary，触发上游 native 的
+      JNI_OnLoad（它们要 FindClass 自己的 Java 侧，那个类在我们这儿不存在）→ SIGABRT。
+      所以：以 zip 预置 → 运行时解到私有目录 → 由 JREUtils.loadNativeLayer（JNI 部分）
+      与 PojavRuntimeSupport（GL 翻译层等，按绝对路径 dlopen）装载。
+
       本地开发时该目录不存在，整组条目自动跳过（Condition），不影响普通构建。
-      目录本身不入库（见 .gitignore），只在 CI 装配。
+      要在本地也打出「自带运行时」的包，先跑一次 scripts/prepare-android-runtime.sh 装配。
+      目录本身不入库（见 .gitignore），CI 与本地都靠脚本/工作流现装配。
     -->
     <ItemGroup Condition="Exists('RuntimeAssets')">
-        <AndroidNativeLibrary Include="RuntimeAssets/libs/arm64-v8a/*.so"/>
+        <!-- 原生库打 zip：assets 里直接放 .so 会被 .NET Android 检查 ABI（路径无 ABI 名 → XA4301）。 -->
+        <AndroidAsset Include="RuntimeAssets/natives.zip"
+                      Link="Assets/runtime/natives.zip"
+                      Condition="Exists('RuntimeAssets/natives.zip')"/>
 
         <AndroidAsset Include="RuntimeAssets/jre/**/*.tar.xz"
                       Link="Assets/runtime/jre/%(RecursiveDir)%(Filename)%(Extension)"/>
@@ -91,6 +103,28 @@
                       Link="Assets/runtime/manifest.json"
                       Condition="Exists('RuntimeAssets/manifest.json')"/>
     </ItemGroup>
+
+    <!--
+      ⚠ 上游 native 的 JNI_OnLoad 依赖（补 Java 占位类的依据，改运行组件时必看）：
+
+      .NET Android 默认会把 APK 里所有 native 库在启动时 System.loadLibrary 一遍 —— 目的是让各自的
+      JNI_OnLoad 跑起来。而 Pojav 系 native 的 JNI_OnLoad 会去 FindClass / RegisterNatives
+      **它们自己的 Java 侧**，这些类在我们的启动器里并不存在：
+
+        libbytehook.so   → com.bytedance.android.bytehook.ByteHook（RegisterNatives 10 个方法）
+        libSDL3.so       → org.libsdl.app.{SDLActivity, SDLInputConnection, SDLAudioManager,
+                                          SDLControllerManager, HIDDeviceManager}
+        libpojavexec.so  → org.lwjgl.glfw.CallbackBridge
+
+      缺类时 FindClass 返回 null 并**留下 pending exception**，紧接着 native 里下一个 JNI 调用
+      （NewGlobalRef / FindClass）就会被 CheckJNI 直接判死 → SIGABRT（实测过）。
+
+      现在已经从两头都堵上：
+        ① 这些库不再进 lib/（见上面 RuntimeAssets 段落），不在启动期被 loadLibrary，
+           而是运行时按绝对路径 System.load / dlopen；
+        ② 需要 JNI 注册的那两个类仍有占位类兜底 —— Java/org/lwjgl/glfw/CallbackBridge.java、
+           Java/com/bytedance/android/bytehook/ByteHook.java（签名与上游严格对齐，方法体不会被调用）。
+    -->
 
     <ItemGroup>
         <AndroidResource Include="..\..\assets\MChub.png" Link="Resources\drawable\mchub_icon.png"/>

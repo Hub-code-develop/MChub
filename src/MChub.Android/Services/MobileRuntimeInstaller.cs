@@ -27,26 +27,20 @@ internal static class MobileRuntimeInstaller
         AreNativeLibrariesInstalled && AreLwjglJarsInstalled;
 
     /// <summary>
-    /// native 库（LWJGL / OpenAL / GL 翻译层 / Pojav 系）是否就位。
+    /// native 库（Pojav 系 / OpenAL / GL 翻译层）是否已落到**私有目录**。
     ///
-    /// <p>预置方案（APK 自带）下，系统已把 APK 的 <c>lib/arm64-v8a/</c> 解压到
-    /// <see cref="MobileRuntimePaths.NativeLibraryDirectory"/>，直接查那里即可；
-    /// 只有预置缺失时（本地自行构建、未装配 RuntimeAssets 的包）才回退到私有目录里
-    /// 找早期联网下载的那份。</p>
+    /// <p>这批库不再放进 APK 的 <c>lib/&lt;abi&gt;/</c>：上游预编译产物的 ELF 段对齐是 4 KB，
+    /// 平台会判定不符合 16 KB 要求，让 App 跑在「页面大小兼容模式」并在启动时弹警告
+    /// （实测过，去掉它们弹窗就消失）。改成随 APK 以 <c>assets/runtime/natives.zip</c> 预置、
+    /// 首次启动解到私有目录，再由 JREUtils / PojavRuntimeSupport 按绝对路径装载。</p>
     /// </summary>
     public static bool AreNativeLibrariesInstalled
     {
         get
         {
-            string[] required = ["libpojavexec.so", "liblwjgl.so", "libopenal.so"];
-
-            var bundled = MobileRuntimePaths.NativeLibraryDirectory;
-            if (!string.IsNullOrEmpty(bundled) &&
-                required.All(name => File.Exists(Path.Combine(bundled, name))))
-                return true;
-
-            var downloaded = MobileRuntimePaths.NativesLibraryDirectory;
-            return required.All(name => File.Exists(Path.Combine(downloaded, name)));
+            string[] required = ["libpojavexec.so", "libopenal.so", "libmobileglues.so"];
+            return required.All(name =>
+                File.Exists(Path.Combine(MobileRuntimePaths.NativesLibraryDirectory, name)));
         }
     }
 
@@ -69,6 +63,59 @@ internal static class MobileRuntimeInstaller
     /// <summary>APK 内是否预置了移动端 LWJGL jar（以 zip 形式预置）。</summary>
     public static bool HasBundledJars
         => AssetExists(MobileRuntimePaths.BundledJwjglArchivePath(MobileRuntimeCatalog.LwjglVersion));
+
+    /// <summary>APK 内是否预置了原生库归档（assets/runtime/natives.zip）。</summary>
+    public static bool HasBundledNatives
+        => AssetExists(MobileRuntimePaths.BundledNativesArchivePath);
+
+    /// <summary>
+    /// 把 APK 内预置的原生库解到私有目录（**不需要联网**）。
+    ///
+    /// <p>为什么必须解成真实文件：这些库要按**绝对路径** <c>System.load</c> / <c>dlopen</c>，
+    /// linker 只认可读的真实文件（asset 流不行）；而且 Mesa / ANGLE 这类库还要靠
+    /// 「驱动就在自己旁边」（$ORIGIN）去找同目录的其它 .so。</p>
+    /// </summary>
+    public static async Task InstallBundledNativesAsync(
+        IProgress<MobileInstallProgress>? progress = null, CancellationToken cancellationToken = default)
+    {
+        var assetPath = MobileRuntimePaths.BundledNativesArchivePath;
+        if (!AssetExists(assetPath))
+            throw new InvalidOperationException(
+                $"APK 内没有预置原生库归档（assets/{assetPath}），运行组件不完整");
+
+        var destination = MobileRuntimePaths.NativesLibraryDirectory;
+        Directory.CreateDirectory(destination);
+
+        progress?.Report(new MobileInstallProgress("解出原生库…", 0));
+
+        // asset 流未必可随机访问，ZipArchive 顺序读更稳：先落到临时文件。
+        var temp = Path.Combine(Path.GetTempPath(), "mchub-natives.zip");
+        try
+        {
+            await CopyAssetToFileAsync(assetPath, temp, cancellationToken);
+
+            using var archive = ZipFile.OpenRead(temp);
+            var entries = archive.Entries
+                .Where(entry => entry.Name.EndsWith(".so", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (entries.Length == 0)
+                throw new InvalidOperationException($"原生库归档里没有 .so：{assetPath}");
+
+            var done = 0;
+            foreach (var entry in entries)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                progress?.Report(new MobileInstallProgress(
+                    $"解出 {entry.Name}…", Progress(done, entries.Length)));
+                entry.ExtractToFile(Path.Combine(destination, entry.Name), overwrite: true);
+                done++;
+            }
+        }
+        finally
+        {
+            TryDelete(temp);
+        }
+    }
 
     /// <summary>
     /// 从 APK 内预置资产安装 JRE（**不需要联网**）：把归档解出到私有目录。

@@ -8,6 +8,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.kdt.pojavlaunch.utils.JREUtils;
+
 /**
  * Avalonia(C#) 侧通过 JNI 调用本类的静态方法，完成「在 Android 上启动 Minecraft Java 版」的编排。
  *
@@ -153,6 +155,9 @@ public final class LauncherBridge {
         }
 
         try {
+            // 0) 先把 native 层从私有目录装载进来（这些库不再进 APK 的 lib/，见 JREUtils.loadNativeLayer）。
+            JREUtils.loadNativeLayer(nativeLibDir);
+
             // 创建 JVM 之前必须先按 Pojav 的顺序准备好运行环境：
             // env → LD_LIBRARY_PATH（含 linker 私有接口）→ hook → JRE 内部库 dlopen → GL 层 → chdir。
             // 少了这步，JVM 即使建起来，MC 一碰 java.awt / 网络 / 音频就会缺库。
@@ -174,7 +179,7 @@ public final class LauncherBridge {
             }
             return exitCode;
         } catch (UnsatisfiedLinkError error) {
-            return fail("原生启动层尚未接入（缺少 mchubjvm 动态库）：" + error.getMessage());
+            return fail("装载移动端原生库失败：" + error.getMessage());
         } catch (Exception exception) {
             return fail("启动游戏失败：" + exception);
         }

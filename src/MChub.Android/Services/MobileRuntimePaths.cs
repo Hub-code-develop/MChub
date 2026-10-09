@@ -76,15 +76,32 @@ internal static class MobileRuntimePaths
     /// <summary>预置 LWJGL 原生库归档所在的 assets 目录。</summary>
     public const string BundledLwjglNativesAssetRoot = "runtime/lwjgl-natives";
 
+    /// <summary>
+    /// 预置原生库归档（zip）在 assets 里的路径。
+    ///
+    /// <p><b>为什么原生库不放进 APK 的 <c>lib/&lt;abi&gt;/</c></b>：平台会对那里的每个 <c>.so</c> 做
+    /// 16 KB 页对齐检查，不达标就让 App 强制跑在「页面大小兼容模式」并在启动时弹警告
+    /// （Android 15+ 的要求）。而这批库多数来自上游**预编译**产物（AngelAuraMC / Zalith 的 AAR、
+    /// JRE 自带的 libawt*），ELF 段对齐是 4 KB，我们无法重链接。实测：放进 <c>lib/</c> 就弹窗，
+    /// 改走「assets + 私有目录 + dlopen」就不弹。</p>
+    ///
+    /// <p>所以运行时解压到 <see cref="NativesLibraryDirectory"/>，再由
+    /// <c>JREUtils.loadNativeLayer</c>（需要 JNI 注册的那几个）与 <c>PojavRuntimeSupport</c>
+    /// （GL 翻译层等，按绝对路径 dlopen）装载。</p>
+    /// </summary>
+    public static string BundledNativesArchivePath
+        => $"{BundledAssetRoot}/natives.zip";
+
     /// <summary>某个 LWJGL 版本的原生库解压目标目录（私有目录下按版本分开）。</summary>
     public static string LwjglNativesDirectoryFor(string lwjglVersion)
         => Path.Combine(NativesDirectory, "lwjgl-natives", lwjglVersion);
 
     /// <summary>
-    /// 系统为本应用解压原生库的目录。
+    /// 系统为本应用解压原生库的目录（=<c>ApplicationInfo.nativeLibraryDir</c>）。
     ///
-    /// <p>APK 里 <c>lib/arm64-v8a/*.so</c> 在安装时由系统解压到这里，可直接 dlopen，
-    /// 也可以拼进 <c>java.library.path</c> —— 预置方案下无需再往私有目录复制一份。</p>
+    /// <p><b>现在这里只有我们自己编的 <c>libmchubjvm.so</c></b> —— 移动端运行时那批
+    /// 上游原生库已经改走 assets（见 <see cref="BundledNativesArchivePath"/>），
+    /// 它们解在 <see cref="NativesLibraryDirectory"/>。</p>
     /// </summary>
     public static string NativeLibraryDirectory =>
         Android.App.Application.Context.ApplicationInfo!.NativeLibraryDir!;

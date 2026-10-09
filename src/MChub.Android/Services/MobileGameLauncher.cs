@@ -85,15 +85,21 @@ internal static class MobileGameLauncher
                     requiredJavaMajorVersion, progress, cancellationToken);
         }
 
-        // native 库在预置方案下由系统解压到 nativeLibraryDir，无需动作；
-        // 需要落盘的是 LWJGL jar（classpath 用的是文件路径）。
-        if (!MobileRuntimeInstaller.AreLwjglJarsInstalled)
+        // 原生库随 APK 以 zip 预置（assets/runtime/natives.zip），要落到私有目录才能按绝对路径
+        // System.load / dlopen（见 MobileRuntimePaths.BundledNativesArchivePath 的说明）。
+        if (!MobileRuntimeInstaller.AreNativeLibrariesInstalled)
         {
-            if (MobileRuntimeInstaller.HasBundledJars)
-                await MobileRuntimeInstaller.InstallBundledJarsAsync(
-                    MobileRuntimeCatalog.LwjglVersion, progress, cancellationToken);
-            else if (!MobileRuntimeInstaller.AreNativeLibrariesInstalled)
+            if (MobileRuntimeInstaller.HasBundledNatives)
+                await MobileRuntimeInstaller.InstallBundledNativesAsync(progress, cancellationToken);
+            else
                 await MobileRuntimeInstaller.InstallNativesAsync(progress, cancellationToken);
+        }
+
+        // LWJGL jar 同理要落盘：classpath 用的是真实文件路径。
+        if (!MobileRuntimeInstaller.AreLwjglJarsInstalled && MobileRuntimeInstaller.HasBundledJars)
+        {
+            await MobileRuntimeInstaller.InstallBundledJarsAsync(
+                MobileRuntimeCatalog.LwjglVersion, progress, cancellationToken);
         }
 
         // LWJGL 原生库按版本各解一份（3.3.3 / 3.4.1 有同名 .so，不能放同一目录），
@@ -125,7 +131,9 @@ internal static class MobileGameLauncher
         {
             var invoked = JavaRuntimeBridge.TryLaunch(runtimeRoot, plan.MainClass,
                 plan.JvmArguments.ToArray(), plan.GameArguments.ToArray(), plan.GameDirectory,
-                MobileRuntimePaths.NativeLibraryDirectory,
+                // 运行时原生库目录（私有目录），不是 ApplicationInfo.nativeLibraryDir ——
+                // Java/native 侧靠它找 libpojavexec、GL 翻译层与 libopenal。
+                MobileRuntimePaths.NativesLibraryDirectory,
                 out var exitCode, out var failure);
 
             if (!invoked)

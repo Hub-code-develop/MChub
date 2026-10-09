@@ -74,10 +74,15 @@ jobs:
 
           dest=src/MChub.Android/RuntimeAssets
           rm -rf "$dest"
-          mkdir -p "$dest/libs/arm64-v8a"
-          # 目录名带 arm64-v8a，AndroidNativeLibrary 才能推断出目标 ABI。
-          # natives/ = 不区分 LWJGL 版本的那批（自建 Pojav 系 native + OpenAL/ANGLE/SDL/GL 层）。
-          cp /tmp/mobile-runtime/natives/*.so "$dest/libs/arm64-v8a/"
+          mkdir -p "$dest"
+          # 原生库打成一个 zip 进 assets —— **不进 lib/<abi>/**：
+          #   ① 平台对 lib/<abi>/*.so 做 16 KB 页对齐检查，这批上游预编译产物是 4 KB 对齐，
+          #      放进去会让 App 被强制「页面大小兼容模式」并在启动时弹警告（实测过）；
+          #   ② 放进 lib/ 会被 .NET Android 在启动时全部 loadLibrary，触发上游 native 的 JNI_OnLoad
+          #      （它们要 FindClass 自己的 Java 侧，那些类不在我们包里）→ 启动即 SIGABRT。
+          # 运行时解到私有目录后由 JREUtils.loadNativeLayer / PojavRuntimeSupport 按绝对路径装载。
+          root=$(pwd)
+          (cd /tmp/mobile-runtime/natives && zip -qr "$root/$dest/natives.zip" .)
           # LWJGL natives 打 zip 再进 assets：.NET Android 会检查 assets 里 .so 的 ABI
           # （路径里没有 ABI 名就报 XA4301），且两套版本有同名 .so（不能同目录）。打 zip 由运行时解压。
           root=$(pwd)
@@ -101,7 +106,7 @@ jobs:
           cp /tmp/mobile-runtime/manifest.json "$dest/manifest.json"
 
           echo "=== 预置运行时 ==="
-          echo "natives: $(ls -1 "$dest/libs/arm64-v8a" | wc -l) 个"
+          echo "natives.zip: $(du -h "$dest/natives.zip" | cut -f1)（$(unzip -l "$dest/natives.zip" | tail -1 | awk '{print $2}') 个条目）"
           echo "LWJGL natives zip: $(ls -1 "$dest/lwjgl-natives" 2>/dev/null | tr '\n' ' ')"
           echo "JRE: $(ls -1 "$dest/jre" | tr '\n' ' ')"
           du -sh "$dest"
@@ -112,7 +117,8 @@ jobs:
           -c Release
           -p:Version=0.0.0
 
-      # 打包后核对：APK 里确实带了 native 与运行时资产，避免"看着成功其实空包"。
+      # 打包后核对：APK 里确实带了运行时资产，避免"看着成功其实空包"；
+      # 并卡住 16 KB 页对齐 —— 这是 Android 15+ 的硬要求，不达标会被判「页面大小兼容模式」并弹警告。
       - name: Verify APK contains runtime
         shell: bash
         run: |
@@ -123,7 +129,7 @@ jobs:
           unzip -l "$apk" | grep -E 'lib/arm64-v8a/.*\.so' | awk '{print $4}' | sed 's|.*/||' | sort
           echo "=== assets/runtime ==="
           unzip -l "$apk" | grep -E 'assets/runtime/' | awk '{print $4}'
-          for must in libpojavexec.so \
+          for must in assets/runtime/natives.zip \
                       assets/runtime/manifest.json \
                       assets/runtime/lwjgl-natives/3.3.3.zip \
                       assets/runtime/lwjgl/3.3.3.zip; do
@@ -134,6 +140,43 @@ jobs:
               exit 1
             fi
           done
+
+          # 16 KB 页对齐检查：lib/<abi>/ 下每个 .so 的所有 PT_LOAD 段，p_align 必须 ≥ 0x4000。
+          # 前端库（Pojav 系 / SDL / Mesa / JRE 自带的 libawt*）不在这里 —— 它们在
+          # assets/runtime/natives.zip 里，运行时解到私有目录加载，不受这条平台检查约束。
+          python3 - "$apk" <<'PY'
+          import struct, sys, zipfile
+          apk = sys.argv[1]
+          def load_aligns(data):
+              if data[:4] != b'\x7fELF':
+                  return []
+              phoff = struct.unpack_from('<Q', data, 0x20)[0]
+              phentsize = struct.unpack_from('<H', data, 0x36)[0]
+              phnum = struct.unpack_from('<H', data, 0x38)[0]
+              out = []
+              for i in range(phnum):
+                  off = phoff + i * phentsize
+                  if struct.unpack_from('<I', data, off)[0] == 1:      # PT_LOAD
+                      out.append(struct.unpack_from('<Q', data, off + 0x30)[0])
+              return out
+          bad = []
+          total = 0
+          with zipfile.ZipFile(apk) as z:
+              for name in z.namelist():
+                  if not (name.startswith('lib/') and name.endswith('.so')):
+                      continue
+                  total += 1
+                  aligns = load_aligns(z.read(name))
+                  if aligns and min(aligns) < 0x4000:
+                      bad.append((name, hex(min(aligns))))
+          print(f"lib/ 下 .so 共 {total} 个，PT_LOAD 对齐不足 16 KB 的：{len(bad)}")
+          for name, align in bad:
+              print(f"  {name}: p_align={align}")
+          if bad:
+              print("::error::有原生库不是 16 KB 页对齐；放进 lib/ 会被平台判为不符合 16 KB 要求。"
+                    "请把它移出 lib/（改走 assets/runtime/natives.zip + 运行时私有目录加载）。")
+              sys.exit(1)
+          PY
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
