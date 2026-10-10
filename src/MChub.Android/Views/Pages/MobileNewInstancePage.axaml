@@ -1,0 +1,178 @@
+<UserControl
+    x:Class="MChub.Mobile.Views.Pages.MobileNewInstancePage"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:fa="using:FluentAvalonia.UI.Controls"
+    xmlns:loc="using:MChub.Localization"
+    xmlns:vm="using:MChub.Mobile.ViewModels"
+    Background="{DynamicResource SolidBackgroundFillColorBaseBrush}">
+
+    <!-- 结构对齐 ZL2 的「下载 / 新建版本」：左侧是可搜索的版本列表，右侧是安装配置与动作。
+         移动端这里全程在本机下载安装，不依赖桌面端预先建好实例。 -->
+    <UserControl.Styles>
+        <Style Selector="Border.formCard">
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        </Style>
+
+        <Style Selector="TextBlock.formLabel">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid Margin="12" ColumnDefinitions="7*,3*">
+
+        <!-- ============ 左：版本列表 ============ -->
+        <Border Grid.Column="0" Classes="formCard" Margin="0,0,6,0">
+            <Grid RowDefinitions="Auto,Auto,Auto,*">
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_newVersion}}" />
+                    <Button
+                        x:Name="ReloadVersionsButton"
+                        Grid.Column="1"
+                        Padding="8,4"
+                        Click="ReloadVersions_OnClick">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <fa:FASymbolIcon FontSize="13" Symbol="Refresh" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_newVersionRetry}}" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <Grid
+                    Grid.Row="1"
+                    Margin="0,10,0,0"
+                    ColumnDefinitions="*,Auto"
+                    ColumnSpacing="10">
+                    <TextBox x:Name="VersionSearch" TextChanged="VersionSearch_OnTextChanged" />
+                    <CheckBox
+                        x:Name="ShowAllVersions"
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        IsCheckedChanged="ShowAllVersions_OnChanged" />
+                </Grid>
+
+                <TextBlock
+                    x:Name="IntroText"
+                    Grid.Row="2"
+                    Margin="0,8,0,0"
+                    Classes="formLabel"
+                    FontSize="11"
+                    TextWrapping="Wrap" />
+
+                <Grid Grid.Row="3" Margin="0,8,0,0">
+                    <ListBox
+                        x:Name="VersionList"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        SelectionChanged="VersionList_OnSelectionChanged">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MobileVersionOption">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <TextBlock
+                                        FontSize="13"
+                                        TextTrimming="CharacterEllipsis"
+                                        Text="{Binding Id}" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontSize="11"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                        Text="{Binding TypeLabel}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <TextBlock
+                        x:Name="VersionEmptyHint"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        IsVisible="False"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- ============ 右：安装配置 ============ -->
+        <ScrollViewer
+            Grid.Column="1"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="6,0,0,0" Spacing="12">
+
+                <Border Classes="formCard">
+                    <StackPanel Spacing="8">
+                        <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_newLoader}}" />
+                        <ComboBox
+                            x:Name="LoaderCombo"
+                            HorizontalAlignment="Stretch"
+                            SelectionChanged="LoaderCombo_OnSelectionChanged" />
+                        <TextBlock
+                            x:Name="LoaderHintText"
+                            Classes="formLabel"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="LoaderVersionCard" Classes="formCard">
+                    <StackPanel Spacing="8">
+                        <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_newLoaderVersion}}" />
+                        <ComboBox
+                            x:Name="LoaderVersionCombo"
+                            HorizontalAlignment="Stretch"
+                            SelectionChanged="LoaderVersionCombo_OnSelectionChanged" />
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="formCard">
+                    <StackPanel Spacing="8">
+                        <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_newInstanceName}}" />
+                        <TextBox x:Name="InstanceIdBox" TextChanged="InstanceIdBox_OnTextChanged" />
+                    </StackPanel>
+                </Border>
+
+                <Button
+                    x:Name="InstallButton"
+                    Classes="accent"
+                    Height="48"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Click="Install_OnClick">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <fa:FASymbolIcon FontSize="16" Symbol="Download" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_newInstall}}" />
+                    </StackPanel>
+                </Button>
+
+                <ProgressBar
+                    x:Name="InstallProgress"
+                    Height="4"
+                    IsVisible="False"
+                    Minimum="0"
+                    Maximum="1" />
+
+                <TextBlock
+                    x:Name="StatusText"
+                    FontSize="12"
+                    TextWrapping="Wrap"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

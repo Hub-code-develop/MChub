@@ -232,6 +232,20 @@
                     FontSize="12"
                     TextWrapping="Wrap"
                     Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+
+                <!-- 本机安装入口：设备上直接下载安装新实例，不需要桌面端先建好。 -->
+                <Button
+                    x:Name="NewInstanceButton"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Click="NewInstance_OnClick">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <fa:FASymbolIcon FontSize="14" Symbol="Add" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherNewInstance}}" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </ScrollViewer>
     </Grid>

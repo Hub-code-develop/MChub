@@ -130,7 +130,7 @@ internal static class MobileRuntimeInstaller
 
         // 解压器需要可随机访问的文件，先把 asset 落到私有临时文件再解。
         var temp = Path.Combine(Path.GetTempPath(),
-            $"jre{majorVersion}-{MobileRuntimeCatalog.Abi}.tar.xz");
+            $"jre{majorVersion}-{MobileRuntimeCatalog.JreAbi}.tar.xz");
         try
         {
             await CopyAssetToFileAsync(assetPath, temp, cancellationToken);
@@ -319,7 +319,7 @@ internal static class MobileRuntimeInstaller
         IProgress<MobileInstallProgress>? progress = null, CancellationToken cancellationToken = default)
     {
         var majorVersion = MobileRuntimeCatalog.NormalizeRuntimeMajor(requiredMajorVersion);
-        var archiveName = $"jre{majorVersion}-android-{MobileRuntimeCatalog.Abi}.tar.xz";
+        var archiveName = $"jre{majorVersion}-android-{MobileRuntimeCatalog.JreAbi}.tar.xz";
 
         progress?.Report(new MobileInstallProgress($"下载 Java {majorVersion} 运行时…", 0));
 

@@ -59,6 +59,15 @@
     <ItemGroup>
         <AndroidNativeLibrary Include="Native\out\arm64-v8a\libmchubjvm.so"
                               Condition="Exists('Native\out\arm64-v8a\libmchubjvm.so')"/>
+
+        <!-- 移动端自带的「java 命令」（Forge / NeoForge / OptiFine 的安装处理器要靠它跑）。
+             它是**可执行文件**，不是共享库：
+               * 不能进启动期 JNI 预加载 —— 否则 linker 会把它当动态库 dlopen 并报「不是共享库」；
+               * 放在 lib/<abi>/ 是 Android 上唯一既允许 execve 又受系统保护的位置
+                 （应用私有目录自 targetSdk 29 起禁止 execve）。
+             execve 不受「不做 JNI 预加载」影响，两者互不干扰。 -->
+        <AndroidNativeLibraryNoJniPreload Include="Native\out\arm64-v8a\libmchubjava.so"
+                                          Condition="Exists('Native\out\arm64-v8a\libmchubjava.so')"/>
     </ItemGroup>
 
     <!--

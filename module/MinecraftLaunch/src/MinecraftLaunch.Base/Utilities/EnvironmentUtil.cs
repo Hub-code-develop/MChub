@@ -21,7 +21,26 @@ public static class EnvironmentUtil {
     public static bool IsWindow
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
+    /// <summary>
+    /// 是否运行在 Android 上。
+    ///
+    /// <p><b>必须单独判断</b>：Android 的 RID 是 <c>android-arm64</c>，OS 报告为 android，
+    /// 因此 <c>RuntimeInformation.IsOSPlatform(OSPlatform.Linux)</c> 返回 <b>false</b>。
+    /// 不判它就落到 <see cref="GetPlatformName"/> 末尾的 throw —— 在设备上表现为安装到
+    /// 「下载库」这一步直接失败：<c>NotSupportedException: Specified method is not supported.</c>
+    /// （MinecraftEntry.IsLibraryEnabled → GetPlatformName，实测踩过）。</p>
+    /// </summary>
+    public static bool IsAndroid
+        => OperatingSystem.IsAndroid();
+
     public static string GetPlatformName() {
+        if (IsAndroid) {
+            // 按 linux 归类：MC 的库规则（rules.os.name）与原生分类器只有 windows/linux/osx 三档，
+            // 没有 android。取 linux 变体最接近 —— 而且运行时真正用的是移动端补丁版 LWJGL
+            // （见 MobileLaunchPlanBuilder），这里只影响「下载哪些依赖 / 按 .so 解压」。
+            return "linux";
+        }
+
         if (IsMac) {
             return "osx";
         } else if (IsLinux) {

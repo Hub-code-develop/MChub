@@ -33,6 +33,16 @@ internal static class MobileRuntimeCatalog
     /// <summary>本项目只发 arm64（csproj 的 RuntimeIdentifiers=android-arm64）。</summary>
     public const string Abi = "arm64-v8a";
 
+    /// <summary>
+    /// JRE 归档（直链与 APK 内预置路径）用的 ABI 名。
+    ///
+    /// <p><b>= <c>arm64</c>，不是 <c>arm64-v8a</c></b>：上游
+    /// AngelAuraMC/angelauramc-openjdk-build 的资产名就叫
+    /// <c>jre21-android-arm64.tar.xz</c>（沿用 JDK 的 arch 名，不是 Android 的 ABI 名）。
+    /// 这里写错会同时踩两个坑：① 预置资产探测不到 → 回落到联网下载；② 直链 404（实测踩过）。</p>
+    /// </summary>
+    public const string JreAbi = "arm64";
+
     /// <summary>LWJGL 版本：与移动端补丁 jar 的版本号一一对应。</summary>
     public const string LwjglVersion = "3.3.3";
 
@@ -67,7 +77,7 @@ internal static class MobileRuntimeCatalog
 
     /// <summary>JRE 归档的候选直链（arm64）。</summary>
     public static IReadOnlyList<string> GetRuntimeUrls(int majorVersion)
-        => [$"{JreReleaseBase}/download_jre{majorVersion}/jre{majorVersion}-android-{Abi}.tar.xz"];
+        => [$"{JreReleaseBase}/download_jre{majorVersion}/jre{majorVersion}-android-{JreAbi}.tar.xz"];
 
     /// <summary>
     /// 原生库归档（AAR）。Amethyst 的 AAR 内部布局是

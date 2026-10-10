@@ -129,7 +129,9 @@ jobs:
           unzip -l "$apk" | grep -E 'lib/arm64-v8a/.*\.so' | awk '{print $4}' | sed 's|.*/||' | sort
           echo "=== assets/runtime ==="
           unzip -l "$apk" | grep -E 'assets/runtime/' | awk '{print $4}'
-          for must in assets/runtime/natives.zip \
+          for must in lib/arm64-v8a/libmchubjvm.so \
+                      lib/arm64-v8a/libmchubjava.so \
+                      assets/runtime/natives.zip \
                       assets/runtime/manifest.json \
                       assets/runtime/lwjgl-natives/3.3.3.zip \
                       assets/runtime/lwjgl/3.3.3.zip; do

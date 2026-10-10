@@ -49,9 +49,14 @@ internal static class MobileRuntimePaths
     /// </summary>
     public const string BundledAssetRoot = "runtime";
 
-    /// <summary>预置 JRE 归档在 assets 里的相对路径。</summary>
+    /// <summary>
+    /// 预置 JRE 归档在 assets 里的相对路径。
+    ///
+    /// <p>ABI 名用 <see cref="MobileRuntimeCatalog.JreAbi"/>（<c>arm64</c>）而不是 <c>arm64-v8a</c> ——
+    /// 上游资产就叫这个名字，写错会「预置探测不到 + 直链 404」双踩。</p>
+    /// </summary>
     public static string BundledJreAssetPath(int majorVersion)
-        => $"{BundledAssetRoot}/jre/{majorVersion}/jre{majorVersion}-android-{MobileRuntimeCatalog.Abi}.tar.xz";
+        => $"{BundledAssetRoot}/jre/{majorVersion}/jre{majorVersion}-android-{MobileRuntimeCatalog.JreAbi}.tar.xz";
 
     /// <summary>
     /// 预置 LWJGL jar 归档（zip）在 assets 里的路径。

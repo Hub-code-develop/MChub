@@ -22,6 +22,9 @@ namespace MChub.Mobile.Views.Pages;
 /// </summary>
 public partial class MobileLauncherPage : UserControl
 {
+    /// <summary>用户点了「新建实例」——外壳负责切到新建页。</summary>
+    public event EventHandler? NewInstanceRequested;
+
     private readonly ObservableCollection<MobileInstanceEntry> _entries = [];
 
     /// <summary>当前实例（左侧卡片的选中项，右侧操作栏也读它）。</summary>
@@ -41,6 +44,12 @@ public partial class MobileLauncherPage : UserControl
     }
 
     private void Refresh_OnClick(object? sender, RoutedEventArgs e) => Refresh();
+
+    private void NewInstance_OnClick(object? sender, RoutedEventArgs e)
+        => NewInstanceRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>重新扫描实例（安装完 / 切回主页时由外壳调用）。</summary>
+    public void Reload() => Refresh();
 
     private void Refresh()
     {

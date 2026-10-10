@@ -52,17 +52,32 @@ echo "输出  : $BUILD_DIR/libmchubjvm.so"
 
 "$CMAKE" --build "$BUILD_DIR" -j "$JOBS"
 
-ls -l "$BUILD_DIR/libmchubjvm.so"
+ls -l "$BUILD_DIR/libmchubjvm.so" "$BUILD_DIR/libmchubjava.so"
 
-# 自检：必须 16 KB 段对齐（Android 15+ 对 lib/<abi>/ 下 .so 的硬要求；不达标装机弹「页面大小兼容模式」警告）。
+# 自检：两者都必须 16 KB 段对齐（Android 15+ 对 lib/<abi>/ 的硬要求；不达标装机弹「页面大小兼容模式」警告）。
 # CMakeLists 已显式加 -Wl,-z,max-page-size=16384，这里再验一次，免得换 NDK 时静默退化。
 READELF="$(ls -d "$NDK"/toolchains/llvm/prebuilt/*/bin/llvm-readelf 2>/dev/null | head -1 || true)"
 if [ -n "${READELF:-}" ] && [ -x "$READELF" ]; then
-  BAD="$("$READELF" -l "$BUILD_DIR/libmchubjvm.so" | awk '$1=="LOAD" && $NF!="0x4000"{print}')"
-  if [ -n "$BAD" ]; then
-    echo "✗ libmchubjvm.so 的 LOAD 段不是 16 KB 对齐（Android 15+ 会把 App 判为不符合要求）：" >&2
-    echo "$BAD" >&2
+  for binary in libmchubjvm.so libmchubjava.so; do
+    BAD="$("$READELF" -l "$BUILD_DIR/$binary" | awk '$1=="LOAD" && $NF!="0x4000"{print}')"
+    if [ -n "$BAD" ]; then
+      echo "✗ $binary 的 LOAD 段不是 16 KB 对齐（Android 15+ 会把 App 判为不符合要求）：" >&2
+      echo "$BAD" >&2
+      exit 1
+    fi
+    echo "对齐  : 16 KB ok（${binary}）"
+  done
+
+  # libmchubjava.so 必须仍是可执行文件（PIE）——被误编成共享库就没法 exec 了。
+  TYPE="$("$READELF" -h "$BUILD_DIR/libmchubjava.so" | awk '/Type:/{print $2}')"
+  if [ "$TYPE" != "DYN" ] && [ "$TYPE" != "EXEC" ]; then
+    echo "✗ libmchubjava.so 的类型是 $TYPE，不是可执行文件" >&2
     exit 1
   fi
-  echo "对齐  : 16 KB ok"
+  ENTRY="$("$READELF" -h "$BUILD_DIR/libmchubjava.so" | awk '/Entry point/{print $4}')"
+  if [ "$ENTRY" = "0x0" ]; then
+    echo "✗ libmchubjava.so 没有入口点，无法作为可执行文件拉起" >&2
+    exit 1
+  fi
+  echo "入口  : ${ENTRY}（libmchubjava.so 可执行）"
 fi

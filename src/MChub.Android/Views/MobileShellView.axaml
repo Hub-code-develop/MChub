@@ -54,6 +54,20 @@
                     </Button>
 
                     <Button
+                        x:Name="NewInstanceNavButton"
+                        Classes="railItem"
+                        Click="NewInstanceNav_OnClick">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <fa:FASymbolIcon x:Name="NewInstanceNavIcon" Symbol="Add" FontSize="16" />
+                            <TextBlock
+                                x:Name="NewInstanceNavLabel"
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_navNewInstance}}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button
                         x:Name="SettingsNavButton"
                         Classes="railItem"
                         Click="SettingsNav_OnClick">
