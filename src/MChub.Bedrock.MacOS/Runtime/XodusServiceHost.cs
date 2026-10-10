@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Sockets;
 
 namespace MChub.Bedrock.MacOS;
 
@@ -20,16 +21,42 @@ public sealed class XodusServiceHost : IAsyncDisposable
     /// <summary>本类启动的服务是否仍在运行。</summary>
     public bool IsRunning => _process is { HasExited: false };
 
-    /// <summary>外部是否已有服务在监听 socket。</summary>
+    /// <summary>socket 文件是否存在(不代表背后还有服务活着)。</summary>
     public static bool SocketExists() => File.Exists(SocketPath);
 
     /// <summary>
-    /// 启动服务并等待 socket 就绪。若 socket 已存在(例如另一个实例已拉起服务)则直接返回。
+    /// socket 背后是否真有服务在监听。服务被强杀时 socket 文件会残留下来,
+    /// 只判断文件存在会把这种残留误认成"服务已在运行",于是永远不再拉起服务,
+    /// 游戏侧便一直报 <c>Could not load Xodus's service socket.</c>。
+    /// </summary>
+    public static bool IsSocketAlive()
+    {
+        if (!SocketExists())
+            return false;
+
+        using var probe = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+        try
+        {
+            // 无监听者时立刻返回 ECONNREFUSED / ENOENT,不需要额外超时。
+            probe.Connect(new UnixDomainSocketEndPoint(SocketPath));
+            return true;
+        }
+        catch (SocketException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 启动服务并等待 socket 就绪。若已有服务在监听(例如另一个实例已拉起)则直接返回;
+    /// 若只剩残留 socket 文件,则先清理再拉起服务。
     /// </summary>
     public async Task StartAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        if (SocketExists())
+        if (IsSocketAlive())
             return;
+
+        TryDeleteSocket();
 
         if (!File.Exists(_binaryPath))
             throw new FileNotFoundException($"未找到 xodus-service:{_binaryPath}", _binaryPath);
