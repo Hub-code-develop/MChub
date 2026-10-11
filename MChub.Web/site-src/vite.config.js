@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-// GitHub Pages 部署在子路径 /MChub/ 下，base 必须指到它，否则资源 404
+// 站点使用独立子域 mchub.code.hub-develop.top 挂在根路径 / 下，base 用 '/'
 export default defineConfig({
-  base: '/MChub/',
+  base: '/',
   plugins: [vue()],
   build: {
     outDir: 'dist',
