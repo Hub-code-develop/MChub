@@ -63,7 +63,7 @@
     "settingsRuntimeImporting": "正在解压运行时…",
     "settingsRuntimeImported": "运行时已导入：Java {0}",
     "settingsRuntimeImportFailed": "导入失败：{0}",
-    "settingsRuntimeNativeMissing": "原生启动层未随本安装包提供（libmchubjvm.so 缺失）",
+    "settingsRuntimeNativeMissing": "运行时原生库未安装（libpojavexec 等缺失）",
     "settingsInstallAll": "一键安装（Java 运行时 + 运行组件）",
     "settingsInstallDone": "安装完成，可以启动了",
     "settingsRuntimeComponentsMissing": "运行组件未安装",

@@ -63,7 +63,7 @@
     "settingsRuntimeImporting": "Extracting runtime…",
     "settingsRuntimeImported": "Runtime imported: Java {0}",
     "settingsRuntimeImportFailed": "Import failed: {0}",
-    "settingsRuntimeNativeMissing": "The native launch layer is missing from this build (libmchubjvm.so)",
+    "settingsRuntimeNativeMissing": "Runtime native libraries are not installed (libpojavexec etc. missing)",
     "settingsInstallAll": "Install everything (Java runtime + components)",
     "settingsInstallDone": "Installed — ready to launch",
     "settingsRuntimeComponentsMissing": "Runtime components not installed",
