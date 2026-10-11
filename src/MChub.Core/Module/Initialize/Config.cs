@@ -86,6 +86,14 @@ public class Config
             Data.ConfigEntry.UpdateSource = UpdateSource.Github;
         }
 
+        // 反序列化出来的「当前账户」是**另一个对象**（JSON 里连账户副本一起存了），
+        // 跟 MinecraftAccounts 集合里的那个不是同一个引用。引用比较（== / ReferenceEquals / ListBox 选中）
+        // 会全部失配 —— 表现为「重开应用后当前账户掉选」。这里按值归一化回集合里的那个实例。
+        if (Data.ConfigEntry.UsingMinecraftMinecraftAccount is { } selectedMinecraftAccount)
+            Data.ConfigEntry.UsingMinecraftMinecraftAccount = Data.ConfigEntry.MinecraftAccounts
+                .FirstOrDefault(account => account.Equals(selectedMinecraftAccount));
+        Data.ConfigEntry.UsingMinecraftMinecraftAccount ??= Data.ConfigEntry.MinecraftAccounts.FirstOrDefault();
+
         if (Data.ConfigEntry.UsingBedrockAccount is { } selectedBedrockAccount)
             Data.ConfigEntry.UsingBedrockAccount = Data.ConfigEntry.BedrockAccounts
                 .FirstOrDefault(account =>
