@@ -338,6 +338,20 @@ jobs:
           echo '${{ needs.prepare.outputs.version_json }}' > ./assets/conf/version-ci.txt
           echo 'app' > ./assets/conf/package-type.txt
 
+      - name: Download Bedrock native components
+        uses: actions/download-artifact@v7
+        with:
+          name: mcbe-macos-native-components
+          path: .native-components
+
+      - name: Install Bedrock native components
+        run: |
+          # MacOS 工程把这两个 DLL 内嵌为 EmbeddedResource(BundleApp 时读取),
+          # 必须在构建 App 之前就位;否则内嵌的仍是仓库里陈旧的 Portal 构建产物。
+          cp .native-components/MChub.Preload.dll ./src/MChub.Bedrock.Preload/MChub.Preload.dll
+          cp .native-components/MChub.Bootstrap.dll ./src/MChub.Bedrock.Bootstrap/MChub.Bootstrap.dll
+          ls -l ./src/MChub.Bedrock.Preload/MChub.Preload.dll ./src/MChub.Bedrock.Bootstrap/MChub.Bootstrap.dll
+
       - name: Build macOS App
         run: |
           cd ./src/MChub.Desktop

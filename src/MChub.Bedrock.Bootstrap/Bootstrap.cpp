@@ -27,7 +27,7 @@ namespace
             }
         }
 
-        const wchar_t suffix[] = L"config\\Portal\\logs\\bootstrap.log";
+        const wchar_t suffix[] = L"config\\MChub\\logs\\bootstrap.log";
         if (wcslen(modulePath) + wcslen(suffix) >= MAX_PATH)
             return;
         wcscat_s(modulePath, suffix);

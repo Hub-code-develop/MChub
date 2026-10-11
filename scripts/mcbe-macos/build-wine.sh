@@ -86,6 +86,38 @@ echo "HEAD: $(git -C "$SRC" rev-parse HEAD)"
 # 该文件本不属于 gameinput.dll，构建前移除。
 rm -f "$SRC/dlls/gameinput/padinput.c"
 
+# 上游 xgameruntime 的 QueryApiImpl 只实现了 XSystem / XGameRuntimeFeature /
+# XSystemAnalytics / XNetworking / XThreading,XUser 落到兜底分支返回 E_NOTIMPL。
+# 基岩版启动早期就会 QueryApiImpl(CLSID_XUserImpl),拿不到接口时其 C++ 侧抛未处理
+# 异常并 abort(退出码 3),表现为账户未登录时闪退。private.h 已声明
+# `extern IXUserImpl *x_user;`(定义于 GDKComponent/System/XUser.cpp),补一个分支
+# 直接返回它即可:未登录时该实现的各方法返回 E_NOTIMPL,但足以让游戏继续启动到
+# 窗口出现,从而满足"未登录也允许启动"。
+log "补丁:QueryApiImpl 支持 CLSID_XUserImpl(免登录启动)"
+python3 - "$SRC/dlls/xgameruntime/main.c" <<'PYEOF'
+import sys
+
+path = sys.argv[1]
+anchor = """    else if ( IsEqualGUID( runtimeClassId, &CLSID_XNetworkingImpl ) )
+    {
+        return IXNetworkingImpl_QueryInterface( x_networking, interfaceId, out );
+    }
+"""
+addition = """    else if ( IsEqualGUID( runtimeClassId, &CLSID_XUserImpl ) )
+    {
+        return IXUserImpl_QueryInterface( x_user, interfaceId, out );
+    }
+"""
+src = open(path).read()
+if "CLSID_XUserImpl" in src:
+    print("main.c 已含 XUser 分支,跳过")
+elif anchor not in src:
+    sys.exit("未找到 XNetworking 分支锚点,无法为 QueryApiImpl 打 XUser 补丁")
+else:
+    open(path, "w").write(src.replace(anchor, anchor + addition, 1))
+    print("已为 QueryApiImpl 补上 CLSID_XUserImpl 分支")
+PYEOF
+
 log "生成 configure / Makefile / spec"
 cd "$SRC"
 ./tools/make_requests

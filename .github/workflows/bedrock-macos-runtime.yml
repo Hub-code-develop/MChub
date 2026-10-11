@@ -5,6 +5,9 @@ name: bedrock-macos-runtime
 #   xodus/      —— 原生 xodus-service,负责 MSA/XSTS/许可,监听 /tmp/xodus.sock
 #   render/     —— MoltenVK、DXVK、vkd3d-proton,以及 Wine 运行期需要的 Vulkan loader / FreeType
 #   winappsdk/  —— WinAppSDK 引导器桩(替换实例内那个在 Wine 下必然失败的 Bootstrap DLL)
+#   native-components/ —— MChub.Preload.dll / MChub.Bootstrap.dll 的新鲜构建(Windows x64),
+#                    作为独立工件 mcbe-macos-native-components 上传,供 mac-dmg 在 BundleApp
+#                    之前回填,替换仓库里陈旧的 Portal 品牌产物。
 #   vulkan-loader/ —— 自建 Khronos Vulkan loader(brew 无 macOS Intel bottle)。
 #                    构建 Wine 时要先下载它,configure 的 vulkan 检测是 -lvulkan 链接检查;
 #                    汇总时再并入 render/lib,供运行期 dlopen。
@@ -97,6 +100,55 @@ jobs:
           path: artifacts/runtime/winappsdk
           if-no-files-found: error
 
+  native-components:
+    name: native components (MChub.Preload / MChub.Bootstrap, windows x64)
+    runs-on: windows-latest
+    steps:
+      # 基座库 CodeHub-FluentUI 发布在 GitHub Packages。该源即使包是公开的也要求认证
+      # （实测匿名请求服务索引与包下载均 401），所以每个会还原的作业都要先配好凭据。
+      # 显式指定 bash：Windows runner 默认 PowerShell，续行符 \ 会被判为语法错误，
+      # 因此这里写成单行，三种系统下行为一致。
+      - name: Configure NuGet (GitHub Packages)
+        shell: bash
+        run: |-
+          dotnet nuget add source "https://nuget.pkg.github.com/hub-code-develop/index.json" --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name codehub-gh
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: "recursive"
+
+      # 仓库里提交的 MChub.Preload.dll / MChub.Bootstrap.dll 是早期 Portal 品牌的手工构建产物,
+      # 会被 MChub.Bedrock.MacOS 内嵌并在 Wine 下部署到实例目录,导致运行日志/目录仍显示 Portal。
+      # 这里从当前源码重建,并由 mac-dmg 在 BundleApp 之前回填到工程目录。
+      - name: 构建 MChub.Preload(NativeAOT win-x64 共享库)
+        shell: pwsh
+        run: |
+          dotnet publish src/MChub.Bedrock.Preload/MChub.Bedrock.Preload.csproj -c Release
+
+      - name: 添加 MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: 构建 MChub.Bootstrap(MSVC x64)
+        shell: pwsh
+        run: |
+          msbuild src/MChub.Bedrock.Bootstrap/MChub.Bedrock.Bootstrap.vcxproj /p:Configuration=Release /p:Platform=x64 /m
+
+      - name: 汇总产物
+        shell: bash
+        run: |
+          mkdir -p artifacts/runtime/native-components
+          cp src/MChub.Bedrock.Preload/MChub.Preload.dll artifacts/runtime/native-components/
+          cp src/MChub.Bedrock.Bootstrap/MChub.Bootstrap.dll artifacts/runtime/native-components/
+          ls -l artifacts/runtime/native-components
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v7
+        with:
+          name: mcbe-macos-native-components
+          path: artifacts/runtime/native-components
+          if-no-files-found: error
+
   vulkan-loader:
     name: Vulkan loader (macOS x86_64, 自建)
     runs-on: macos-15-intel
@@ -143,7 +195,10 @@ jobs:
           path: artifacts/runtime/wine
           # v3:Wine 需带 Vulkan 支持(configure 的 -lvulkan 链接检查),且构建时
           # 额外传入了 VULKAN_LOADER_DIR;旧缓存产物不含 Vulkan,必须重编。
-          key: wine-gdk-${{ env.WINE_GDK_REF }}-${{ runner.os }}-${{ runner.arch }}-v3
+          # v4:build-wine.sh 为 xgameruntime 的 QueryApiImpl 补了 CLSID_XUserImpl 分支
+          # (未登录账户启动时游戏要 QueryApiImpl(CLSID_XUserImpl),否则 abort 退出码 3);
+          # 旧缓存不含该补丁,必须重编。
+          key: wine-gdk-${{ env.WINE_GDK_REF }}-${{ runner.os }}-${{ runner.arch }}-v4
 
       - name: 构建 Wine(WineGDK,x86_64)
         if: steps.wine-cache.outputs.cache-hit != 'true'
