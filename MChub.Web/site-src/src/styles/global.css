@@ -1,7 +1,27 @@
 /* ============================================================
-   全局样式 —— 完全复刻自 x-coder-ocs/website，仅去掉阿里妈妈字体
-   （仓库里没有字体文件，回退到系统字体栈）
+   全局样式 —— 复刻自 x-coder-ocs/website
+   字体：阿里妈妈方圆体（AlimamaFangYuanTi），与桌面端 MChub 一致，
+        字体文件见 public/fonts/，由 @font-face 注入；
+        系统字体栈仅作回退（字体未加载完成 / 极老浏览器）
    ============================================================ */
+
+/* ---- 阿里妈妈方圆体：Regular(400) / Bold(700) ---- */
+@font-face {
+  font-family: 'AlimamaFangYuanTi';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/AlimamaFangYuanTi-Regular.woff2') format('woff2'),
+       url('/fonts/AlimamaFangYuanTi-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'AlimamaFangYuanTi';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/AlimamaFangYuanTi-Bold.woff2') format('woff2'),
+       url('/fonts/AlimamaFangYuanTi-Bold.ttf') format('truetype');
+}
 
 :root {
   /* 一个"像素"字符的格子尺寸 —— 本项目未用像素画，保留与参考一致 */
@@ -45,7 +65,7 @@ body {
   background-size: var(--grid-size) var(--grid-size);
   background-attachment: fixed;
   color: var(--text);
-  font-family: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'AlimamaFangYuanTi', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
