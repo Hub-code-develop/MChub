@@ -32,6 +32,27 @@ public final class JREUtils {
     /** 让 exit hook 拿到应用 Context（用于在游戏退出时做收尾而不是直接杀进程）。 */
     public static native void setupExitMethod(android.content.Context context);
 
+    /**
+     * 把 Android 的 {@code Surface} 交给 native 的窗口桥 —— **渲染的关键一步**。
+     *
+     * <p>游戏 JVM 里的 GLFW stub 调 {@code glfwCreateWindow/glfwMakeContextCurrent} 时，
+     * native 侧用的就是这里传进来的 Surface 去建 EGLSurface（GL 上下文由 libglxshim +
+     * GL 翻译层在 JVM 内建）。所以必须在 {@code VMLauncher.launchJVM} **之前**、
+     * SurfaceHolder 已经 surfaceCreated 之后调用。</p>
+     *
+     * @param surface {@code android.view.Surface}
+     */
+    public static native void setupBridgeWindow(Object surface);
+
+    /** 释放窗口桥（游戏退出 / Surface 销毁时调用，不看住会留悬挂引用）。 */
+    public static native void releaseBridgeWindow();
+
+    /** AWT（Caciocavallo）路径下的窗口桥，与 {@link #setupBridgeWindow} 配套。 */
+    public static native void setupBridgeSurfaceAWT(Object surface);
+
+    /** 以子进程方式执行一个可执行文件（Forge 系安装处理器会用到）。 */
+    public static native int executeBinary(String[] args);
+
     /** native 层是否已装载（{@link #loadNativeLayer} 幂等）。 */
     private static boolean nativeLayerLoaded;
 
@@ -43,9 +64,22 @@ public final class JREUtils {
      * 不能放 {@code lib/} 的原因见 {@code MobileRuntimePaths.BundledNativesArchivePath}：
      * 上游预编译产物的 ELF 段对齐是 4 KB，平台会判定不符合 16 KB 要求并强制「页面大小兼容模式」。</p>
      *
-     * <p><b>加载顺序</b>：共同依赖（libc++_shared）→ libbytehook（libpojavexec 与
-     * libandroidnsbypass 都依赖它）→ libexithook → libpojavexec → libpojavexec_awt。
-     * linker 按 SONAME 复用已载入的库，所以先把依赖载进来，后面 dlopen 绝对路径才找得到。</p>
+     * <p><b>顺序必须满足 DT_NEEDED 的偏序</b>（实测每个库的 NEEDED，见下）。
+     * 私有目录不在 linker 的搜索路径里，所以「按名字找依赖」必然失败：
+     * {@code dlopen failed: library "libpojavexec.so" not found: needed by libexithook.so}。
+     * 唯一可行的是**先把被依赖的那个按绝对路径装载**，之后 linker 会在已装载表里按 SONAME 复用。</p>
+     *
+     * <pre>
+     *   libc++_shared.so       → 仅系统库
+     *   libbytehook.so         → 仅系统库
+     *   libandroidnsbypass.so  → libc++_shared
+     *   libpojavexec.so        → libandroidnsbypass
+     *   libexithook.so         → libbytehook + libpojavexec
+     *   libpojavexec_awt.so    → 仅系统库
+     * </pre>
+     *
+     * <p>注意 {@code setLdLibraryPath}（属于 libpojavexec）只能等它装载之后才能调，
+     * 所以这里没法靠改 linker 搜索路径来偷懒 —— 顺序是唯一解。</p>
      *
      * @param nativeLibraryDirectory 运行时原生库所在目录（应用私有目录）
      */
@@ -56,8 +90,9 @@ public final class JREUtils {
 
         load(sharedLibrary(nativeLibraryDirectory, "libc++_shared.so"));
         load(sharedLibrary(nativeLibraryDirectory, "libbytehook.so"));
-        load(sharedLibrary(nativeLibraryDirectory, "libexithook.so"));
+        load(sharedLibrary(nativeLibraryDirectory, "libandroidnsbypass.so"));
         load(sharedLibrary(nativeLibraryDirectory, "libpojavexec.so"));
+        load(sharedLibrary(nativeLibraryDirectory, "libexithook.so"));
         load(sharedLibrary(nativeLibraryDirectory, "libpojavexec_awt.so"));
 
         nativeLayerLoaded = true;

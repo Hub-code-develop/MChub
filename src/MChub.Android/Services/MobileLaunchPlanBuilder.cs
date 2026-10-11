@@ -86,26 +86,41 @@ internal static partial class MobileLaunchPlanBuilder
     private static partial Regex LwjglVersionRegex();
 
     /// <summary>
-    /// 找出实例实际使用的 LWJGL 版本对应的原生库目录（由预置资产按版本解出）。
-    /// 没有匹配版本时返回 null，调用方退回公共 native 目录。
+    /// 找出该实例该用哪一份预置 LWJGL 原生库目录。
+    ///
+    /// <para>不能只看 classpath 里的第一个版本号：原版 1.20.1 的版本 JSON 里是 LWJGL <b>3.3.1</b>，
+    /// 而我们预置的是 3.3.3 / 3.4.1。第一个匹配必然指向一个不存在的目录，
+    /// 结果就是 <c>java.library.path</c> 里没有 Android 版 <c>liblwjgl.so</c>，
+    /// 游戏跑到 <c>org.lwjgl.system.Library.loadSystem</c> 时直接
+    /// 「Failed to locate library: liblwjgl.so」。</para>
+    ///
+    /// <para>所以：把 classpath 里所有版本号都收集起来，取第一个**目录真的存在**的；
+    /// 都不存在时退回我们确实随包发出去的那一版（{@link MobileRuntimeCatalog.LwjglVersion}）。</para>
     /// </summary>
     private static string? ResolveLwjglNativesDirectory(IReadOnlyList<string> jvmArguments)
     {
+        var requested = new List<string>();
+
         foreach (var argument in jvmArguments)
         {
             if (!argument.StartsWith("-Djava.class.path=", StringComparison.Ordinal))
                 continue;
 
-            var match = LwjglVersionRegex().Match(argument);
-            if (!match.Success)
-                continue;
+            foreach (System.Text.RegularExpressions.Match match in LwjglVersionRegex().Matches(argument))
+                requested.Add(match.Groups[1].Value);
+        }
 
-            var directory = MobileRuntimePaths.LwjglNativesDirectoryFor(match.Groups[1].Value);
+        foreach (var version in requested)
+        {
+            var directory = MobileRuntimePaths.LwjglNativesDirectoryFor(version);
             if (Directory.Exists(directory))
                 return directory;
         }
 
-        return null;
+        // 实例用的版本我们没预置（原版 1.20.1 就是这种情况）→ 改用随包发的那一版：
+        // classpath 里已经被我们换成同一版的 jar（见 ApplyMobileRuntime），两边必须一致。
+        var bundled = MobileRuntimePaths.LwjglNativesDirectoryFor(MobileRuntimeCatalog.LwjglVersion);
+        return Directory.Exists(bundled) ? bundled : null;
     }
 
     private static IReadOnlyList<string> ApplyMobileRuntime(IReadOnlyList<string> jvmArguments)
@@ -115,7 +130,7 @@ internal static partial class MobileLaunchPlanBuilder
         // library path 顺序 = 优先级：
         //   1) 实例所用 LWJGL 版本对应的原生库（3.3.3 / 3.4.1 同名 .so 各放一处，必须选对）
         //   2) 运行时原生库的**私有目录**（随 APK 以 assets/runtime/natives.zip 预置，首次启动解到这里）
-        //   3) APK 的 lib/ 目录（现在只剩我们自己编的 libmchubjvm.so，留作兜底）
+        //   3) APK 的 lib/ 目录（现在只剩 libmchubjava.so，留作兜底）
         // 为什么不把运行时库放 lib/：平台会做 16 KB 页对齐检查，上游预编译产物是 4 KB 对齐
         // （见 MobileRuntimePaths.BundledNativesArchivePath）。
         var candidateDirectories = new List<string>(3);
@@ -152,8 +167,12 @@ internal static partial class MobileLaunchPlanBuilder
 
             if (hasLibraries && argument.StartsWith("-Djava.library.path=", StringComparison.Ordinal))
             {
-                // 桌面端那份 natives 目录仍保留（老版本会用到其中的 java 侧原生库），只在其后追加。
-                result.Add(argument + Path.PathSeparator + libraryDirectory);
+                // 必须**前置**：实例目录里的 meta/natives 是安装器从版本 JSON 的
+                // *-natives-linux.jar 解出来的 **x86_64 Linux** 库，同名（liblwjgl.so 等）
+                // 且排在前面的话，LWJGL 会先命中它们然后加载失败。Android 版放最前，
+                // 桌面那份留在后面（老版本可能还要用其中的纯 java 侧原生库）。
+                result.Add("-Djava.library.path=" + libraryDirectory
+                           + Path.PathSeparator + argument["-Djava.library.path=".Length..]);
                 libraryPathApplied = true;
                 continue;
             }

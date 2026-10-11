@@ -32,7 +32,10 @@ public final class PojavRuntimeSupport {
 
     /** 准备结果。{@code failure} 非空即失败，界面要如实展示，不要静默继续。 */
     public static final class Result {
+        /** 设进环境变量 LD_LIBRARY_PATH 的值（**不含** lib/server，见 prepare 里的说明）。 */
         public String ldLibraryPath;
+        /** 交给 linker（setLdLibraryPath）的值，在 ldLibraryPath 前面加了 lib/server。 */
+        public String linkerPath;
         public String renderLibrary;
         public String failure;
 
@@ -61,6 +64,9 @@ public final class PojavRuntimeSupport {
 
             Context context = currentApplicationContext();
 
+            // 0) 把进程的 stdout / stderr 接到一份日志文件上（见 beginGameLog 的说明）。
+            beginGameLog(context);
+
             // 1) 环境变量：JVM 侧与 native 侧都会读
             Os.setenv("POJAV_NATIVEDIR", nativeLibDir, true);
             Os.setenv("JAVA_HOME", runtimeDir, true);
@@ -74,17 +80,42 @@ public final class PojavRuntimeSupport {
             Os.setenv("LIBGL_NOINTOVLHACK", "1", true);
             Os.setenv("LIBGL_NORMALIZE", "1", true);
             Os.setenv("LIBGL_ES", "3", true);
+            // FORCE_VSYNC 同样被裸 strcmp：egl_bridge.c 的 pojavInitOpenGL() 里
+            //     if (strcmp(getenv("FORCE_VSYNC"), "true") == 0)
+            // 不设就是 strcmp(NULL, "true") → 又一次 SIGSEGV（就在 AMETHYST_RENDERER 之后的下一步）。
+            Os.setenv("FORCE_VSYNC", "true", true);
+            // Mesa（zink 后端）的着色器缓存目录，换后端时不必再回来改代码。
+            if (context != null) {
+                Os.setenv("MESA_GLSL_CACHE_DIR", context.getCacheDir().getAbsolutePath(), true);
+            }
 
-            // 2) LD_LIBRARY_PATH：JRE 的 lib + jli + server，再补上应用原生库目录
-            String ldLibraryPath = jreLibDir + ":"
-                    + jreLibDir + "/jli:"
-                    + jreLibDir + "/server:"
+            // 2) LD_LIBRARY_PATH。
+            //
+            // ⚠ 这里有两个路径，**绝不能混为一谈**（踩过一次，代价极大）：
+            //
+            //   * 环境变量 LD_LIBRARY_PATH —— 给「别人看的」，比如 JLI 自己；
+            //   * linker 内部搜索路径（setLdLibraryPath）—— 给 dlopen 用的。
+            //
+            // OpenJDK 的 java_md.c 里 RequiresSetenv() 会读**环境变量**判断要不要「重新 exec 自己」：
+            //   LD_LIBRARY_PATH 里只要出现含 lib/server（或 lib/client）且那里真有 libjvm.so 的路径，
+            //   且它又不是以 libjvm 所在目录开头，JLI 就会 putenv 后 execve($JAVA_HOME/bin/java)。
+            // Android 上应用私有目录**禁止 execve**，于是直接：
+            //     Permission denied
+            //     Error: trying to exec /data/user/0/<pkg>/files/Runtimes/Java/17/bin/java.
+            //   游戏连主类都没跑到就退出了。
+            //
+            // 所以：环境变量里**不放 server 目录**（与上游 Amethyst 的 relocateLibPath 一致），
+            // 只在 linker 搜索路径里放 —— dlopen("libjvm.so") 能命中，JLI 又不会想重开自己。
+            String ldLibraryPath = jreLibDir + "/jli:"
+                    + jreLibDir + ":"
                     + nativeLibDir;
-            result.ldLibraryPath = ldLibraryPath;
             Os.setenv("LD_LIBRARY_PATH", ldLibraryPath, true);
+            result.ldLibraryPath = ldLibraryPath;
 
-            // 3) 让 linker 真的认这条路径（只有 native 侧能调这个私有接口）
-            JREUtils.setLdLibraryPath(ldLibraryPath);
+            // 3) 给 linker 的路径：server 目录在最前（libjvm.so / libjsig.so 在这里）
+            String linkerPath = jreLibDir + "/server:" + ldLibraryPath;
+            result.linkerPath = linkerPath;
+            JREUtils.setLdLibraryPath(linkerPath);
 
             // 4) hook：exit 拦截（否则游戏退出会直接带走进程）、dlopen/chmod 补丁
             if (context != null) {
@@ -121,11 +152,54 @@ public final class PojavRuntimeSupport {
             // 7) 工作目录 —— 游戏必须在实例目录下启动
             JREUtils.chdir(gameDir);
 
-            Log.i(TAG, "运行环境就绪：ld=" + ldLibraryPath + " renderer=" + result.renderLibrary);
+            Log.i(TAG, "运行环境就绪：env ld=" + ldLibraryPath + " | linker=" + result.linkerPath
+                    + " | renderer=" + result.renderLibrary);
         } catch (Throwable error) {
             result.failure = "准备运行环境失败：" + error;
         }
         return result;
+    }
+
+    /**
+     * 把进程的 stdout / stderr 接到一份日志文件上。
+     *
+     * <p><b>为什么不用上游的 {@code Logger.begin}</b>：它内部是「dup2 到管道 + 一个 native 线程读管道
+     * 再写文件」。进程被 {@code abort()} 掉的那一刻，管道里最后一段（恰恰是崩溃原因）来不及被
+     * 搬到文件里就丢了。我们要的就是崩溃现场，所以直接 dup2 到文件，写入是同步的。</p>
+     *
+     * <p>{@code JLI_Launch}、JVM 的初始化报错、游戏主类、GL 翻译层的输出全走 stdout/stderr，
+     * 不接这一下就只能看到「退出码 1」。</p>
+     */
+    private static void beginGameLog(Context context) {
+        if (context == null) {
+            Log.w(TAG, "拿不到 Context，跳过日志重定向（游戏输出只会进 logcat）");
+            return;
+        }
+
+        try {
+            File logs = new File(context.getFilesDir(), "Logs");
+            if (!logs.isDirectory() && !logs.mkdirs()) {
+                Log.w(TAG, "日志目录建不出来：" + logs);
+                return;
+            }
+
+            File latest = new File(logs, "minecraft-latest.log");
+            java.io.FileDescriptor descriptor = Os.open(
+                    latest.getAbsolutePath(),
+                    android.system.OsConstants.O_WRONLY
+                            | android.system.OsConstants.O_CREAT
+                            | android.system.OsConstants.O_TRUNC,
+                    0600);
+
+            // 1 = stdout，2 = stderr；此后进程里所有原生 fprintf 与 System.out/err 都落到这个文件。
+            Os.dup2(descriptor, 1);
+            Os.dup2(descriptor, 2);
+            Os.close(descriptor);
+
+            Log.i(TAG, "游戏输出重定向到：" + latest.getAbsolutePath());
+        } catch (Throwable error) {
+            Log.w(TAG, "启用游戏日志失败：" + error);
+        }
     }
 
     /**
@@ -135,6 +209,18 @@ public final class PojavRuntimeSupport {
      */
     private static String loadGraphicsLibrary(Context context, String nativeLibDir, String renderer) {
         String selected = renderer == null || renderer.isEmpty() ? DEFAULT_RENDERER : renderer;
+
+        // ⚠ AMETHYST_RENDERER 必须设，而且 native 侧**不做空指针判断**：
+        //   egl_bridge.c 的 pojavSetWindowHint() 里是
+        //       const char *renderer = getenv("AMETHYST_RENDERER");
+        //       if (strncmp(renderer, "opengles", 8) == 0) ...
+        //   glfwInit 一进来就 strncmp(NULL, ...) → SIGSEGV（si_addr=0），
+        //   堆栈是 pojavInit → glfwInit → GLX._initGlfw，极难从 Java 侧看出来。
+        try {
+            Os.setenv("AMETHYST_RENDERER", selected, true);
+        } catch (Throwable error) {
+            Log.w(TAG, "设置 AMETHYST_RENDERER 失败：" + error);
+        }
 
         if ("opengles_mobileglues".equals(selected)) {
             try {

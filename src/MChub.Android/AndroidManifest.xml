@@ -9,10 +9,21 @@
   <uses-feature android:glEsVersion="0x00030000" android:required="true" />
   <uses-feature android:name="android.hardware.gamepad" android:required="false" />
 
-  <!-- extractNativeLibs 必须为 true：游戏运行时需要从 APK 解出 libjvm.so 等原生库再加载。 -->
+  <!-- extractNativeLibs 必须为 true：游戏运行时需要从 APK 解出 libjvm.so 等原生库再加载。
+
+       allowNativeHeapPointerTagging="false" 是**必须**的，不是可选项：
+       Android 11 起 64 位进程默认开启 native 堆指针标记（TBI，把 tag 写进指针最高字节），
+       Bionic 在 free() 时会校验这个 tag。OpenJDK 的 native 代码会把元数据放在指针高位，
+       于是第二个 JVM 一启动就死：
+           F libc : Pointer tag for 0x... was truncated, see .../tagged-pointers
+           Abort message: 'Pointer tag for ... was truncated.'   → SIGABRT
+       而且现场**没有任何 JVM 崩溃报告**（abort 来自 libc，不是 JVM 的 crash handler），极难定位。
+       官方给的逃生开关就是这个属性（source.android.com/docs/security/test/tagged-pointers），
+       上游 Amethyst 同样关着它。等 MTE 普及后这个开关会消失，届时只能从 OpenJDK 侧解决。 -->
   <application
       android:label="MChub"
       android:icon="@drawable/mchub_icon"
       android:hardwareAccelerated="true"
+      android:allowNativeHeapPointerTagging="false"
       android:extractNativeLibs="true" />
 </manifest>

@@ -104,8 +104,8 @@ internal static class MobileRuntimePaths
     /// <summary>
     /// 系统为本应用解压原生库的目录（=<c>ApplicationInfo.nativeLibraryDir</c>）。
     ///
-    /// <p><b>现在这里只有我们自己编的 <c>libmchubjvm.so</c></b> —— 移动端运行时那批
-    /// 上游原生库已经改走 assets（见 <see cref="BundledNativesArchivePath"/>），
+    /// <p>现在这里只有我们自己编的 <c>libmchubjava.so</c>（移动端的「java 命令」）——
+    /// 移动端运行时那批上游原生库已经改走 assets（见 <see cref="BundledNativesArchivePath"/>），
     /// 它们解在 <see cref="NativesLibraryDirectory"/>。</p>
     /// </summary>
     public static string NativeLibraryDirectory =>

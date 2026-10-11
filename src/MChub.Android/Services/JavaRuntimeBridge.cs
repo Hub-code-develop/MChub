@@ -86,7 +86,12 @@ internal static class JavaRuntimeBridge
         }
     }
 
-    /// <summary>native 启动层（libmchubjvm.so）是否已随 APK 打包并可加载。</summary>
+    /// <summary>
+    /// 本次会话是否已经成功装载过运行时原生层（libpojavexec 等）。
+    ///
+    /// <para>装载发生在启动游戏的那一刻（见 JREUtils.loadNativeLayer），所以启动之前它一直是
+    /// false —— 「能不能启动」的判据请用 MobileRuntimeInstaller.AreNativesInstalled。</para>
+    /// </summary>
     public static bool IsNativeLayerLoaded()
     {
         if (!TryEnsureClass(out _))
@@ -137,13 +142,36 @@ internal static class JavaRuntimeBridge
     }
 
     /// <summary>
+    /// 把 Application Context 交给 Java 侧（hub.code.mchub.runtime.AndroidBridge）。
+    ///
+    /// <para>java 侧的 org.lwjgl.glfw.CallbackBridge 要向游戏回传剪贴板内容与屏幕 DPI，
+    /// 而它只能通过 JNI 符号被调用、拿不到托管对象，所以必须提前把 Context 存到 Java 静态字段里。</para>
+    ///
+    /// <para>失败不致命（只影响剪贴板/DPI），因此只记日志、不把 Java 后端标记为不可用。</para>
+    /// </summary>
+    public static void AttachApplicationContext(Android.Content.Context context)
+    {
+        try
+        {
+            Hub.Code.Mchub.Runtime.AndroidBridge.Attach(context);
+        }
+        catch (Exception exception)
+        {
+            System.Diagnostics.Debug.WriteLine($"登记 Application Context 失败：{exception.Message}");
+        }
+    }
+
+    /// <summary>
     /// 启动游戏。参数由 C# 侧依据版本 JSON 组装（与桌面端同一套逻辑）。
     /// </summary>
-    /// <param name="nativeLibDir">应用原生库目录（ApplicationInfo.nativeLibraryDir）：
-    /// Java/native 侧靠它找 libpojavexec、GL 翻译层与 libopenal。</param>
+    /// <param name="nativeLibDir">运行时原生库目录（应用私有目录）：Java/native 侧靠它找
+    /// libpojavexec、GL 翻译层与 libopenal。</param>
+    /// <param name="surface">已经 surfaceCreated 的 <see cref="Android.Views.Surface"/>：
+    /// 游戏 JVM 的第一次 glfwCreateWindow 会拿它建 EGLSurface，所以必须在启动前给进去。</param>
     /// <param name="exitCode">成功调用时 Java 侧返回的退出码；调用失败时为 -1。</param>
     public static bool TryLaunch(string runtimeDir, string mainClass, string[] jvmArgs, string[] gameArgs,
-        string gameDir, string nativeLibDir, out int exitCode, out string? failure)
+        string gameDir, string nativeLibDir, Android.Views.Surface surface,
+        out int exitCode, out string? failure)
     {
         exitCode = -1;
 
@@ -152,7 +180,8 @@ internal static class JavaRuntimeBridge
 
         try
         {
-            exitCode = LauncherBridge.Launch(runtimeDir, mainClass, jvmArgs, gameArgs, gameDir, nativeLibDir);
+            exitCode = LauncherBridge.Launch(runtimeDir, mainClass, jvmArgs, gameArgs, gameDir,
+                nativeLibDir, surface);
             failure = null;
             return true;
         }

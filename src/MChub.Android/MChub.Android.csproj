@@ -55,10 +55,8 @@
         <AndroidJavaSource Include="Java\**\*.java"/>
     </ItemGroup>
 
-    <!-- native 启动层产物：存在就随 APK 打进 lib/arm64-v8a/，不存在则跳过（界面仍可用，只如实提示未接入）。 -->
+    <!-- native 产物：存在就随 APK 打进 lib/arm64-v8a/，不存在则跳过（界面仍可用，只如实提示未接入）。 -->
     <ItemGroup>
-        <AndroidNativeLibrary Include="Native\out\arm64-v8a\libmchubjvm.so"
-                              Condition="Exists('Native\out\arm64-v8a\libmchubjvm.so')"/>
 
         <!-- 移动端自带的「java 命令」（Forge / NeoForge / OptiFine 的安装处理器要靠它跑）。
              它是**可执行文件**，不是共享库：

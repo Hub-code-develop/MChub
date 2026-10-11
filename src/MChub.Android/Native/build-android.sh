@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 用本机 Android NDK 构建 native 启动层 libmchubjvm.so。
+# 用本机 Android NDK 构建移动端自带的「java 命令」libmchubjava.so。
 #
 # 用法：
 #   ./build-android.sh                # 默认 arm64-v8a
@@ -42,7 +42,7 @@ JOBS="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)"
 
 echo "NDK   : $NDK"
 echo "ABI   : $ABI (android-$API)"
-echo "输出  : $BUILD_DIR/libmchubjvm.so"
+echo "输出  : $BUILD_DIR/libmchubjava.so"
 
 "$CMAKE" -S "$HERE" -B "$BUILD_DIR" \
   -DCMAKE_TOOLCHAIN_FILE="$NDK/build/cmake/android.toolchain.cmake" \
@@ -52,13 +52,13 @@ echo "输出  : $BUILD_DIR/libmchubjvm.so"
 
 "$CMAKE" --build "$BUILD_DIR" -j "$JOBS"
 
-ls -l "$BUILD_DIR/libmchubjvm.so" "$BUILD_DIR/libmchubjava.so"
+ls -l "$BUILD_DIR/libmchubjava.so"
 
-# 自检：两者都必须 16 KB 段对齐（Android 15+ 对 lib/<abi>/ 的硬要求；不达标装机弹「页面大小兼容模式」警告）。
+# 自检：必须 16 KB 段对齐（Android 15+ 对 lib/<abi>/ 的硬要求；不达标装机弹「页面大小兼容模式」警告）。
 # CMakeLists 已显式加 -Wl,-z,max-page-size=16384，这里再验一次，免得换 NDK 时静默退化。
 READELF="$(ls -d "$NDK"/toolchains/llvm/prebuilt/*/bin/llvm-readelf 2>/dev/null | head -1 || true)"
 if [ -n "${READELF:-}" ] && [ -x "$READELF" ]; then
-  for binary in libmchubjvm.so libmchubjava.so; do
+  for binary in libmchubjava.so; do
     BAD="$("$READELF" -l "$BUILD_DIR/$binary" | awk '$1=="LOAD" && $NF!="0x4000"{print}')"
     if [ -n "$BAD" ]; then
       echo "✗ $binary 的 LOAD 段不是 16 KB 对齐（Android 15+ 会把 App 判为不符合要求）：" >&2

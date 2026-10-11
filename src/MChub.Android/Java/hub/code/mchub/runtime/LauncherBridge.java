@@ -106,17 +106,19 @@ public final class LauncherBridge {
      * 启动游戏。
      *
      * @param runtimeDir 运行时根目录
-     * @param mainClass  启动主类（由 C# 侧依据版本 JSON 解析，例如 {@code cpw.mods.bootstraplauncher.BootstrapLauncher}）
-     * @param jvmArgs    JVM 参数（含 {@code -Xmx}、{@code -Djava.library.path} 等，由 C# 侧组装）
+     * @param mainClass  启动主类（由 C# 侧依据版本 JSON 解析，例如 {@code net.minecraft.client.main.Main}）
+     * @param jvmArgs    JVM 参数（含 {@code -Xmx}、{@code -Djava.library.path}、{@code -cp} 等，由 C# 侧组装）
      * @param gameArgs   游戏参数（{@code --username} 等）
      * @param gameDir    实例工作目录
-     * @param nativeLibDir 应用原生库目录（{@code ApplicationInfo.nativeLibraryDir}），
-     *                    native 侧要靠它找 libpojavexec / GL 翻译层 / libopenal
+     * @param nativeLibDir 运行时原生库目录（应用私有目录），native 侧要靠它找
+     *                    libpojavexec / GL 翻译层 / libopenal
+     * @param surface    {@code android.view.Surface}（必须是已经 surfaceCreated 的那个），
+     *                   交 native 建 EGLSurface 用；传 null 会启动失败（没有渲染目标）
      * @return {@code 0} 表示游戏正常退出；非 0 由调用方展示 {@link #takeLastError()}。
      */
     public static int launch(String runtimeDir, String mainClass, String[] jvmArgs, String[] gameArgs,
-                             String gameDir, String nativeLibDir) {
-        if (NativeJvmLoader.isGameRunning()) {
+                             String gameDir, String nativeLibDir, Object surface) {
+        if (GameRuntimeState.isGameRunning()) {
             return fail("已有游戏进程在运行");
         }
 
@@ -134,6 +136,10 @@ public final class LauncherBridge {
 
         if (isBlank(nativeLibDir)) {
             return fail("缺少原生库目录（nativeLibDir）");
+        }
+
+        if (surface == null) {
+            return fail("没有可用的渲染 Surface（界面还没准备好就把启动按钮按下去了）");
         }
 
         List<String> jvm = new ArrayList<>();
@@ -154,54 +160,121 @@ public final class LauncherBridge {
             }
         }
 
+        String absoluteGameDir = new File(gameDir).getAbsolutePath();
+
+        GameRuntimeState.notifyGameStarting();
+
         try {
             // 0) 先把 native 层从私有目录装载进来（这些库不再进 APK 的 lib/，见 JREUtils.loadNativeLayer）。
+            //    这一步会跑 libpojavexec.so 的 JNI_OnLoad：它 FindClass org/lwjgl/glfw/CallbackBridge
+            //    并 RegisterNatives 输入入口 —— 类缺了或方法签名不对，这里就会 SIGABRT。
             JREUtils.loadNativeLayer(nativeLibDir);
+            GameRuntimeState.notifyNativeLayerLoaded();
 
-            // 创建 JVM 之前必须先按 Pojav 的顺序准备好运行环境：
-            // env → LD_LIBRARY_PATH（含 linker 私有接口）→ hook → JRE 内部库 dlopen → GL 层 → chdir。
-            // 少了这步，JVM 即使建起来，MC 一碰 java.awt / 网络 / 音频就会缺库。
+            // 1) 环境：env → LD_LIBRARY_PATH（含 linker 私有接口）→ hook → JRE 内部库 dlopen → GL 层 → chdir。
             PojavRuntimeSupport.Result prepared = PojavRuntimeSupport.prepare(
-                    runtimeDir, nativeLibDir, new File(gameDir).getAbsolutePath(), null);
+                    runtimeDir, nativeLibDir, absoluteGameDir, null);
             if (!prepared.ok()) {
                 return fail(prepared.failure);
             }
 
-            int exitCode = nativeLaunch(runtimeDir, mainClass,
-                    jvm.toArray(new String[0]), game.toArray(new String[0]),
-                    new File(gameDir).getAbsolutePath());
+            // 2) 把 Surface 交给 native 窗口桥，顺序上紧贴 JVM 创建：游戏第一次
+            //    glfwCreateWindow 就要用它建 EGLSurface（GL 翻译层的环境变量上一步已设好）。
+            JREUtils.setupBridgeWindow(surface);
+
+            // 3) 告诉 LWJGL「桌面 GL 库」其实是我们的 GL 翻译层。
+            //
+            //    否则 org.lwjgl.opengl.GL 的类初始化会去 dlopen 桌面 Linux 的 libGLX.so.0，直接
+            //      java.lang.UnsatisfiedLinkError: Failed to locate library: libGLX.so.0
+            //      at org.lwjgl.opengl.GL.create(GL.java:101)
+            //      at org.lwjgl.glfw.GLFW.glfwCreateWindow(...)
+            //    —— 崩在创建窗口那一步，看着像 GLFW 的问题，其实是 GL 库名字不对。
+            //    上游 Amethyst 也是在 launchJavaVM 里加这一条（-Dorg.lwjgl.opengl.libname=<renderer>）。
+            //    这里用 prepare() 实际装载成功的那一个，保证「说加载谁」和「真加载谁」一致。
+            List<String> effectiveJvm = new ArrayList<>(jvm);
+            if (prepared.renderLibrary != null
+                    && !containsProperty(effectiveJvm, "-Dorg.lwjgl.opengl.libname=")) {
+                effectiveJvm.add("-Dorg.lwjgl.opengl.libname=" + prepared.renderLibrary);
+            }
+
+            // 4) 组装成与 `java <args>` 完全一样的 argv，交给 libpojavexec 的 JLI_Launch 真正建 JVM。
+            //    argv[0] 是程序名；-Djava.home 必须显式给（JLI 靠它找 lib/server/libjvm.so，
+            //    在 Android 上它自己那套「从可执行文件路径推断 java.home」推断不出来）。
+            List<String> argv = new ArrayList<>(effectiveJvm.size() + game.size() + 3);
+            argv.add("java");
+            if (!containsJavaHome(effectiveJvm)) {
+                argv.add("-Djava.home=" + runtimeDir);
+            }
+            argv.addAll(effectiveJvm);
+            argv.add(mainClass);
+            argv.addAll(game);
+
+            int exitCode = com.oracle.dalvik.VMLauncher.launchJVM(argv.toArray(new String[0]));
             if (exitCode != 0) {
-                // 原生层拿到的 Java 异常文本（找不到主类 / 主类抛异常）比"退出码 1"有用得多。
-                String nativeReason = NativeJvmLoader.takeNativeError();
-                lastError = nativeReason != null
-                        ? nativeReason
+                lastError = lastError != null
+                        ? lastError
                         : "游戏进程以退出码 " + exitCode + " 结束";
             }
             return exitCode;
         } catch (UnsatisfiedLinkError error) {
             return fail("装载移动端原生库失败：" + error.getMessage());
-        } catch (Exception exception) {
-            return fail("启动游戏失败：" + exception);
+        } catch (Throwable error) {
+            return fail("启动游戏失败：" + error);
+        } finally {
+            // 无论怎么退出都要把窗口桥摘掉，否则下次启动会拿着一个已经销毁的 Surface。
+            // 只在 native 层确实装载成功时调：否则这个 native 方法本身就会抛 UnsatisfiedLinkError。
+            if (GameRuntimeState.isNativeLayerLoaded()) {
+                try {
+                    JREUtils.releaseBridgeWindow();
+                } catch (Throwable error) {
+                    android.util.Log.w("MChubRuntime", "释放窗口桥失败: " + error);
+                }
+            }
+            GameRuntimeState.notifyGameStopped();
         }
     }
 
-    /** 原生启动层（libmchubjvm.so）是否已随 APK 打包并可加载。 */
+    /** 参数表里是否已经带了某个 -D 属性（带 = 前缀精确比较属性名）。 */
+    private static boolean containsProperty(List<String> jvmArgs, String propertyPrefix) {
+        for (String argument : jvmArgs) {
+            if (argument.startsWith(propertyPrefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean containsJavaHome(List<String> jvmArgs) {
+        for (String argument : jvmArgs) {
+            if (argument.startsWith("-Djava.home=")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 移动端原生层（libpojavexec 等运行时库）是否已装载成功。 */
     public static boolean isNativeLayerLoaded() {
-        return NativeJvmLoader.isLibraryLoaded();
+        return GameRuntimeState.isNativeLayerLoaded();
     }
 
     /** 是否有游戏进程在运行。 */
     public static boolean isRunning() {
-        return NativeJvmLoader.isGameRunning();
+        return GameRuntimeState.isGameRunning();
     }
 
     /** 请求停止当前游戏进程。 */
     public static void abort() {
-        NativeJvmLoader.requestAbort();
+        // 第二个 JVM 在 native 里跑着 JLI_Launch，停它只能靠 System.exit —— 由 exit hook 兜住，
+        // 让请求变成「结束 JVM」而不是「杀掉我们的进程」。
+        GameRuntimeState.requestAbort();
         try {
-            nativeAbort();
-        } catch (UnsatisfiedLinkError ignored) {
-            // 原生层未接入：仅置位中止标记，由调用方按 IsRunning 继续观察。
+            Class<?> systemClass = Class.forName("java.lang.System");
+            systemClass.getMethod("exit", int.class).invoke(null, 0);
+        } catch (Throwable error) {
+            // 第二个 JVM 可能还没建起来（或已经退出了）：只置位即可，调用方按 IsRunning 观察。
+            // 这里的日志也不能硬用 Logger（它也是 native 方法，native 层没装载时同样会抛）。
+            android.util.Log.w("MChubRuntime", "请求停止时未能调用 System.exit: " + error);
         }
     }
 
@@ -212,26 +285,15 @@ public final class LauncherBridge {
         return message;
     }
 
-    /**
-     * native 入口：加载运行时里的 libjvm.so、创建 JVM、再反射调用主类的
-     * {@code main(String[])} 运行游戏。
-     *
-     * <p><b>为什么 JVM 参数与游戏参数要分开传</b>：{@code JNI_CreateJavaVM} 只吃
-     * {@code JavaVMOption[]}（即 JVM 参数），而 {@code --username} 这类是给主类 {@code main}
-     * 的实参。两者混在一个数组里 native 侧无法区分，会把游戏参数当成 JVM 选项而创建失败。</p>
-     *
-     * @param runtimeDir 运行时根目录（含 libjvm.so）
-     * @param mainClass  启动主类
-     * @param jvmArgs    JVM 参数（含 {@code -cp}、{@code -Djava.library.path}、{@code -Xmx} 等）
-     * @param gameArgs   传给主类 main 的实参
-     * @param gameDir    实例工作目录（作为进程工作目录）
-     * @return 进程退出码
-     */
-    private static native int nativeLaunch(String runtimeDir, String mainClass, String[] jvmArgs,
-                                           String[] gameArgs, String gameDir);
+    /** native 侧（exit hook / 启动失败路径）回调：记录失败原因。 */
+    public static void reportError(String message) {
+        lastError = message;
+    }
 
-    /** native 入口：请求结束当前游戏（调用 {@code System.exit}）。 */
-    private static native void nativeAbort();
+    /** native 侧回调：JVM 已经起来、游戏主类开始跑。 */
+    public static void notifyGameStarted() {
+        GameRuntimeState.notifyGameStarted();
+    }
 
     private static int fail(String message) {
         lastError = message;
@@ -242,6 +304,7 @@ public final class LauncherBridge {
         return value == null || value.trim().isEmpty();
     }
 
+    /** 去掉 release 文件里的首尾引号（JAVA_VERSION="17.0.9"）。 */
     private static String stripQuotes(String value) {
         String trimmed = value.trim();
         if (trimmed.length() >= 2 && trimmed.startsWith("\"") && trimmed.endsWith("\"")) {

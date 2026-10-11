@@ -32,9 +32,6 @@ internal static class MobileGameLauncher
         if (!JavaRuntimeBridge.IsAvailable)
             return JavaRuntimeBridge.UnavailableReason ?? "Java 后端不可用";
 
-        if (!JavaRuntimeBridge.IsNativeLayerLoaded())
-            return "原生启动层未随本安装包提供（libmchubjvm.so 缺失）";
-
         var requiredMajor = instance is null ? 0 : GetRequiredJavaMajorVersion(instance);
         if (instance is null)
         {
@@ -46,8 +43,10 @@ internal static class MobileGameLauncher
             return $"尚未安装 Java {requiredMajor} 运行时";
         }
 
+        // 注意：native 层是**启动时**才从私有目录装载的（见 JREUtils.loadNativeLayer），
+        // 所以这里不能查「本次会话装载过没有」，只能查运行组件是否齐备。
         if (!MobileRuntimeInstaller.AreNativesInstalled)
-            return "运行组件不完整（native 库或移动端 LWJGL 缺失），请用官方发行包或联网补齐";
+            return "运行组件不完整（运行时原生库或移动端 LWJGL 缺失），请用官方发行包或联网补齐";
 
         return null;
     }
@@ -55,7 +54,7 @@ internal static class MobileGameLauncher
     /// <summary>是否缺运行环境（缺了可以一键安装，与"原生层缺失"这类不可自愈的阻塞区分开）。</summary>
     public static bool NeedsInstall(MinecraftInstance? instance = null)
     {
-        if (!JavaRuntimeBridge.IsAvailable || !JavaRuntimeBridge.IsNativeLayerLoaded())
+        if (!JavaRuntimeBridge.IsAvailable)
             return false;
 
         var runtimeMissing = instance is null
@@ -125,24 +124,38 @@ internal static class MobileGameLauncher
 
         await AppendLaunchLogAsync(runtimeRoot, plan);
 
-        // 创建 JVM 并 CallStaticVoidMethod(main) 是同步阻塞调用，
-        // 会一直占到游戏退出，因此必须放到线程池，不能占住 UI 线程。
-        return await Task.Run(() =>
+        // 游戏要有块 Android Surface 才能画（glfwCreateWindow → native 建 EGLSurface）。
+        // 没有它，JVM 起来了也是一片全黑 —— 所以拿不到就如实失败，不硬着头皮往下走。
+        var surface = await MobileGameSurfaceHost.AcquireAsync(TimeSpan.FromSeconds(10));
+        if (surface is null)
+            return new MobileLaunchResult(false, -1, "拿不到可用的渲染 Surface（界面未就绪）");
+
+        try
         {
-            var invoked = JavaRuntimeBridge.TryLaunch(runtimeRoot, plan.MainClass,
-                plan.JvmArguments.ToArray(), plan.GameArguments.ToArray(), plan.GameDirectory,
-                // 运行时原生库目录（私有目录），不是 ApplicationInfo.nativeLibraryDir ——
-                // Java/native 侧靠它找 libpojavexec、GL 翻译层与 libopenal。
-                MobileRuntimePaths.NativesLibraryDirectory,
-                out var exitCode, out var failure);
+            // 创建 JVM 并跑主类是同步阻塞调用（JLI_Launch 会一直占到游戏退出），
+            // 因此必须放到线程池，不能占住 UI 线程。
+            return await Task.Run(() =>
+            {
+                var invoked = JavaRuntimeBridge.TryLaunch(runtimeRoot, plan.MainClass,
+                    plan.JvmArguments.ToArray(), plan.GameArguments.ToArray(), plan.GameDirectory,
+                    // 运行时原生库目录（私有目录），不是 ApplicationInfo.nativeLibraryDir ——
+                    // Java/native 侧靠它找 libpojavexec、GL 翻译层与 libopenal。
+                    MobileRuntimePaths.NativesLibraryDirectory, surface,
+                    out var exitCode, out var failure);
 
-            if (!invoked)
-                return new MobileLaunchResult(false, -1, failure ?? "调用启动接口失败");
+                if (!invoked)
+                    return new MobileLaunchResult(false, -1, failure ?? "调用启动接口失败");
 
-            // 调用成功但游戏可能自己崩了：此时 Java 侧会带回具体原因（原生层回传的异常文本）。
-            var gameError = JavaRuntimeBridge.TakeLastError();
-            return new MobileLaunchResult(true, exitCode, gameError);
-        }, cancellationToken);
+                // 调用成功但游戏可能自己崩了：此时 Java 侧会带回具体原因。
+                var gameError = JavaRuntimeBridge.TakeLastError();
+                return new MobileLaunchResult(true, exitCode, gameError);
+            }, cancellationToken);
+        }
+        finally
+        {
+            // 游戏视图必须摘掉，否则退出后屏幕还被 SurfaceView 占着、点不到启动器。
+            await MobileGameSurfaceHost.ReleaseAsync();
+        }
     }
 
     /// <summary>把这次启动的命令行落到日志文件（令牌脱敏）。</summary>

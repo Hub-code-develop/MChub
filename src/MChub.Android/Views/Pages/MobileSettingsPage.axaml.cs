@@ -77,9 +77,9 @@ public partial class MobileSettingsPage : UserControl
         var versions = string.Join(" / ",
             installed.Keys.OrderBy(major => major).Select(major => major.ToString()));
 
-        if (!JavaRuntimeBridge.IsNativeLayerLoaded())
+        if (!MobileRuntimeInstaller.AreNativesInstalled)
         {
-            // 运行时有了但原生层没打进包：界面可用，但启动必然失败，这里如实说明。
+            // 运行时有了但运行组件没装齐：界面可用，但启动必然失败，这里如实说明。
             RuntimeInfoBar.Severity = FAInfoBarSeverity.Warning;
             RuntimeInfoBar.Message = language.mobile_settingsRuntimeNativeMissing.CurrentValue() +
                                      " · " + string.Format(language.mobile_instancesRuntimeReady.CurrentValue(), versions);
