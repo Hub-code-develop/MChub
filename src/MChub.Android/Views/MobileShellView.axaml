@@ -68,6 +68,20 @@
                     </Button>
 
                     <Button
+                        x:Name="AccountNavButton"
+                        Classes="railItem"
+                        Click="AccountNav_OnClick">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <fa:FASymbolIcon x:Name="AccountNavIcon" Symbol="Contact" FontSize="16" />
+                            <TextBlock
+                                x:Name="AccountNavLabel"
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_navAccount}}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button
                         x:Name="SettingsNavButton"
                         Classes="railItem"
                         Click="SettingsNav_OnClick">

@@ -1,0 +1,280 @@
+<UserControl
+    x:Class="MChub.Mobile.Views.Pages.MobileAccountPage"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:fa="using:FluentAvalonia.UI.Controls"
+    xmlns:loc="using:MChub.Localization"
+    xmlns:vm="using:MChub.Mobile.ViewModels"
+    Background="{DynamicResource SolidBackgroundFillColorBaseBrush}">
+
+    <!-- 独立的账户页（不再塞在主页的浮层里）：
+         左 = 账户卡片网格（头像 + 名字 + 类型 + 当前标记 + 卡片内操作），
+         右 = 添加 / 重命名面板 + 微软账户说明。
+         底部默认收起一条确认条，删除账户时弹出，避免手机上没有右键菜单可退。 -->
+    <UserControl.Styles>
+        <Style Selector="Border.accountCard">
+            <Setter Property="Width" Value="268" />
+            <Setter Property="Margin" Value="5" />
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        </Style>
+
+        <Style Selector="Border.accountCard:pointerover">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorSecondaryBrush}" />
+        </Style>
+
+        <Style Selector="Border.accountCard.selected">
+            <Setter Property="Padding" Value="13" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+        </Style>
+
+        <Style Selector="Border.actionCard">
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        </Style>
+
+        <!-- 卡片上的小操作按钮：不抢视线，但点得着 -->
+        <Style Selector="Button.mini">
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <TextBlock
+            Grid.Row="0"
+            Margin="14,12,14,0"
+            FontSize="12"
+            TextWrapping="Wrap"
+            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+            Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_accountPageIntro}}" />
+
+        <Grid
+            Grid.Row="1"
+            Margin="12"
+            ColumnDefinitions="7*,3*">
+
+            <!-- ============ 左：账户卡片网格 ============ -->
+            <Grid Grid.Column="0">
+                <ScrollViewer
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+                    <ItemsControl x:Name="AccountGrid" Margin="0,0,6,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MobileAccountEntry">
+                                <!-- 点卡片 = 切换为当前账户 -->
+                                <Border
+                                    Classes="accountCard"
+                                    Classes.selected="{Binding IsCurrent}"
+                                    PointerPressed="AccountCard_OnPointerPressed">
+                                    <StackPanel Spacing="12">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border
+                                                Width="46"
+                                                Height="46"
+                                                CornerRadius="10"
+                                                ClipToBounds="True"
+                                                Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                                                <Image
+                                                    Width="46"
+                                                    Height="46"
+                                                    Source="{Binding Head}"
+                                                    Stretch="UniformToFill" />
+                                            </Border>
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Margin="12,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Spacing="3">
+                                                <TextBlock
+                                                    FontSize="15"
+                                                    FontWeight="SemiBold"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    Text="{Binding Name}" />
+                                                <TextBlock
+                                                    FontSize="12"
+                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    Text="{Binding Note}" />
+                                            </StackPanel>
+                                            <Border
+                                                Grid.Column="2"
+                                                Padding="8,3"
+                                                VerticalAlignment="Center"
+                                                Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                                CornerRadius="10"
+                                                IsVisible="{Binding IsCurrent}">
+                                                <TextBlock
+                                                    FontSize="11"
+                                                    Foreground="White"
+                                                    Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_accountCurrentBadge}}" />
+                                            </Border>
+                                        </Grid>
+
+                                        <StackPanel
+                                            HorizontalAlignment="Right"
+                                            Orientation="Horizontal"
+                                            Spacing="6">
+                                            <Button
+                                                Classes="mini"
+                                                Click="SetCurrent_OnClick"
+                                                Content="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_accountSetCurrent}}" />
+                                            <Button
+                                                Classes="mini"
+                                                Click="Rename_OnClick"
+                                                Content="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_accountRename}}"
+                                                IsVisible="{Binding IsOffline}" />
+                                            <Button
+                                                Classes="mini"
+                                                Click="Delete_OnClick"
+                                                Content="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_accountDelete}}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- 空状态：给一句「怎么开始」，别只留空白 -->
+                <StackPanel
+                    x:Name="EmptyState"
+                    Margin="24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="6">
+                    <fa:FASymbolIcon
+                        HorizontalAlignment="Center"
+                        FontSize="34"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Symbol="Contact" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_accountEmptyTitle}}" />
+                    <TextBlock
+                        MaxWidth="380"
+                        HorizontalAlignment="Center"
+                        FontSize="12"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_accountEmptyHint}}" />
+                </StackPanel>
+            </Grid>
+
+            <!-- ============ 右：添加 / 重命名 + 微软账户 ============ -->
+            <ScrollViewer
+                Grid.Column="1"
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="6,0,0,0" Spacing="12">
+
+                    <Border Classes="actionCard">
+                        <StackPanel Spacing="10">
+                            <TextBlock
+                                x:Name="EditorTitle"
+                                FontSize="15"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                FontSize="12"
+                                TextWrapping="Wrap"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_accountOfflineHint}}" />
+                            <TextBox
+                                x:Name="NameBox"
+                                MaxLength="16" />
+                            <StackPanel
+                                HorizontalAlignment="Right"
+                                Orientation="Horizontal"
+                                Spacing="8">
+                                <Button
+                                    x:Name="EditorCancelButton"
+                                    Click="EditorCancel_OnClick"
+                                    IsVisible="False" />
+                                <Button
+                                    x:Name="EditorSubmitButton"
+                                    Classes="accent"
+                                    Click="EditorSubmit_OnClick" />
+                            </StackPanel>
+                            <TextBlock
+                                x:Name="EditorStatus"
+                                FontSize="12"
+                                TextWrapping="Wrap"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="actionCard">
+                        <StackPanel Spacing="6">
+                            <TextBlock
+                                FontSize="15"
+                                FontWeight="SemiBold"
+                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_accountMicrosoftTitle}}" />
+                            <TextBlock
+                                FontSize="12"
+                                TextWrapping="Wrap"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_accountMicrosoftHint}}" />
+                            <Button
+                                HorizontalAlignment="Left"
+                                IsEnabled="False"
+                                Content="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_accountMicrosoftDisabled}}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ============ 删除确认（模态：暗底 + 居中，点空白处也当取消） ============ -->
+        <Border
+            x:Name="ConfirmOverlay"
+            Grid.Row="0"
+            Grid.RowSpan="2"
+            Background="#66000000"
+            IsVisible="False"
+            PointerPressed="ConfirmOverlay_OnPointerPressed">
+            <Border
+                Padding="18,14"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{DynamicResource SolidBackgroundFillColorTertiaryBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="10">
+                <StackPanel Spacing="14">
+                    <TextBlock
+                        x:Name="ConfirmText"
+                        FontSize="14"
+                        TextWrapping="Wrap" />
+                    <StackPanel
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            x:Name="ConfirmCancelButton"
+                            Click="ConfirmCancel_OnClick" />
+                        <Button
+                            x:Name="ConfirmDeleteButton"
+                            Classes="accent"
+                            Click="ConfirmDelete_OnClick" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</UserControl>

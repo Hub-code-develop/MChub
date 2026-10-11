@@ -7,6 +7,7 @@ using FluentAvalonia.UI.Controls;
 using MChub.Core.Const;
 using MChub.Core.Minecraft.Classes;
 using MChub.Core.Minecraft.Instance;
+using MChub.Core.Module.Initialize;
 using MChub.Localization;
 using MChub.Mobile.Services;
 using MChub.Mobile.ViewModels;
@@ -25,6 +26,9 @@ public partial class MobileLauncherPage : UserControl
     /// <summary>用户点了「新建实例」——外壳负责切到新建页。</summary>
     public event EventHandler? NewInstanceRequested;
 
+    /// <summary>用户点了账户卡——外壳负责切到账户页。</summary>
+    public event EventHandler? AccountRequested;
+
     private readonly ObservableCollection<MobileInstanceEntry> _entries = [];
 
     /// <summary>当前实例（左侧卡片的选中项，右侧操作栏也读它）。</summary>
@@ -38,7 +42,7 @@ public partial class MobileLauncherPage : UserControl
     public MobileLauncherPage()
     {
         InitializeComponent();
-        AccountText.Text = Data.ConfigEntry.CurrentAccountDisplay;
+        UpdateAccountCard();
         InstanceGrid.ItemsSource = _entries;
         Refresh();
     }
@@ -49,7 +53,24 @@ public partial class MobileLauncherPage : UserControl
         => NewInstanceRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>重新扫描实例（安装完 / 切回主页时由外壳调用）。</summary>
-    public void Reload() => Refresh();
+    public void Reload()
+    {
+        // 账户可能刚在账户页被加 / 切 / 删过，回来的这一下顺手刷新账户卡。
+        UpdateAccountCard();
+        Refresh();
+    }
+
+    /// <summary>账户卡上的当前账户（头像 + 显示名）。</summary>
+    private void UpdateAccountCard()
+    {
+        var account = Data.ConfigEntry.UsingMinecraftMinecraftAccount;
+        AccountText.Text = Data.ConfigEntry.CurrentAccountDisplay;
+        AccountAvatar.Source = account?.Head;
+    }
+
+    // 账户的增删改切换都在独立的账户页（MobileAccountPage），这里只做跳转。
+    private void AccountCard_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+        => AccountRequested?.Invoke(this, EventArgs.Empty);
 
     private void Refresh()
     {

@@ -9,7 +9,8 @@
 
     <!-- 布局对齐 ZL2 的 LauncherScreen（横屏两列）：
          左 7 成 = 内容区（ZL2 是卡片网格 → 这里是实例卡片网格，卡里带启动按钮）；
-         右 3 成 = 操作栏（ZL2 是 ActionMenu：皮肤预览 → 账户卡 → 版本卡；MChub 落成 账户卡 → 当前实例卡 → 启动按钮）。 -->
+         右 3 成 = 操作栏（ZL2 是 ActionMenu：皮肤预览 → 账户卡 → 版本卡；MChub 落成 账户卡 → 当前实例卡 → 启动按钮）。
+         账户卡只负责「显示当前账户 + 跳到账户页」，账户的增删改切换都在那边（见 MobileAccountPage）。 -->
     <UserControl.Styles>
         <!-- 实例卡片：ZL2 卡片外观（圆角 + 卡片底色 + 选中强调描边）。
              Padding 在选中时少 1px，让 2px 描边不会把内容挤动。 -->
@@ -43,210 +44,221 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid Margin="12" ColumnDefinitions="7*,3*">
+    <Grid>
+        <Grid Margin="12" ColumnDefinitions="7*,3*">
 
-        <!-- ============ 左：实例卡片网格 ============ -->
-        <Grid Grid.Column="0">
-            <ScrollViewer
-                HorizontalScrollBarVisibility="Disabled"
-                VerticalScrollBarVisibility="Auto">
-                <ItemsControl x:Name="InstanceGrid" Margin="0,0,6,0">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:MobileInstanceEntry">
-                            <!-- 点卡片 = 切换「当前实例」（ZL2 的卡片点击语义） -->
-                            <Border
-                                Classes="instanceCard"
-                                Classes.selected="{Binding IsCurrent}"
-                                PointerPressed="InstanceCard_OnPointerPressed">
-                                <StackPanel Spacing="12">
-                                    <Grid ColumnDefinitions="Auto,*">
-                                        <Border
-                                            Width="42"
-                                            Height="42"
-                                            CornerRadius="8"
-                                            ClipToBounds="True">
-                                            <Image
+            <!-- ============ 左：实例卡片网格 ============ -->
+            <Grid Grid.Column="0">
+                <ScrollViewer
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+                    <ItemsControl x:Name="InstanceGrid" Margin="0,0,6,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MobileInstanceEntry">
+                                <!-- 点卡片 = 切换「当前实例」（ZL2 的卡片点击语义） -->
+                                <Border
+                                    Classes="instanceCard"
+                                    Classes.selected="{Binding IsCurrent}"
+                                    PointerPressed="InstanceCard_OnPointerPressed">
+                                    <StackPanel Spacing="12">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Border
                                                 Width="42"
                                                 Height="42"
-                                                Source="{Binding Icon}"
-                                                Stretch="UniformToFill" />
-                                        </Border>
-                                        <StackPanel
-                                            Grid.Column="1"
-                                            Margin="12,0,0,0"
-                                            VerticalAlignment="Center"
-                                            Spacing="3">
-                                            <TextBlock
-                                                FontSize="15"
-                                                FontWeight="SemiBold"
-                                                TextTrimming="CharacterEllipsis"
-                                                Text="{Binding InstanceName}" />
-                                            <TextBlock
-                                                FontSize="12"
-                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                TextTrimming="CharacterEllipsis"
-                                                Text="{Binding ShortDisplay}" />
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <Button
-                                        Classes="accent"
-                                        HorizontalAlignment="Stretch"
-                                        HorizontalContentAlignment="Center"
-                                        Click="LaunchInstance_OnClick">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <fa:FASymbolIcon FontSize="14" Symbol="Play" />
-                                            <TextBlock
+                                                CornerRadius="8"
+                                                ClipToBounds="True">
+                                                <Image
+                                                    Width="42"
+                                                    Height="42"
+                                                    Source="{Binding Icon}"
+                                                    Stretch="UniformToFill" />
+                                            </Border>
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Margin="12,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_instancesLaunch}}" />
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+                                                Spacing="3">
+                                                <TextBlock
+                                                    FontSize="15"
+                                                    FontWeight="SemiBold"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    Text="{Binding InstanceName}" />
+                                                <TextBlock
+                                                    FontSize="12"
+                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    Text="{Binding ShortDisplay}" />
+                                            </StackPanel>
+                                        </Grid>
 
-            <!-- 空/失败状态：居中提示，别只给一片空白 -->
-            <TextBlock
-                x:Name="EmptyHint"
-                Margin="24"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                FontSize="13"
-                IsVisible="False"
-                TextAlignment="Center"
-                TextWrapping="Wrap"
-                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-        </Grid>
+                                        <Button
+                                            Classes="accent"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            Click="LaunchInstance_OnClick">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <fa:FASymbolIcon FontSize="14" Symbol="Play" />
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_instancesLaunch}}" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
 
-        <!-- ============ 右：操作栏 ============ -->
-        <ScrollViewer
-            Grid.Column="1"
-            HorizontalScrollBarVisibility="Disabled"
-            VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="6,0,0,0" Spacing="12">
-
-                <!-- 账户 -->
-                <Border Classes="actionCard">
-                    <Grid ColumnDefinitions="Auto,*">
-                        <Border
-                            Width="42"
-                            Height="42"
-                            CornerRadius="21"
-                            Background="{DynamicResource SubtleFillColorSecondaryBrush}">
-                            <fa:FASymbolIcon
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontSize="20"
-                                Symbol="Contact" />
-                        </Border>
-                        <StackPanel
-                            Grid.Column="1"
-                            Margin="12,0,0,0"
-                            VerticalAlignment="Center"
-                            Spacing="2">
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherAccount}}" />
-                            <TextBlock
-                                x:Name="AccountText"
-                                FontSize="15"
-                                FontWeight="SemiBold"
-                                TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <!-- 当前实例（ZL2 的版本行：图标 + 名称 + 摘要；MChub 无实例设置页，右侧放刷新） -->
-                <Border Classes="actionCard">
-                    <Grid ColumnDefinitions="Auto,*,Auto">
-                        <Border
-                            Width="30"
-                            Height="30"
-                            VerticalAlignment="Center"
-                            CornerRadius="6"
-                            ClipToBounds="True">
-                            <Image
-                                x:Name="CurrentInstanceIcon"
-                                Width="30"
-                                Height="30"
-                                Stretch="UniformToFill" />
-                        </Border>
-                        <StackPanel
-                            Grid.Column="1"
-                            Margin="10,0,0,0"
-                            VerticalAlignment="Center"
-                            Spacing="2">
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherCurrentInstance}}" />
-                            <TextBlock
-                                x:Name="CurrentInstanceName"
-                                FontSize="14"
-                                FontWeight="SemiBold"
-                                TextTrimming="CharacterEllipsis" />
-                            <TextBlock
-                                x:Name="CurrentInstanceInfo"
-                                FontSize="12"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-                        <Button
-                            Grid.Column="2"
-                            Padding="8"
-                            VerticalAlignment="Center"
-                            Click="Refresh_OnClick">
-                            <fa:FASymbolIcon FontSize="15" Symbol="Refresh" />
-                        </Button>
-                    </Grid>
-                </Border>
-
-                <!-- 启动（同一个按钮两种语义：空闲=启动，运行中=停止） -->
-                <Button
-                    x:Name="LaunchButton"
-                    Classes="accent"
-                    Height="48"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Center"
-                    Click="Launch_OnClick">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <fa:FASymbolIcon x:Name="LaunchIcon" FontSize="16" Symbol="Play" />
-                        <TextBlock
-                            x:Name="LaunchLabel"
-                            VerticalAlignment="Center"
-                            Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherLaunchGame}}" />
-                    </StackPanel>
-                </Button>
-
+                <!-- 空/失败状态：居中提示，别只给一片空白 -->
                 <TextBlock
-                    x:Name="StatusText"
-                    FontSize="12"
+                    x:Name="EmptyHint"
+                    Margin="24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    IsVisible="False"
+                    TextAlignment="Center"
                     TextWrapping="Wrap"
                     Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            </Grid>
 
-                <!-- 本机安装入口：设备上直接下载安装新实例，不需要桌面端先建好。 -->
-                <Button
-                    x:Name="NewInstanceButton"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Center"
-                    Click="NewInstance_OnClick">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <fa:FASymbolIcon FontSize="14" Symbol="Add" />
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherNewInstance}}" />
-                    </StackPanel>
-                </Button>
-            </StackPanel>
-        </ScrollViewer>
+            <!-- ============ 右：操作栏 ============ -->
+            <ScrollViewer
+                Grid.Column="1"
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="6,0,0,0" Spacing="12">
+
+                    <!-- 账户（点一下进账户页：加 / 切 / 改名 / 删都在那边） -->
+                    <Border
+                        Classes="actionCard"
+                        PointerPressed="AccountCard_OnPointerPressed">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Border
+                                Width="42"
+                                Height="42"
+                                CornerRadius="21"
+                                ClipToBounds="True"
+                                Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                                <Image
+                                    x:Name="AccountAvatar"
+                                    Width="42"
+                                    Height="42"
+                                    Stretch="UniformToFill" />
+                            </Border>
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center"
+                                Spacing="2">
+                                <TextBlock
+                                    FontSize="12"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherAccount}}" />
+                                <TextBlock
+                                    x:Name="AccountText"
+                                    FontSize="15"
+                                    FontWeight="SemiBold"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <fa:FASymbolIcon
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                Symbol="ChevronRight"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- 当前实例（ZL2 的版本行：图标 + 名称 + 摘要；MChub 无实例设置页，右侧放刷新） -->
+                    <Border Classes="actionCard">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Border
+                                Width="30"
+                                Height="30"
+                                VerticalAlignment="Center"
+                                CornerRadius="6"
+                                ClipToBounds="True">
+                                <Image
+                                    x:Name="CurrentInstanceIcon"
+                                    Width="30"
+                                    Height="30"
+                                    Stretch="UniformToFill" />
+                            </Border>
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="10,0,0,0"
+                                VerticalAlignment="Center"
+                                Spacing="2">
+                                <TextBlock
+                                    FontSize="12"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherCurrentInstance}}" />
+                                <TextBlock
+                                    x:Name="CurrentInstanceName"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    x:Name="CurrentInstanceInfo"
+                                    FontSize="12"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <Button
+                                Grid.Column="2"
+                                Padding="8"
+                                VerticalAlignment="Center"
+                                Click="Refresh_OnClick">
+                                <fa:FASymbolIcon FontSize="15" Symbol="Refresh" />
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- 启动（同一个按钮两种语义：空闲=启动，运行中=停止） -->
+                    <Button
+                        x:Name="LaunchButton"
+                        Classes="accent"
+                        Height="48"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Click="Launch_OnClick">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <fa:FASymbolIcon x:Name="LaunchIcon" FontSize="16" Symbol="Play" />
+                            <TextBlock
+                                x:Name="LaunchLabel"
+                                VerticalAlignment="Center"
+                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherLaunchGame}}" />
+                        </StackPanel>
+                    </Button>
+
+                    <TextBlock
+                        x:Name="StatusText"
+                        FontSize="12"
+                        TextWrapping="Wrap"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+
+                    <!-- 本机安装入口：设备上直接下载安装新实例，不需要桌面端先建好。 -->
+                    <Button
+                        x:Name="NewInstanceButton"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Click="NewInstance_OnClick">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <fa:FASymbolIcon FontSize="14" Symbol="Add" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Text="{Translate {x:Static loc:MobileLanguageManager+Keys.mobile_launcherNewInstance}}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </UserControl>

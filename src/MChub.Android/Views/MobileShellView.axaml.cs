@@ -21,6 +21,7 @@ public partial class MobileShellView : UserControl
     private NavItem _current = NavItem.Home;
     private MobileLauncherPage? _launcherPage;
     private MobileNewInstancePage? _newInstancePage;
+    private MobileAccountPage? _accountPage;
     private MobileSettingsPage? _settingsPage;
 
     public MobileShellView()
@@ -39,6 +40,8 @@ public partial class MobileShellView : UserControl
     private void HomeNav_OnClick(object? sender, RoutedEventArgs e) => ShowPage(NavItem.Home);
 
     private void NewInstanceNav_OnClick(object? sender, RoutedEventArgs e) => ShowPage(NavItem.NewInstance);
+
+    private void AccountNav_OnClick(object? sender, RoutedEventArgs e) => ShowPage(NavItem.Account);
 
     private void SettingsNav_OnClick(object? sender, RoutedEventArgs e) => ShowPage(NavItem.Settings);
 
@@ -61,6 +64,13 @@ public partial class MobileShellView : UserControl
                 PageHost.Content = _newInstancePage;
                 PageTitle.Text = MobileLanguageManager.Instance.mobile_navNewInstance.CurrentValue();
                 break;
+            case NavItem.Account:
+                _accountPage ??= CreateAccountPage();
+                // 回本页时重新读一遍配置：别的地方也可能动了账户。
+                _accountPage.Reload();
+                PageHost.Content = _accountPage;
+                PageTitle.Text = MobileLanguageManager.Instance.mobile_navAccount.CurrentValue();
+                break;
             default:
                 _settingsPage ??= new MobileSettingsPage();
                 PageHost.Content = _settingsPage;
@@ -75,6 +85,14 @@ public partial class MobileShellView : UserControl
     {
         var page = new MobileLauncherPage();
         page.NewInstanceRequested += (_, _) => ShowPage(NavItem.NewInstance);
+        page.AccountRequested += (_, _) => ShowPage(NavItem.Account);
+        return page;
+    }
+
+    private MobileAccountPage CreateAccountPage()
+    {
+        var page = new MobileAccountPage();
+        // 账户变了（加 / 切 / 删）：主页账户卡下次显示时自己会重读，这里不用额外通知。
         return page;
     }
 
@@ -94,6 +112,8 @@ public partial class MobileShellView : UserControl
         ApplyRailState(HomeNavButton, HomeNavIcon, HomeNavLabel, _current == NavItem.Home);
         ApplyRailState(NewInstanceNavButton, NewInstanceNavIcon, NewInstanceNavLabel,
             _current == NavItem.NewInstance);
+        ApplyRailState(AccountNavButton, AccountNavIcon, AccountNavLabel,
+            _current == NavItem.Account);
         ApplyRailState(SettingsNavButton, SettingsNavIcon, SettingsNavLabel, _current == NavItem.Settings);
     }
 
@@ -123,6 +143,7 @@ public partial class MobileShellView : UserControl
     {
         Home,
         NewInstance,
+        Account,
         Settings
     }
 }
