@@ -1,8 +1,9 @@
 /* ============================================================
-   全局样式 —— 复刻自 x-coder-ocs/website
-   字体：阿里妈妈方圆体（AlimamaFangYuanTi），与桌面端 MChub 一致，
-        字体文件见 public/fonts/，由 @font-face 注入；
-        系统字体栈仅作回退（字体未加载完成 / 极老浏览器）
+   全局样式 —— MChub 官网
+   字体：阿里妈妈方圆体（AlimamaFangYuanTi），与桌面端 MChub 一致
+   设计语言：受 Endfield Charge Plus 官网启发 ——
+     暖调近黑底 + 克制微光 + 等宽 eyebrow 标签 + 编号分区 +
+     切角按钮 + 细线分隔卡片（而非阴影填充）
    ============================================================ */
 
 /* ---- 阿里妈妈方圆体：Regular(400) / Bold(700) ---- */
@@ -24,21 +25,30 @@
 }
 
 :root {
-  /* 一个"像素"字符的格子尺寸 —— 本项目未用像素画，保留与参考一致 */
-  --cell-w: 6px;
-  --cell-h: 13px;
+  /* —— 底色与表面 —— */
+  --bg: #0c0d0b;                       /* 暖调近黑（非纯黑） */
+  --surface: rgba(255, 255, 255, 0.045);
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --grid-line: rgba(255, 255, 255, 0.035);
 
-  --grid-size: 40px;
-  --grid-line: 1px;
-  --grid-color: #272727;
+  /* —— 文本 —— */
+  --text: #f3f4ef;                     /* 暖白 */
+  --text-muted: rgba(243, 244, 239, 0.62);
+  --text-dim: #70766c;                 /* 静音绿灰（终端注释/序号） */
 
-  --text: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.6);
-  --text-dim: #69707b;
-  --accent: #00d9ff;
-  --accent-2: #a78bfa;
+  /* —— 品牌强调色 —— */
+  --accent: #00e0ff;                   /* 青（主） */
+  --accent-2: #b794ff;                 /* 紫（次） */
+  --accent-soft: rgba(0, 224, 255, 0.14);
 
-  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  /* —— 线条 —— */
+  --line: rgba(255, 255, 255, 0.10);
+  --line-strong: rgba(255, 255, 255, 0.20);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* 等宽体（eyebrow / 标签 / 终端感） */
+  --mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;
 }
 
 *,
@@ -57,17 +67,12 @@ html {
 body {
   min-width: 100vw;
   min-height: 100vh;
-  background-color: #000;
-  /* 40px 网格背景：两条 1px 渐变线拼出来的，不需要图片 */
-  background-image:
-    linear-gradient(to right, var(--grid-color) var(--grid-line), transparent 0),
-    linear-gradient(to bottom, var(--grid-color) var(--grid-line), transparent 0);
-  background-size: var(--grid-size) var(--grid-size);
-  background-attachment: fixed;
+  background-color: var(--bg);
   color: var(--text);
   font-family: 'AlimamaFangYuanTi', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 #app {
@@ -109,16 +114,124 @@ img {
   max-width: 100%;
 }
 
-/* 滚动条 */
+/* —— 滚动条 —— */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.28);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-track {
-  background: #010101;
+  background: transparent;
+}
+
+/* 选中态：用强调色（与 ECP 一致） */
+::selection {
+  background: var(--accent);
+  color: #04121a;
+}
+
+/* ============================================================
+   通用设计工具类（受 ECP 启发）
+   ============================================================ */
+
+/* 等宽 eyebrow 小标签：MCHUB / OPEN SOURCE 这种 */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+}
+.eyebrow::before {
+  content: '+';
+  color: var(--accent);
+  margin-right: 12px;
+  font-size: 13px;
+}
+
+/* 分区节奏：编号 + eyebrow + 大标题 */
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 44px;
+}
+.section-head .eyebrow {
+  margin-bottom: 14px;
+}
+
+/* 大标题：收紧字距、加重量（ECP 的强排版） */
+.display-title {
+  font-size: clamp(34px, 4.6vw, 64px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+  margin: 0;
+}
+.display-title .sub {
+  color: var(--text-dim);
+}
+
+/* 切角按钮（clip-path 缺一角） */
+.cut-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: 0;
+  transition: transform 0.3s var(--ease), background 0.3s var(--ease), border-color 0.3s var(--ease);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 11px), calc(100% - 11px) 100%, 0 100%);
+}
+.cut-btn .arrow {
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 0.3s var(--ease);
+}
+.cut-btn:hover .arrow {
+  transform: translateX(5px);
+}
+
+/* 主按钮：强调色填充（深色字） */
+.cut-btn--primary {
+  background: var(--accent);
+  color: #04121a;
+}
+.cut-btn--primary:hover {
+  background: #5cf0ff;
+  transform: translateY(-3px);
+}
+
+/* 次按钮：描边幽灵 */
+.cut-btn--ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 11px), calc(100% - 11px) 100%, 0 100%);
+}
+.cut-btn--ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-3px);
+}
+
+/* 通用滚动渐入（reveal-card 由组件自管，这里给其它元素用） */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* 尊重系统"减弱动态效果"设置 */

@@ -95,23 +95,21 @@ onUnmounted(() => {
 }
 
 .up-background {
-  background-color: #000;
-  background-image: radial-gradient(
-    125% 125% at 50% 100%,
-    #000 20%,
-    #010203f9,
-    #070d13f2 40%,
-    #253746e6,
-    #4e6d88d9,
-    #80b1dacc
-  );
+  background-color: #0c0d0b;
+  /* 极淡网格线（ECP 风的 techy 底纹），外加两束克制的品牌微光 */
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px),
+    radial-gradient(110% 90% at 18% 0%, rgba(0, 224, 255, 0.10), transparent 55%),
+    radial-gradient(120% 110% at 100% 100%, rgba(183, 148, 255, 0.12), transparent 55%);
+  background-size: 64px 64px, 64px 64px, 100% 100%, 100% 100%;
 }
 
 .down-background {
-  background-color: #000;
+  background-color: transparent;
   background-image: radial-gradient(
-    ellipse 90% 40% at 50% 100%,
-    rgba(109, 122, 145, 0.25),
+    ellipse 80% 45% at 50% 105%,
+    rgba(0, 224, 255, 0.07),
     transparent 70%
   );
 }

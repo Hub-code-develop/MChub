@@ -34,9 +34,15 @@ onUnmounted(() => {
 <template>
   <!-- 功能：直接占满首屏往下滚动就能看到 -->
   <section id="feature" class="about">
-    <h2 class="section-title">{{ t(site.about.featuresTitle) }}</h2>
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">01 / FEATURES</p>
+        <h2 class="section-title">{{ t(site.about.featuresTitle) }}</h2>
+      </div>
+    </div>
     <div class="card-grid">
-      <div v-for="f in site.features" :key="f.title.zh" class="reveal-card">
+      <div v-for="(f, i) in site.features" :key="f.title.zh" class="reveal-card">
+        <span class="card-index">{{ String(i + 1).padStart(2, '0') }}</span>
         <h3 class="item-title">{{ t(f.title) }}</h3>
         <p class="item-desc">{{ t(f.desc) }}</p>
       </div>
@@ -45,7 +51,12 @@ onUnmounted(() => {
 
   <!-- 关于 -->
   <section id="about" class="about">
-    <h2 class="section-title">{{ t(site.about.title) }}</h2>
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">02 / ABOUT</p>
+        <h2 class="section-title">{{ t(site.about.title) }}</h2>
+      </div>
+    </div>
     <div class="intro">
       <p v-for="p in t(site.about.paragraphs)" :key="p">{{ p }}</p>
     </div>
@@ -53,10 +64,16 @@ onUnmounted(() => {
 
   <!-- 下载 -->
   <section id="download" class="about">
-    <h2 class="section-title">{{ t(site.about.downloadTitle) }}</h2>
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">03 / DOWNLOAD</p>
+        <h2 class="section-title">{{ t(site.about.downloadTitle) }}</h2>
+      </div>
+    </div>
 
     <div class="card-grid">
-      <div v-for="plat in site.platforms" :key="plat.name + plat.sub" class="reveal-card">
+      <div v-for="(plat, i) in site.platforms" :key="plat.name + plat.sub" class="reveal-card">
+        <span class="card-index">{{ String(i + 1).padStart(2, '0') }}</span>
         <h3 class="item-title">{{ plat.name }}</h3>
         <p class="item-sub">{{ plat.sub }}</p>
         <div class="download-links">
@@ -86,45 +103,51 @@ onUnmounted(() => {
 .about {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 24px 140px;
+  padding: 80px 24px 140px;
 }
 
 .section-title {
-  font-size: 36px;
-  margin-top: 64px;
-  margin-bottom: 28px;
-  color: #fff;
+  font-size: clamp(34px, 4.6vw, 60px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
 }
 
 .intro {
   max-width: 760px;
-  line-height: 1.75;
-  color: #ffffffb3;
+  line-height: 1.85;
+  color: var(--text-muted);
+  font-size: 1.05rem;
 }
 
 .intro p + p {
-  margin-top: 0.9rem;
+  margin-top: 1rem;
 }
 
 /* ── 卡片网格（功能 / 下载平台共用） ── */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 18px;
+  gap: 16px;
 }
 
 .reveal-card {
+  position: relative;
   display: block;
-  padding: 20px 22px;
-  border-radius: 12px;
-  background-color: #ffffff1a;
-  color: #fff;
+  padding: 26px 24px 24px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background-color: var(--surface);
+  color: var(--text);
   /* 收起来的状态，等 IntersectionObserver 加 .animate-in */
   opacity: 0;
   transform: translateY(16px);
   transition:
     opacity 0.7s ease-out,
     transform 0.7s ease-out,
+    border-color 0.3s ease,
     background-color 0.3s ease;
 }
 
@@ -134,27 +157,43 @@ onUnmounted(() => {
 }
 
 .reveal-card:hover {
-  background-color: #ffffff26;
+  border-color: var(--accent);
+  background-color: var(--surface-2);
   transform: translateY(-4px);
 }
 
+/* 卡片左上角等宽序号（ECP 风） */
+.card-index {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  display: block;
+  margin-bottom: 14px;
+}
+
+.reveal-card:hover .card-index {
+  color: var(--accent);
+}
+
 .item-title {
-  font-size: 1.125rem;
+  font-size: 1.2rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
   word-break: break-word;
+  letter-spacing: -0.01em;
 }
 
 .item-sub {
   font-size: 0.85rem;
-  color: #ffffff80;
+  color: var(--text-muted);
   margin-bottom: 0.75rem;
 }
 
 .item-desc {
-  font-size: 0.875rem;
-  line-height: 1.6;
-  color: #fff9;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--text-muted);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -166,23 +205,24 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 10px;
 }
 
 .dl-link {
   display: inline-block;
-  padding: 5px 12px;
+  padding: 6px 13px;
   border-radius: 999px;
   font-size: 0.8rem;
-  color: #fff;
-  background: #ffffff14;
-  border: 1px solid #ffffff2e;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line-strong);
   transition: all 0.25s ease;
 }
 
 .dl-link:hover {
-  background: #ffffff2e;
-  border-color: #ffffff59;
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .more {
@@ -192,15 +232,15 @@ onUnmounted(() => {
 
 .more a {
   font-size: 0.9rem;
-  color: #ffffffb3;
-  border-bottom: 1px solid #ffffff40;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--line-strong);
   padding-bottom: 2px;
-  transition: color 0.25s ease;
+  transition: color 0.25s ease, border-color 0.25s ease;
 }
 
 .more a:hover {
-  color: #fff;
-  border-color: #fff;
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 @media (min-width: 768px) {
@@ -216,13 +256,12 @@ onUnmounted(() => {
 }
 
 @media (max-width: 648px) {
-  .section-title {
-    font-size: 28px;
-    margin-top: 44px;
+  .about {
+    padding: 56px 18px 90px;
   }
 
-  .about {
-    padding-bottom: 90px;
+  .section-head {
+    margin-bottom: 30px;
   }
 
   .more {

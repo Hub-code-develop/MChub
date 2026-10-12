@@ -10,6 +10,8 @@ const year = new Date().getFullYear()
 <template>
   <footer class="footer-container">
     <div class="footer-content">
+      <p class="eyebrow footer-eyebrow">MCHUB / GET IN TOUCH</p>
+
       <div class="social-links">
         <a
           v-for="(s, i) in socials"
@@ -51,13 +53,12 @@ const year = new Date().getFullYear()
   position: relative;
   z-index: 10;
   padding: 9rem 0 4rem;
-  /* 四层错位径向渐变叠出来的彩色光晕，纯 CSS */
+  /* 收敛到统一青/紫调性的双向微光，纯 CSS */
   background:
-    radial-gradient(120% 80% at 30% 100%, rgba(255, 20, 147, 0.15), transparent 50%),
-    radial-gradient(100% 60% at 70% 90%, rgba(0, 255, 255, 0.12), transparent 60%),
-    radial-gradient(90% 70% at 50% 80%, rgba(138, 43, 226, 0.18), transparent 65%),
-    radial-gradient(110% 50% at 20% 110%, rgba(255, 215, 0, 0.08), transparent 40%),
-    #000000b3;
+    radial-gradient(120% 80% at 28% 100%, rgba(0, 224, 255, 0.14), transparent 52%),
+    radial-gradient(110% 70% at 72% 92%, rgba(183, 148, 255, 0.16), transparent 58%),
+    radial-gradient(90% 60% at 50% 80%, rgba(0, 224, 255, 0.06), transparent 65%),
+    #060706cc;
   mask-image: linear-gradient(to top, black 80%, transparent 100%);
   -webkit-mask-image: linear-gradient(to top, black 80%, transparent 100%);
 }
@@ -70,6 +71,10 @@ const year = new Date().getFullYear()
   margin: 0 auto;
   padding: 0 1.5rem 2rem;
   text-align: center;
+}
+
+.footer-eyebrow {
+  margin-bottom: 1.75rem;
 }
 
 .social-links {
@@ -128,22 +133,24 @@ const year = new Date().getFullYear()
 }
 
 .touch-button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0 1rem;
-  line-height: 2.5rem;
-  border: none;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #000;
-  background: #fff;
-  transition: all 0.3s ease;
+  padding: 0 1.25rem;
+  line-height: 2.75rem;
+  border: 1px solid var(--accent);
+  border-radius: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #04121a;
+  background: var(--accent);
+  transition: transform 0.3s var(--ease), background 0.3s var(--ease);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
 }
 
 .touch-button:hover {
-  transform: scale(1.05);
+  background: #5cf0ff;
+  transform: translateY(-2px);
 }
 
 .tb-icon {

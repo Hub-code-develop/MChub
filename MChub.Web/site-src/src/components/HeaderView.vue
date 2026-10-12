@@ -36,6 +36,10 @@ onUnmounted(() => {
       <img class="logo" :src="site.avatar" alt="MChub logo" />
 
       <div class="content-text">
+        <p class="eyebrow animated" style="animation-delay: 0.05s">
+          {{ site.watermark.toUpperCase() }} / OPEN SOURCE
+        </p>
+
         <p class="p-input animated" style="animation-delay: 0.1s">
           <span class="c-user">{{ site.user }}@{{ site.host }}</span
           ><span class="c-sep">:</span><span class="c-path">~</span
@@ -313,41 +317,54 @@ h1 {
 
 .btn,
 .g-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 999px;
-  font-size: 16px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 22px;
+  border: 1px solid var(--line-strong);
+  font-size: 15px;
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition: transform 0.3s var(--ease), background 0.3s var(--ease),
+    border-color 0.3s var(--ease), color 0.3s var(--ease);
+  /* 切角按钮（clip-path 缺一角） */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 11px), calc(100% - 11px) 100%, 0 100%);
 }
 
 .btn {
-  color: #fff;
-  background-color: #ffffff1a;
+  color: var(--text);
+  background-color: transparent;
 }
 
 .btn:hover {
-  background-color: #fff3;
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-3px);
 }
 
 .g-btn {
-  color: #000;
-  background-color: #fff;
+  color: #04121a;
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.g-btn:hover {
+  background-color: #5cf0ff;
+  border-color: #5cf0ff;
+  transform: translateY(-3px);
 }
 
 .btn-icon,
 .g-btn-icon {
   width: 18px;
   height: 18px;
-  margin-left: 10px;
+  margin-left: 0;
   position: relative;
   transition: all 0.3s ease;
 }
 
 .btn-icon {
-  fill: #fff;
+  fill: currentColor;
 }
 
 .btn:hover .btn-icon {
@@ -355,11 +372,11 @@ h1 {
 }
 
 .g-btn-icon {
-  fill: #000;
+  fill: #04121a;
 }
 
 .g-btn:hover .g-btn-icon {
-  transform: scale(1.25);
+  transform: scale(1.15);
 }
 
 .btn-icon :deep(svg),

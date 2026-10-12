@@ -95,16 +95,24 @@ const shown = computed(() => props.scrollRatio >= 1)
 }
 
 .g-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  border: 0;
-  border-radius: 999px;
-  padding: 10px 20px;
-  font-size: 16px;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 0;
+  padding: 12px 18px;
+  font-size: 15px;
   font-weight: 600;
-  color: #000;
-  background: #fff;
-  transition: all 0.2s ease;
+  color: #04121a;
+  background: var(--accent);
+  transition: transform 0.3s var(--ease), background 0.3s var(--ease);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+
+.g-btn:hover {
+  background: #5cf0ff;
+  transform: translateY(-2px);
 }
 
 .btn-label {
@@ -115,8 +123,8 @@ const shown = computed(() => props.scrollRatio >= 1)
 .g-btn-icon {
   width: 18px;
   height: 18px;
-  margin-left: 10px;
-  fill: #000;
+  margin-left: 0;
+  fill: #04121a;
   transition: transform 0.3s ease;
 }
 
