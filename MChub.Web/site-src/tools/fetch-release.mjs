@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = resolve(ROOT, 'src/data/releases.json')
-const REPO = 'hub-code-develop/MChub'
+const REPO = 'Hub-code-develop/MChub'
 
 async function gh(path) {
   const headers = {

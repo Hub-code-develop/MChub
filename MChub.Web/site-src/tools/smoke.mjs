@@ -35,7 +35,7 @@ try {
     ['代理加速', /代理加速/],
     ['QQ 群号', /545716736/],
     ['开源协议', /AGPL-3\.0/],
-    ['GitHub 链接', /hub-code-develop\/MChub/],
+    ['GitHub 链接', /Hub-code-develop\/MChub/],
   ]
 
   let failed = 0
