@@ -1,8 +1,8 @@
 <p align="center">
-  <a href="https://codehub-develop.github.io/MChub/">
+  <a href="https://hub-code-develop.github.io/MChub/">
     <img src="assets/top.png" alt="赞助 MChub">
   </a>
-  <a href="https://codehub-develop.github.io/MChub/">
+  <a href="https://hub-code-develop.github.io/MChub/">
     <img src="assets/header.png" alt="MChub">
   </a>
 </p>
