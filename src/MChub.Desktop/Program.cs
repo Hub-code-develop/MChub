@@ -29,11 +29,11 @@ internal static class Program
         LocalizationInitializer.Initialize();
 
         Logger.Info("MChub MC");
-        Logger.Info(@"  ____                   _             _     __  __    ____ ");
-        Logger.Info(@" |  _ \    ___    _ __  | |_    __ _  | |   |  \/  |  / ___|");
-        Logger.Info(@" | |_) |  / _ \  | '__| | __|  / _` | | |   | |\/| | | |    ");
-        Logger.Info(@" |  __/  | (_) | | |    | |_  | (_| | | |   | |  | | | |___ ");
-        Logger.Info(@" |_|      \___/  |_|     \__|  \__,_| |_|   |_|  |_|  \____|");
+        Logger.Info(@" __  __  ____ _           _     ");
+        Logger.Info(@"|  \/  |/ ___| |__  _   _| |__  ");
+        Logger.Info(@"| |\/| | |   | '_ \| | | | '_ \ ");
+        Logger.Info(@"| |  | | |___| | | | |_| | |_) |");
+        Logger.Info(@"|_|  |_|\____|_| |_|\__,_|_.__/ ");
         Logger.Info("");
 
         ExceptionHandlerSetup.Register();
