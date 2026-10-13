@@ -85,13 +85,8 @@
 
 环境变量清单见 [`[root]/.env.example`](.env.example)
 
-官网 [`MChub.Web/site-src`](MChub.Web/site-src) :
-
-```bash
-cd MChub.Web/site-src
-npm i
-npm run dev
-```
+## 统计
+![Alt](https://repobeats.axiom.co/api/embed/25be430763a4c50d2b1640877cf42345ba415799.svg "Repobeats analytics image")
 
 ## 致谢
 
