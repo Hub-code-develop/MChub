@@ -43,6 +43,10 @@ public static class ResourceCompatibility
             LoaderType.Forge => "forge",
             LoaderType.Fabric => "fabric",
             LoaderType.Quilt => "quilt",
+            // Modrinth 上确有这些装载器的分类（Babric / BTA 没有，返回 null 即视为不参与匹配）。
+            LoaderType.Ornithe => "ornithe",
+            LoaderType.LegacyFabric => "legacy-fabric",
+            LoaderType.Rift => "rift",
             _ => null
         };
     }

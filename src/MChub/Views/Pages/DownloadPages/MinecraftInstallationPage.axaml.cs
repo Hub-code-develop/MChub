@@ -85,22 +85,47 @@ public partial class MinecraftInstallationViewModel : ObservableObject, INotifyD
     [ObservableProperty] public partial bool IsNeoForgeSelected { get; set; }
     [ObservableProperty] public partial bool IsQuiltSelected { get; set; }
     [ObservableProperty] public partial bool IsOptiFineSelected { get; set; }
-    [ObservableProperty] public partial string FabricStatus { get; set; } =
-        CommonLanguageManager.Instance.minecraftInstall_noLoader.CurrentValue();
-    [ObservableProperty] public partial string ForgeStatus { get; set; } =
-        CommonLanguageManager.Instance.minecraftInstall_noLoader.CurrentValue();
-    [ObservableProperty] public partial string NeoForgeStatus { get; set; } =
-        CommonLanguageManager.Instance.minecraftInstall_noLoader.CurrentValue();
-    [ObservableProperty] public partial string QuiltStatus { get; set; } =
-        CommonLanguageManager.Instance.minecraftInstall_noLoader.CurrentValue();
-    [ObservableProperty] public partial string OptiFineStatus { get; set; } =
+    [ObservableProperty] public partial bool IsOrnitheSelected { get; set; }
+    [ObservableProperty] public partial bool IsLegacyFabricSelected { get; set; }
+    [ObservableProperty] public partial bool IsBabricSelected { get; set; }
+    [ObservableProperty] public partial bool IsRiftSelected { get; set; }
+    [ObservableProperty] public partial bool IsBtaSelected { get; set; }
+    [ObservableProperty] public partial bool IsLiteLoaderSelected { get; set; }
+    [ObservableProperty] public partial string FabricStatus { get; set; } = NoLoaderText;
+    [ObservableProperty] public partial string ForgeStatus { get; set; } = NoLoaderText;
+    [ObservableProperty] public partial string NeoForgeStatus { get; set; } = NoLoaderText;
+    [ObservableProperty] public partial string QuiltStatus { get; set; } = NoLoaderText;
+    [ObservableProperty] public partial string OptiFineStatus { get; set; } = NoLoaderText;
+    [ObservableProperty] public partial string OrnitheStatus { get; set; } = NoLoaderText;
+    [ObservableProperty] public partial string LegacyFabricStatus { get; set; } = NoLoaderText;
+    [ObservableProperty] public partial string BabricStatus { get; set; } = NoLoaderText;
+    [ObservableProperty] public partial string RiftStatus { get; set; } = NoLoaderText;
+    [ObservableProperty] public partial string BtaStatus { get; set; } = NoLoaderText;
+    [ObservableProperty] public partial string LiteLoaderStatus { get; set; } = NoLoaderText;
+
+    private static string NoLoaderText =>
         CommonLanguageManager.Instance.minecraftInstall_noLoader.CurrentValue();
 
-    public bool HasModLoader => IsFabricSelected || IsForgeSelected || IsNeoForgeSelected || IsQuiltSelected ||
-                                IsOptiFineSelected;
+    /// <summary>主装载器（彼此互斥）；OptiFine 是可选附加，单独处理。</summary>
+    private static readonly LoaderKind[] PrimaryLoaderKinds =
+    [
+        LoaderKind.Forge, LoaderKind.NeoForge, LoaderKind.Fabric, LoaderKind.Quilt,
+        LoaderKind.Ornithe, LoaderKind.LegacyFabric, LoaderKind.Babric, LoaderKind.Rift, LoaderKind.Bta,
+        LoaderKind.LiteLoader
+    ];
+
+    /// <summary>UI 上出现的全部装载器（含 OptiFine），用于统一清理与状态刷新。</summary>
+    private static readonly LoaderKind[] AllLoaderKinds =
+    [
+        LoaderKind.Forge, LoaderKind.NeoForge, LoaderKind.Fabric, LoaderKind.Quilt, LoaderKind.OptiFine,
+        LoaderKind.Ornithe, LoaderKind.LegacyFabric, LoaderKind.Babric, LoaderKind.Rift, LoaderKind.Bta,
+        LoaderKind.LiteLoader
+    ];
+
+    public bool HasModLoader => AllLoaderKinds.Any(IsSelected);
 
     public bool CanCustomizeVersionId => true;
-    public bool RequiresJava => IsForgeSelected || IsNeoForgeSelected || IsOptiFineSelected;
+    public bool RequiresJava => AllLoaderKinds.Where(IsSelected).Any(LoaderCatalog.RequiresJavaRuntime);
 
     public bool CanInstall => !IsInstalling && _loadingCount == 0 && SelectedMinecraftFolder is not null &&
                               IsVersionIdValid() && SelectedLoadersAreReady();
@@ -138,30 +163,27 @@ public partial class MinecraftInstallationViewModel : ObservableObject, INotifyD
         OnPropertyChanged(nameof(CanInstall));
     }
 
-    partial void OnIsFabricSelectedChanged(bool value)
-    {
-        SelectionChanged(LoaderKind.Fabric, value);
-    }
+    partial void OnIsFabricSelectedChanged(bool value) => SelectionChanged(LoaderKind.Fabric, value);
 
-    partial void OnIsForgeSelectedChanged(bool value)
-    {
-        SelectionChanged(LoaderKind.Forge, value);
-    }
+    partial void OnIsForgeSelectedChanged(bool value) => SelectionChanged(LoaderKind.Forge, value);
 
-    partial void OnIsNeoForgeSelectedChanged(bool value)
-    {
-        SelectionChanged(LoaderKind.NeoForge, value);
-    }
+    partial void OnIsNeoForgeSelectedChanged(bool value) => SelectionChanged(LoaderKind.NeoForge, value);
 
-    partial void OnIsQuiltSelectedChanged(bool value)
-    {
-        SelectionChanged(LoaderKind.Quilt, value);
-    }
+    partial void OnIsQuiltSelectedChanged(bool value) => SelectionChanged(LoaderKind.Quilt, value);
 
-    partial void OnIsOptiFineSelectedChanged(bool value)
-    {
-        SelectionChanged(LoaderKind.OptiFine, value);
-    }
+    partial void OnIsOptiFineSelectedChanged(bool value) => SelectionChanged(LoaderKind.OptiFine, value);
+
+    partial void OnIsOrnitheSelectedChanged(bool value) => SelectionChanged(LoaderKind.Ornithe, value);
+
+    partial void OnIsLegacyFabricSelectedChanged(bool value) => SelectionChanged(LoaderKind.LegacyFabric, value);
+
+    partial void OnIsBabricSelectedChanged(bool value) => SelectionChanged(LoaderKind.Babric, value);
+
+    partial void OnIsRiftSelectedChanged(bool value) => SelectionChanged(LoaderKind.Rift, value);
+
+    partial void OnIsBtaSelectedChanged(bool value) => SelectionChanged(LoaderKind.Bta, value);
+
+    partial void OnIsLiteLoaderSelectedChanged(bool value) => SelectionChanged(LoaderKind.LiteLoader, value);
 
     private void SelectionChanged(LoaderKind kind, bool selected)
     {
@@ -174,26 +196,25 @@ public partial class MinecraftInstallationViewModel : ObservableObject, INotifyD
             {
                 if (kind == LoaderKind.OptiFine)
                 {
-                    IsFabricSelected = false;
-                    IsNeoForgeSelected = false;
-                    IsQuiltSelected = false;
+                    // OptiFine 可叠加在 Forge 上；其余主装载器一律让位。
+                    foreach (var other in PrimaryLoaderKinds)
+                        if (other != LoaderKind.Forge) SetSelected(other, false);
                 }
                 else
                 {
-                    IsFabricSelected = kind == LoaderKind.Fabric;
-                    IsForgeSelected = kind == LoaderKind.Forge;
-                    IsNeoForgeSelected = kind == LoaderKind.NeoForge;
-                    IsQuiltSelected = kind == LoaderKind.Quilt;
-                    if (kind != LoaderKind.Forge) IsOptiFineSelected = false;
+                    foreach (var other in PrimaryLoaderKinds)
+                        if (other != kind) SetSelected(other, false);
+                    // OptiFine 只允许配 Forge（与原逻辑一致）。
+                    if (kind != LoaderKind.Forge) SetSelected(LoaderKind.OptiFine, false);
                 }
             }
 
-            foreach (var loaderKind in Enum.GetValues<LoaderKind>())
+            foreach (var loaderKind in AllLoaderKinds)
                 if (!IsSelected(loaderKind))
                 {
                     _selectedLoaders.Remove(loaderKind);
                     _availableLoaderVersions.Remove(loaderKind);
-                    SetStatus(loaderKind, CommonLanguageManager.Instance.minecraftInstall_noLoader.CurrentValue());
+                    SetStatus(loaderKind, NoLoaderText);
                     _loadGenerations[loaderKind] = _loadGenerations.GetValueOrDefault(loaderKind) + 1;
                 }
         }
@@ -205,6 +226,24 @@ public partial class MinecraftInstallationViewModel : ObservableObject, INotifyD
         CustomVersionId = CreateRecommendedVersionId();
         UpdateVersionState();
         if (selected && IsSelected(kind)) _ = LoadLatestAsync(kind);
+    }
+
+    private void SetSelected(LoaderKind kind, bool value)
+    {
+        switch (kind)
+        {
+            case LoaderKind.Fabric: IsFabricSelected = value; break;
+            case LoaderKind.Forge: IsForgeSelected = value; break;
+            case LoaderKind.NeoForge: IsNeoForgeSelected = value; break;
+            case LoaderKind.Quilt: IsQuiltSelected = value; break;
+            case LoaderKind.OptiFine: IsOptiFineSelected = value; break;
+            case LoaderKind.Ornithe: IsOrnitheSelected = value; break;
+            case LoaderKind.LegacyFabric: IsLegacyFabricSelected = value; break;
+            case LoaderKind.Babric: IsBabricSelected = value; break;
+            case LoaderKind.Rift: IsRiftSelected = value; break;
+            case LoaderKind.Bta: IsBtaSelected = value; break;
+            case LoaderKind.LiteLoader: IsLiteLoaderSelected = value; break;
+        }
     }
 
     private async Task LoadLatestAsync(LoaderKind kind)
@@ -268,7 +307,8 @@ public partial class MinecraftInstallationViewModel : ObservableObject, INotifyD
             LoaderKind.Quilt => (await QuiltInstaller.EnumerableQuiltAsync(_vanilla.Id)).Cast<IInstallEntry>().ToList(),
             LoaderKind.OptiFine => (await OptifineInstaller.EnumerableOptifineAsync(_vanilla.Id)).Cast<IInstallEntry>()
                 .ToList(),
-            _ => []
+            // Ornithe / LegacyFabric / Babric 走 Fabric 兼容元数据；BTA / Rift 各有自己的取版本方式。
+            _ => await LoaderCatalog.FetchVersionsAsync(kind, _vanilla.Id)
         };
     }
 
@@ -400,6 +440,12 @@ public partial class MinecraftInstallationViewModel : ObservableObject, INotifyD
             LoaderKind.NeoForge => IsNeoForgeSelected,
             LoaderKind.Quilt => IsQuiltSelected,
             LoaderKind.OptiFine => IsOptiFineSelected,
+            LoaderKind.Ornithe => IsOrnitheSelected,
+            LoaderKind.LegacyFabric => IsLegacyFabricSelected,
+            LoaderKind.Babric => IsBabricSelected,
+            LoaderKind.Rift => IsRiftSelected,
+            LoaderKind.Bta => IsBtaSelected,
+            LoaderKind.LiteLoader => IsLiteLoaderSelected,
             _ => false
         };
     }
@@ -413,6 +459,12 @@ public partial class MinecraftInstallationViewModel : ObservableObject, INotifyD
             case LoaderKind.NeoForge: NeoForgeStatus = status; break;
             case LoaderKind.Quilt: QuiltStatus = status; break;
             case LoaderKind.OptiFine: OptiFineStatus = status; break;
+            case LoaderKind.Ornithe: OrnitheStatus = status; break;
+            case LoaderKind.LegacyFabric: LegacyFabricStatus = status; break;
+            case LoaderKind.Babric: BabricStatus = status; break;
+            case LoaderKind.Rift: RiftStatus = status; break;
+            case LoaderKind.Bta: BtaStatus = status; break;
+            case LoaderKind.LiteLoader: LiteLoaderStatus = status; break;
         }
     }
 

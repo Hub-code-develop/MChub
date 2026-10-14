@@ -6,5 +6,10 @@ public enum LoaderType {
     NeoForge,
     Quilt,
     Optifine,
-    LiteLoader
+    LiteLoader,
+    Ornithe,
+    LegacyFabric,
+    Babric,
+    Rift,
+    Bta
 }

@@ -506,6 +506,21 @@ public abstract partial class MinecraftLibrary : MinecraftDependency {
 
         #endregion
 
+        #region Generic maven base (LiteLoader / Sponge 等自带 url 的库)
+
+        // 有些版本 JSON（LiteLoader、Sponge 等）会给库直接写一个 maven 仓库地址。
+        // 这类地址不在上面几个已知前缀里，若不特判就会掉到最后的 VanillaLibrary —— 去
+        // libraries.minecraft.net 找，必然 404。这里按 url + maven 路径拼出真实下载地址。
+        if (!string.IsNullOrWhiteSpace(libNode.MavenUrl) && !IsSpecialMavenBase(libNode.MavenUrl)) {
+            return new DownloadableDependency(libNode.MavenName,
+                libNode.MavenUrl.TrimEnd('/') + "/" + GetLibraryPath(libNode.MavenName).Replace('\\', '/')) {
+                MinecraftFolderPath = minecraftFolderPath,
+                IsNativeLibrary = libNode.NativeClassifierNames is not null
+            };
+        }
+
+        #endregion
+
         return new VanillaLibrary(libNode.MavenName) {
             IsNativeLibrary = libNode.NativeClassifierNames is not null,
             Size = null,
@@ -513,6 +528,13 @@ public abstract partial class MinecraftLibrary : MinecraftDependency {
             MinecraftFolderPath = minecraftFolderPath
         };
     }
+
+    /// <summary>
+    /// 该 maven 基址是否需要走原有的专门分支（原版库 / 旧版 Forge），不走通用拼接。
+    /// </summary>
+    private static bool IsSpecialMavenBase(string mavenUrl) =>
+        mavenUrl.StartsWith("https://libraries.minecraft.net/", StringComparison.Ordinal)
+        || mavenUrl.Contains("minecraftforge", StringComparison.OrdinalIgnoreCase);
 
     private static DownloadArtifactEntry GetLibraryArtifactInfo(LibraryEntry libNode) {
         if (libNode.DownloadInformation is null)

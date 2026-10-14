@@ -234,6 +234,12 @@ public partial class ModInstallDialogViewModel : ObservableObject, IDialogContex
             LoaderType.Forge => "Forge",
             LoaderType.Fabric => "Fabric",
             LoaderType.Quilt => "Quilt",
+            LoaderType.LiteLoader => "LiteLoader",
+            LoaderType.Ornithe => "Ornithe",
+            LoaderType.LegacyFabric => "LegacyFabric",
+            LoaderType.Babric => "Babric",
+            LoaderType.Rift => "Rift",
+            LoaderType.Bta => "BTA",
             _ => string.Empty
         };
     }

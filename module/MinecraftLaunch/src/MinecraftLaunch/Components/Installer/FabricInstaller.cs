@@ -11,29 +11,47 @@ using System.Text.Json;
 namespace MinecraftLaunch.Components.Installer;
 
 public sealed class FabricInstaller : InstallerBase {
+    /// <summary>官方 Fabric 元数据根（v2），也是其它 Fabric 系分支的默认值。</summary>
+    public const string DefaultMetaBaseUrl = "https://meta.fabricmc.net/v2";
+
     public string CustomId { get; init; }
     public FabricInstallEntry Entry { get; init; }
+    /// <summary>
+    /// 元数据根地址（形如 <c>https://meta.fabricmc.net/v2</c>）。
+    /// Ornithe / LegacyFabric / Babric 等 Fabric 系装载器只是换一个兼容根地址。
+    /// </summary>
+    public string MetaBaseUrl { get; init; } = DefaultMetaBaseUrl;
     public override string MinecraftFolder { get; init; }
     public MinecraftEntry InheritedMinecraft { get; init; }
 
-    public static FabricInstaller Create(string mcFolder, FabricInstallEntry installEntry, string customId = default) {
+    public static FabricInstaller Create(string mcFolder, FabricInstallEntry installEntry, string customId = default,
+        string metaBaseUrl = default) {
         return new FabricInstaller {
             CustomId = customId,
             Entry = installEntry,
+            MetaBaseUrl = string.IsNullOrWhiteSpace(metaBaseUrl) ? DefaultMetaBaseUrl : metaBaseUrl.TrimEnd('/'),
             MinecraftFolder = mcFolder,
         };
     }
 
-    public static async Task<IEnumerable<FabricInstallEntry>> EnumerableFabricAsync(string mcVersion, CancellationToken cancellationToken = default) {
-        await using var json = await HttpUtil.FlurlClient.Request($"https://meta.fabricmc.net/v2/versions/loader/{mcVersion}")
+    public static async Task<IEnumerable<FabricInstallEntry>> EnumerableFabricAsync(string mcVersion,
+        CancellationToken cancellationToken = default, string metaBaseUrl = default) {
+        var baseUrl = string.IsNullOrWhiteSpace(metaBaseUrl) ? DefaultMetaBaseUrl : metaBaseUrl.TrimEnd('/');
+        await using var json = await HttpUtil.FlurlClient.Request($"{baseUrl}/versions/loader/{mcVersion}")
             .GetStreamAsync(cancellationToken: cancellationToken);
 
         var entries = (await JsonSerializer.DeserializeAsync(json,
                 FabricInstallEntryContext.Default.IEnumerableFabricInstallEntry, cancellationToken))
             .Select(entry => entry with { RequestedMcVersion = mcVersion })
-            .OrderByDescending(x => new Version(x.Loader.Version.Replace(x.Loader.Separator, ".")));
+            // 部分分支（如 Ornithe）不返回 separator，这里给个兜底，否则 Replace(null, ".") 会抛。
+            .OrderByDescending(x => ToComparableVersion(x.Loader.Version, x.Loader.Separator));
 
         return entries;
+    }
+
+    private static Version ToComparableVersion(string version, string? separator) {
+        var normalized = string.IsNullOrEmpty(separator) ? version : version.Replace(separator, ".");
+        return Version.TryParse(normalized, out var parsed) ? parsed : new Version(0, 0);
     }
 
     public override async Task<MinecraftEntry> InstallAsync(CancellationToken cancellationToken = default) {
@@ -92,7 +110,7 @@ public sealed class FabricInstaller : InstallerBase {
             }
         }
 
-        string requestUrl = $"https://meta.fabricmc.net/v2/versions/loader/{Entry.McVersion}/{Entry.BuildVersion}/profile/json";
+        string requestUrl = $"{MetaBaseUrl}/versions/loader/{Entry.McVersion}/{Entry.BuildVersion}/profile/json";
         requestUrl = DownloadManager.BmclApi.TryFindUrl(requestUrl);
 
         await using var jsonStream = await HttpUtil.FlurlClient.Request(requestUrl)
@@ -133,7 +151,7 @@ public sealed class FabricInstaller : InstallerBase {
         }
 
         var requestUrl = DownloadManager.BmclApi.TryFindUrl(
-            $"https://meta.fabricmc.net/v2/versions/loader/{Entry.McVersion}/{Entry.BuildVersion}/profile/json");
+            $"{MetaBaseUrl}/versions/loader/{Entry.McVersion}/{Entry.BuildVersion}/profile/json");
         await using var jsonStream = await HttpUtil.FlurlClient.Request(requestUrl)
             .GetStreamAsync(HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         if (!jsonFile.Directory!.Exists) jsonFile.Directory.Create();

@@ -12,6 +12,7 @@ using MinecraftLaunch.Components.Installer;
 using MChub.Bedrock.Standard.Interface;
 using MChub.Bedrock.Standard.Manifest;
 using MChub.Core.Const;
+using MChub.Core.Minecraft;
 using MChub.Core.Minecraft.Classes;
 using MChub.Core.Minecraft.Instance;
 using MChub.Core.Minecraft.Models;
@@ -219,7 +220,15 @@ public partial class CreateInstanceDialogViewModel : ObservableObject, IDialogCo
         new("Fabric", LoaderKind.Fabric),
         new("NeoForge", LoaderKind.NeoForge),
         new("Forge", LoaderKind.Forge),
-        new("Quilt", LoaderKind.Quilt)
+        new("Quilt", LoaderKind.Quilt),
+        // Fabric 系分支（元数据兼容）
+        new("Ornithe", LoaderKind.Ornithe),
+        new("Legacy Fabric", LoaderKind.LegacyFabric),
+        new("Babric", LoaderKind.Babric),
+        // 独立机制
+        new("Rift", LoaderKind.Rift),
+        new("BTA", LoaderKind.Bta),
+        new("LiteLoader", LoaderKind.LiteLoader)
     ];
 
     public IReadOnlyList<LoaderVersionFilterOption> LoaderVersionFilters { get; } =
@@ -985,7 +994,8 @@ public partial class CreateInstanceDialogViewModel : ObservableObject, IDialogCo
             LoaderKind.Quilt => (await QuiltInstaller.EnumerableQuiltAsync(mcVersion)).Cast<IInstallEntry>().ToList(),
             LoaderKind.OptiFine => (await OptifineInstaller.EnumerableOptifineAsync(mcVersion)).Cast<IInstallEntry>()
                 .ToList(),
-            _ => []
+            // Ornithe / LegacyFabric / Babric 走 Fabric 兼容元数据；BTA / Rift 各有自己的取版本方式。
+            _ => await LoaderCatalog.FetchVersionsAsync(kind, mcVersion)
         };
     }
 
@@ -1113,7 +1123,9 @@ public partial class CreateInstanceDialogViewModel : ObservableObject, IDialogCo
     {
         return kind switch
         {
-            LoaderKind.Fabric => entry is FabricInstallEntry { Loader.IsStable: true },
+            // Ornithe / LegacyFabric / Babric 与 Fabric 同构（都是 FabricInstallEntry）。
+            LoaderKind.Fabric or LoaderKind.Ornithe or LoaderKind.LegacyFabric or LoaderKind.Babric
+                => entry is FabricInstallEntry { Loader.IsStable: true },
             LoaderKind.Quilt => entry is QuiltInstallEntry { Loader.IsStable: true },
             LoaderKind.Forge or LoaderKind.NeoForge => entry is ForgeInstallEntry forge &&
                                                        !forge.ForgeVersion.Contains("beta",
@@ -1123,6 +1135,12 @@ public partial class CreateInstanceDialogViewModel : ObservableObject, IDialogCo
                                                             StringComparison.OrdinalIgnoreCase)),
             LoaderKind.OptiFine => entry is OptifineInstallEntry optifine &&
                                    !optifine.Patch.Contains("pre", StringComparison.OrdinalIgnoreCase),
+            // BTA / Rift 的版本列表本身就是发布版，直接算稳定。
+            LoaderKind.Bta or LoaderKind.Rift => true,
+            // LiteLoader 的 SNAPSHOT 流不算稳定版。
+            LoaderKind.LiteLoader => entry is LiteLoaderInstallEntry liteLoader &&
+                                     !liteLoader.LoaderVersion.Contains("SNAPSHOT",
+                                         StringComparison.OrdinalIgnoreCase),
             _ => false
         };
     }

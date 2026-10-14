@@ -106,6 +106,8 @@ public static class IridiumResourceMapping
             ModLoaderType.Forge => ResourceLoaderType.Forge,
             ModLoaderType.Fabric => ResourceLoaderType.Fabric,
             ModLoaderType.Quilt => ResourceLoaderType.Quilt,
+            ModLoaderType.LiteLoader => ResourceLoaderType.LiteLoader,
+            ModLoaderType.LegacyFabric => ResourceLoaderType.LegacyFabric,
             _ => ResourceLoaderType.Any
         };
     }

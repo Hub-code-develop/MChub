@@ -49,7 +49,7 @@ public static class MinecraftInstallationTasks
 
     public static bool RequiresJavaRuntime(IEnumerable<LoaderKind> kinds)
     {
-        return kinds.Any(kind => kind is LoaderKind.Forge or LoaderKind.NeoForge or LoaderKind.Quilt or LoaderKind.OptiFine);
+        return kinds.Any(LoaderCatalog.RequiresJavaRuntime);
     }
 
     private static async Task RunInstallationAsync(TaskExecutionContext context, VersionManifestEntry vanilla,
@@ -368,8 +368,13 @@ public static class MinecraftInstallationTasks
         {
             LoaderKind.Forge or LoaderKind.NeoForge =>
                 ForgeInstaller.Create(folder, javaPath!, (ForgeInstallEntry)entry, versionId),
-            LoaderKind.Fabric => FabricInstaller.Create(folder, (FabricInstallEntry)entry, versionId),
+            // Fabric 与其兼容分支（Ornithe / LegacyFabric / Babric）共用同一个安装器，只是元数据根不同。
+            _ when LoaderCatalog.IsFabricCompatible(kind) =>
+                FabricInstaller.Create(folder, (FabricInstallEntry)entry, versionId, LoaderCatalog.FabricMetaBaseUrl(kind)),
             LoaderKind.Quilt => QuiltInstaller.Create(folder, (QuiltInstallEntry)entry, versionId),
+            LoaderKind.Bta => BtaInstaller.Create(folder, (BtaInstallEntry)entry, versionId),
+            LoaderKind.Rift => RiftInstaller.Create(folder, (RiftInstallEntry)entry, versionId),
+            LoaderKind.LiteLoader => LiteLoaderInstaller.Create(folder, (LiteLoaderInstallEntry)entry, versionId),
             _ => throw new InvalidOperationException(string.Format(CommonLanguageManager.Instance.minecraft_unsupportedLoader.CurrentValue(), kind))
         };
         installer.SourceRootDirectories = sourceRoots;
@@ -389,6 +394,9 @@ public static class MinecraftInstallationTasks
             ForgeInstaller forge => forge.PreloadAsync(cancellationToken),
             FabricInstaller fabric => fabric.PreloadAsync(cancellationToken),
             QuiltInstaller quilt => quilt.PreloadAsync(cancellationToken),
+            BtaInstaller bta => bta.PreloadAsync(cancellationToken),
+            RiftInstaller rift => rift.PreloadAsync(cancellationToken),
+            LiteLoaderInstaller liteLoader => liteLoader.PreloadAsync(cancellationToken),
             _ => throw new NotSupportedException(string.Format(CommonLanguageManager.Instance.minecraft_unsupportedPreloadLoader.CurrentValue(), installer.GetType().Name))
         };
     }

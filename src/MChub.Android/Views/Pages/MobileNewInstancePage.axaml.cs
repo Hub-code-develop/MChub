@@ -70,12 +70,18 @@ public partial class MobileNewInstancePage : UserControl
         _loaderKinds.Clear();
         _loaderKinds.Add(null);
 
-        foreach (var kind in new[] { LoaderKind.Fabric, LoaderKind.Forge, LoaderKind.NeoForge, LoaderKind.Quilt, LoaderKind.OptiFine })
+        var supported = new[]
+        {
+            LoaderKind.Fabric, LoaderKind.Forge, LoaderKind.NeoForge, LoaderKind.Quilt, LoaderKind.OptiFine,
+            LoaderKind.Ornithe, LoaderKind.LegacyFabric, LoaderKind.Babric, LoaderKind.Rift, LoaderKind.Bta,
+            LoaderKind.LiteLoader
+        };
+        foreach (var kind in supported)
         {
             if (!MobileInstanceInstaller.CanInstallOnDevice(kind))
                 continue;
 
-            labels.Add(kind.ToString());
+            labels.Add(LoaderDisplayName(kind));
             _loaderKinds.Add(kind);
         }
 
@@ -84,11 +90,18 @@ public partial class MobileNewInstancePage : UserControl
         LoaderVersionCard.IsVisible = false;
     }
 
+    private static string LoaderDisplayName(LoaderKind kind) => kind switch
+    {
+        LoaderKind.LegacyFabric => "Legacy Fabric",
+        LoaderKind.Bta => "BTA",
+        _ => kind.ToString()
+    };
+
     /// <summary>能不能装 Forge 系取决于包里有没有内置的 java 命令（见 MobileInstallerJava）。</summary>
     private void UpdateLoaderHint()
     {
         var language = MobileLanguageManager.Instance;
-        var missing = new[] { LoaderKind.Forge, LoaderKind.NeoForge, LoaderKind.OptiFine }
+        var missing = new[] { LoaderKind.Forge, LoaderKind.NeoForge, LoaderKind.OptiFine, LoaderKind.Rift, LoaderKind.Bta }
             .Any(kind => !MobileInstanceInstaller.CanInstallOnDevice(kind));
         LoaderHintText.Text = missing ? language.mobile_newLoaderUnsupported.CurrentValue() : string.Empty;
     }

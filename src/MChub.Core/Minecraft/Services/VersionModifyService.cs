@@ -616,8 +616,12 @@ public static class VersionModifyService
         {
             LoaderKind.Forge or LoaderKind.NeoForge =>
                 ForgeInstaller.Create(folder, javaPath!, (ForgeInstallEntry)entry, versionId),
-            LoaderKind.Fabric => FabricInstaller.Create(folder, (FabricInstallEntry)entry, versionId),
+            _ when LoaderCatalog.IsFabricCompatible(kind) =>
+                FabricInstaller.Create(folder, (FabricInstallEntry)entry, versionId, LoaderCatalog.FabricMetaBaseUrl(kind)),
             LoaderKind.Quilt => QuiltInstaller.Create(folder, (QuiltInstallEntry)entry, versionId),
+            LoaderKind.Bta => BtaInstaller.Create(folder, (BtaInstallEntry)entry, versionId),
+            LoaderKind.Rift => RiftInstaller.Create(folder, (RiftInstallEntry)entry, versionId),
+            LoaderKind.LiteLoader => LiteLoaderInstaller.Create(folder, (LiteLoaderInstallEntry)entry, versionId),
             _ => throw new InvalidOperationException(string.Format(CommonLanguageManager.Instance.versionModify_unsupportedLoaderInstall.CurrentValue(), kind))
         };
         installer.SourceRootDirectories = sourceRoots;
@@ -637,6 +641,9 @@ public static class VersionModifyService
             ForgeInstaller forge => forge.PreloadAsync(cancellationToken),
             FabricInstaller fabric => fabric.PreloadAsync(cancellationToken),
             QuiltInstaller quilt => quilt.PreloadAsync(cancellationToken),
+            BtaInstaller bta => bta.PreloadAsync(cancellationToken),
+            RiftInstaller rift => rift.PreloadAsync(cancellationToken),
+            LiteLoaderInstaller liteLoader => liteLoader.PreloadAsync(cancellationToken),
             _ => throw new NotSupportedException(string.Format(CommonLanguageManager.Instance.versionModify_unsupportedPreload.CurrentValue(), installer.GetType().Name))
         };
     }

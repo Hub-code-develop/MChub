@@ -20,6 +20,10 @@ public static class ModLoaderDetector {
             { "optifine:optifine", (LoaderType.Optifine, AfterFirstUnderscoreUpper) },
             { "net.fabricmc:fabric-loader:", (LoaderType.Fabric, static v => v) },
             { "net.fabricmc:fabric-api:", (LoaderType.Fabric, static v => v) },
+            { "net.ornithemc:ornithe-loader:", (LoaderType.Ornithe, static v => v) },
+            { "net.legacyfabric:intermediary:", (LoaderType.LegacyFabric, static v => v) },
+            { "babric:intermediary-upstream:", (LoaderType.Babric, static v => v) },
+            { "org.dimdev:rift:", (LoaderType.Rift, static v => v) },
             { "com.mumfrey:liteloader:", (LoaderType.LiteLoader, static v => v) },
             { "org.quiltmc:quilt-loader:", (LoaderType.Quilt, static v => v) },
         }.ToFrozenDictionary();

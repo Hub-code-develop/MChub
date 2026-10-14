@@ -64,7 +64,8 @@ internal static class MobileInstanceInstaller
                 .Cast<IInstallEntry>().ToList(),
             LoaderKind.OptiFine => (await OptifineInstaller.EnumerableOptifineAsync(minecraftVersion))
                 .Cast<IInstallEntry>().ToList(),
-            _ => []
+            // Ornithe / LegacyFabric / Babric 走 Fabric 兼容元数据；BTA / Rift 各有自己的取版本方式。
+            _ => await LoaderCatalog.FetchVersionsAsync(kind, minecraftVersion, cancellationToken)
         };
     }
 

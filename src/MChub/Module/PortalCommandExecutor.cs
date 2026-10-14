@@ -119,6 +119,9 @@ public static class MChubCommandExecutor
                 LoaderKind.Quilt => await QuiltInstaller.EnumerableQuiltAsync(minecraftVersion),
                 LoaderKind.OptiFine => (await OptifineInstaller.EnumerableOptifineAsync(minecraftVersion))
                     .Cast<IInstallEntry>(),
+                // Ornithe / LegacyFabric / Babric / BTA / Rift 统一走装载器目录。
+                _ when LoaderCatalog.IsFabricCompatible(kind) => await LoaderCatalog.FetchVersionsAsync(kind, minecraftVersion),
+                LoaderKind.Bta or LoaderKind.Rift => await LoaderCatalog.FetchVersionsAsync(kind, minecraftVersion),
                 _ => throw new InvalidOperationException(string.Format(
                     CommonLanguageManager.Instance.minecraft_unsupportedLoader.CurrentValue(), kind))
             }).ToList();
@@ -159,6 +162,12 @@ public static class MChubCommandExecutor
             "neoforge" => LoaderKind.NeoForge,
             "quilt" => LoaderKind.Quilt,
             "optifine" => LoaderKind.OptiFine,
+            "ornithe" => LoaderKind.Ornithe,
+            "legacyfabric" or "legacy-fabric" or "legacy_fabric" => LoaderKind.LegacyFabric,
+            "babric" => LoaderKind.Babric,
+            "rift" => LoaderKind.Rift,
+            "bta" or "betterthanadventure" or "better-than-adventure" => LoaderKind.Bta,
+            "liteloader" or "lite-loader" or "lite_loader" => LoaderKind.LiteLoader,
             _ => throw new InvalidOperationException(string.Format(
                 CommonLanguageManager.Instance.minecraft_unknownLoader.CurrentValue(), value))
         };

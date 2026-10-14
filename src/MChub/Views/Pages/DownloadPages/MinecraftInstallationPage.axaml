@@ -128,6 +128,84 @@
                         <TextBlock Text="{Binding OptiFineStatus}" TextWrapping="Wrap" />
                     </StackPanel>
                 </CheckBox>
+                <CheckBox
+                    IsChecked="{Binding IsOrnitheSelected, Mode=TwoWay}"
+                    Margin="0,0,10,10"
+                    Theme="{DynamicResource PureCardCheckBox}"
+                    Width="220">
+                    <StackPanel Spacing="4">
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Text="Ornithe" />
+                        <TextBlock Text="{Binding OrnitheStatus}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </CheckBox>
+                <CheckBox
+                    IsChecked="{Binding IsLegacyFabricSelected, Mode=TwoWay}"
+                    Margin="0,0,10,10"
+                    Theme="{DynamicResource PureCardCheckBox}"
+                    Width="220">
+                    <StackPanel Spacing="4">
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Text="Legacy Fabric" />
+                        <TextBlock Text="{Binding LegacyFabricStatus}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </CheckBox>
+                <CheckBox
+                    IsChecked="{Binding IsBabricSelected, Mode=TwoWay}"
+                    Margin="0,0,10,10"
+                    Theme="{DynamicResource PureCardCheckBox}"
+                    Width="220">
+                    <StackPanel Spacing="4">
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Text="Babric" />
+                        <TextBlock Text="{Binding BabricStatus}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </CheckBox>
+                <CheckBox
+                    IsChecked="{Binding IsRiftSelected, Mode=TwoWay}"
+                    Margin="0,0,10,10"
+                    Theme="{DynamicResource PureCardCheckBox}"
+                    Width="220">
+                    <StackPanel Spacing="4">
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Text="Rift" />
+                        <TextBlock Text="{Binding RiftStatus}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </CheckBox>
+                <CheckBox
+                    IsChecked="{Binding IsBtaSelected, Mode=TwoWay}"
+                    Margin="0,0,10,10"
+                    Theme="{DynamicResource PureCardCheckBox}"
+                    Width="220">
+                    <StackPanel Spacing="4">
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Text="BTA" />
+                        <TextBlock Text="{Binding BtaStatus}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </CheckBox>
+                <CheckBox
+                    IsChecked="{Binding IsLiteLoaderSelected, Mode=TwoWay}"
+                    Margin="0,0,10,10"
+                    Theme="{DynamicResource PureCardCheckBox}"
+                    Width="220">
+                    <StackPanel Spacing="4">
+                        <TextBlock
+                            FontSize="15"
+                            FontWeight="SemiBold"
+                            Text="LiteLoader" />
+                        <TextBlock Text="{Binding LiteLoaderStatus}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </CheckBox>
             </WrapPanel>
             <Panel>
                 <Button

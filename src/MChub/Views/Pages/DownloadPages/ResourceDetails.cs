@@ -562,7 +562,9 @@ public partial class ResourceDetailsViewModel : ObservableObject, IDisposable
         return loader switch
         {
             ModLoaderType.NeoForge => "NeoForge", ModLoaderType.Forge => "Forge", ModLoaderType.Fabric => "Fabric",
-            ModLoaderType.Quilt => "Quilt", _ => null
+            ModLoaderType.Quilt => "Quilt", ModLoaderType.LiteLoader => "LiteLoader",
+            ModLoaderType.Ornithe => "Ornithe", ModLoaderType.LegacyFabric => "LegacyFabric",
+            ModLoaderType.Rift => "Rift", ModLoaderType.Bta => "BTA", _ => null
         };
     }
 }
