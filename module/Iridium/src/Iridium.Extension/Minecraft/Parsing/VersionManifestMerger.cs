@@ -30,7 +30,7 @@ public sealed class MergedVersionManifest {
 /// <summary>
 /// Walks an <c>inheritsFrom</c> chain of Mojang-style version manifests and merges each
 /// layer into a single <see cref="MergedVersionManifest"/>. Used by launcher providers
-/// whose metadata stores fully merged or inherited vanilla manifests (Portal MC, Modrinth,
+/// whose metadata stores fully merged or inherited vanilla manifests (MChub, Modrinth,
 /// CurseForge, ...).
 /// </summary>
 public sealed class VersionManifestMerger {
@@ -90,7 +90,7 @@ public sealed class VersionManifestMerger {
 
     /// <summary>
     /// Merges a single manifest layer into an accumulated result. Used both while walking the
-    /// inheritance chain and by providers that overlay a standalone manifest (e.g. a Portal MC
+    /// inheritance chain and by providers that overlay a standalone manifest (e.g. a MChub
     /// instance file) on top of an already-merged chain.
     /// </summary>
     public static void ApplyLayer(MergedVersionManifest merged, JsonElement root, string? fallbackId) {

@@ -49,7 +49,10 @@ public static class BedrockDataPathResolver
 
     private static string GetLinuxProtonDataRoot(BedrockInstanceConfig config)
     {
-        var prefix = Environment.GetEnvironmentVariable("PORTAL_BEDROCK_PREFIX");
+        // MCHUB_BEDROCK_PREFIX 为准，回落兼容旧品牌名 PORTAL_BEDROCK_PREFIX。
+        var prefix = Environment.GetEnvironmentVariable("MCHUB_BEDROCK_PREFIX");
+        if (string.IsNullOrWhiteSpace(prefix))
+            prefix = Environment.GetEnvironmentVariable("PORTAL_BEDROCK_PREFIX");
         if (string.IsNullOrWhiteSpace(prefix))
         {
             var dataHome = Environment.GetEnvironmentVariable("XDG_DATA_HOME");

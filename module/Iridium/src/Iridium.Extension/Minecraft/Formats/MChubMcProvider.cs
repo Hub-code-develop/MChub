@@ -8,7 +8,7 @@ using Iridium.Models.Minecraft;
 namespace Iridium.Extension.Minecraft.Formats;
 
 /// <summary>
-/// Scans Portal MC installations. Every instance is a fabric-style inherited version manifest
+/// Scans MChub installations. Every instance is a fabric-style inherited version manifest
 /// stored under <c>instances/&lt;name&gt;/&lt;name&gt;.json</c>; it declares an
 /// <c>inheritsFrom</c> id pointing at a vanilla version whose full metadata lives in
 /// <c>meta/versions/&lt;id&gt;/&lt;id&gt;.json</c>. This provider walks that chain, merges
@@ -27,7 +27,7 @@ public sealed class MChubMcProvider : IFormatProvider {
         if (!Directory.Exists(instancesRoot))
             return false;
 
-        // Distinguish from Prism's instances/: Portal MC instance dirs hold a manifest
+        // Distinguish from Prism's instances/: MChub instance dirs hold a manifest
         // named after the instance declaring an inheritsFrom chain.
         foreach (var dir in Directory.EnumerateDirectories(instancesRoot)) {
             var jsonPath = Path.Combine(dir, $"{Path.GetFileName(dir)}.json");

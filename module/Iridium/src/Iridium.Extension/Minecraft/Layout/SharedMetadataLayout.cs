@@ -8,7 +8,7 @@ namespace Iridium.Extension.Minecraft.Layout;
 /// Base layout for launchers that keep their shared metadata (libraries, assets, version
 /// manifests, natives) in a root-relative directory while game directories live in
 /// per-instance folders, e.g. <c>Instances/&lt;name&gt;</c> + <c>Install/</c> (CurseForge)
-/// or <c>instances/&lt;name&gt;</c> + <c>meta/</c> (Portal MC, Modrinth).
+/// or <c>instances/&lt;name&gt;</c> + <c>meta/</c> (MChub, Modrinth).
 /// </summary>
 public abstract class SharedMetadataLayout : IMinecraftLayout {
     /// <summary>Format identity of this layout (e.g. "CurseForge", "Modrinth", "MChubMc").</summary>

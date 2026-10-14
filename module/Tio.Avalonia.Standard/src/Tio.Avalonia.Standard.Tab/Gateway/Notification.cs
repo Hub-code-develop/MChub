@@ -8,6 +8,9 @@ namespace Tio.Avalonia.Standard.Tab.Gateway;
 
 public static class NotificationGateway
 {
+    /// <summary>通知卡片左上角显示的启动器名（旧品牌 "Portal" 已弃用）。</summary>
+    private const string NotificationTitle = "MChub";
+
     public static Func<bool> IsToastFunc = null;
     
     public static void Notice(this TopLevel topLevel, NotificationOptions options)
@@ -32,7 +35,7 @@ public static class NotificationGateway
         }
         else
         {
-            topLevel.TryGetNotification()?.Show("Portal", msg, new NotificationOptions { Type = type });
+            topLevel.TryGetNotification()?.Show(NotificationTitle, msg, new NotificationOptions { Type = type });
         }
     }
 

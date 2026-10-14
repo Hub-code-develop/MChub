@@ -249,7 +249,7 @@
     "refreshTokenWritten": "Xbox 刷新令牌已写入 WineGDK machine registry",
     "resolvingProtonRuntime": "开始解析 Linux 基岩版 Proton 运行时。",
     "protonRuntimeReady": "Linux 基岩版 Proton 运行时已就绪：{0}，前缀：{1}。",
-    "usingConfiguredProton": "使用 PORTAL_PROTON_PATH 指定的 Proton：{0}。",
+    "usingConfiguredProton": "使用 MCHUB_PROTON_PATH 指定的 Proton：{0}。",
     "steamProtonDiscovered": "发现 Steam 安装的 Proton：{0}。",
     "usingInstalledProton": "使用 MChub 已安装的 Proton：{0}。",
     "protonInstalledWhileWaiting": "等待安装锁期间 Proton 已安装：{0}。",

@@ -61,7 +61,7 @@ namespace
     };
 }
 
-// Portal native injector ABI. The DLL path must be an absolute ANSI path.
+// MChub native injector ABI. The DLL path must be an absolute ANSI path.
 extern "C" __declspec(dllexport) int __cdecl Inject(
     std::int32_t processId,
     const char* dllPath,

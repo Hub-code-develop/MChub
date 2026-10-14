@@ -22,8 +22,18 @@ public sealed record LinuxBedrockRuntimeProgress(string Message, long BytesRecei
 
 public sealed class LinuxBedrockRuntimeResolver
 {
-    public const string ProtonPathVariable = "PORTAL_PROTON_PATH";
-    public const string PrefixPathVariable = "PORTAL_BEDROCK_PREFIX";
+    public const string ProtonPathVariable = "MCHUB_PROTON_PATH";
+    public const string PrefixPathVariable = "MCHUB_BEDROCK_PREFIX";
+
+    // 旧品牌时期的环境变量名。不再对外展示，但仍然兜底读取，免得老用户的配置失效。
+    private const string LegacyProtonPathVariable = "PORTAL_PROTON_PATH";
+    private const string LegacyPrefixPathVariable = "PORTAL_BEDROCK_PREFIX";
+
+    /// <summary>先读新名字，没有就回落到旧名字。</summary>
+    private static string? ReadEnvironmentVariable(string name, string legacyName)
+        => Environment.GetEnvironmentVariable(name) is { Length: > 0 } value
+            ? value
+            : Environment.GetEnvironmentVariable(legacyName);
 
     private const int DownloadBufferSize = 1024 * 256;
     private const int SourceProbeBytes = 1024 * 1024;
@@ -85,7 +95,7 @@ public sealed class LinuxBedrockRuntimeResolver
     private static async Task<string> ResolveProtonScriptAsync(Action<LinuxBedrockRuntimeProgress>? progress,
         CancellationToken cancellationToken, bool requireXUserRuntime)
     {
-        var configuredPath = Environment.GetEnvironmentVariable(ProtonPathVariable);
+        var configuredPath = ReadEnvironmentVariable(ProtonPathVariable, LegacyProtonPathVariable);
         if (!string.IsNullOrWhiteSpace(configuredPath))
         {
             var configuredScript = NormalizeProtonScript(configuredPath);
@@ -637,7 +647,7 @@ public sealed class LinuxBedrockRuntimeResolver
 
     private static string ResolvePrefixPath()
     {
-        var configuredPath = Environment.GetEnvironmentVariable(PrefixPathVariable);
+        var configuredPath = ReadEnvironmentVariable(PrefixPathVariable, LegacyPrefixPathVariable);
         if (!string.IsNullOrWhiteSpace(configuredPath)) return Path.GetFullPath(configuredPath);
         return Path.Combine(GetDataHome(), "MChub", "Bedrock", "proton-prefix");
     }

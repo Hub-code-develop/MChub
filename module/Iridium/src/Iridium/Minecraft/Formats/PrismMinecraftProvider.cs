@@ -25,7 +25,7 @@ public sealed class PrismMinecraftProvider : IFormatProvider {
             return false;
 
         // Require at least one instance carrying a Prism manifest so we don't shadow
-        // other launchers that also use an instances/ folder (e.g. Portal MC).
+        // other launchers that also use an instances/ folder (e.g. MChub).
         return Directory.EnumerateDirectories(instancesDir)
             .Any(dir => File.Exists(Path.Combine(dir, "mmc-pack.json")) ||
                         File.Exists(Path.Combine(dir, "package.info")));

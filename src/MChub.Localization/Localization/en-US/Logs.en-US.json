@@ -249,7 +249,7 @@
     "refreshTokenWritten": "Xbox refresh token written to the WineGDK machine registry",
     "resolvingProtonRuntime": "Start resolving the Linux Bedrock Proton runtime.",
     "protonRuntimeReady": "Linux Bedrock Proton runtime ready: {0}, prefix: {1}.",
-    "usingConfiguredProton": "Using the Proton specified by PORTAL_PROTON_PATH: {0}.",
+    "usingConfiguredProton": "Using the Proton specified by MCHUB_PROTON_PATH: {0}.",
     "steamProtonDiscovered": "Found a Proton installed by Steam: {0}.",
     "usingInstalledProton": "Using the Proton installed by MChub: {0}.",
     "protonInstalledWhileWaiting": "Proton installed while waiting for the install lock: {0}.",
