@@ -101,6 +101,9 @@
     "newInstallDone": "Installed: {0}",
     "newInstallFailed": "Install failed: {0}",
     "newInstallCancelled": "Installation cancelled",
-    "newPreparingJava": "Preparing the Java {0} runtime…"
+    "newPreparingJava": "Preparing the Java {0} runtime…",
+    "gameKeyJump": "Jump",
+    "gameKeySneak": "Sneak",
+    "gameKeySprint": "Sprint"
   }
 }

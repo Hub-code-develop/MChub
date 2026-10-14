@@ -101,6 +101,9 @@
     "newInstallDone": "安装完成：{0}",
     "newInstallFailed": "安装失败：{0}",
     "newInstallCancelled": "已取消安装",
-    "newPreparingJava": "正在准备 Java {0} 运行时…"
+    "newPreparingJava": "正在准备 Java {0} 运行时…",
+    "gameKeyJump": "跳",
+    "gameKeySneak": "潜行",
+    "gameKeySprint": "疾跑"
   }
 }

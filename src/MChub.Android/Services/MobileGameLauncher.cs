@@ -132,6 +132,11 @@ internal static class MobileGameLauncher
 
         try
         {
+            // 游戏渲染层之上挂上触屏操作层（触摸板 + 屏幕按键 + 软键盘）。
+            // 必须在 Surface 之后挂，保证操作层在更上层、优先收到触摸事件；
+            // MC 抓取鼠标后由 MobileTouchpadView 把手势翻成相对鼠标移动，未抓取时则绝对定位。
+            await MobileGameControls.AttachAsync();
+
             // 创建 JVM 并跑主类是同步阻塞调用（JLI_Launch 会一直占到游戏退出），
             // 因此必须放到线程池，不能占住 UI 线程。
             return await Task.Run(() =>
@@ -153,7 +158,9 @@ internal static class MobileGameLauncher
         }
         finally
         {
-            // 游戏视图必须摘掉，否则退出后屏幕还被 SurfaceView 占着、点不到启动器。
+            // 操作层先摘（触摸板/按键/软键盘），再把渲染 Surface 交还启动器界面，
+            // 否则退出后屏幕还被视图占着、点不到启动器。
+            await MobileGameControls.DetachAsync();
             await MobileGameSurfaceHost.ReleaseAsync();
         }
     }
