@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 
@@ -13,15 +14,22 @@ public class FluentColorPicker : ContentControl
 {
     /// <summary>
     /// 当前选中颜色，双向绑定到 <see cref="ColorView.Color"/>。
+    ///
+    /// <para><b>必须是 TwoWay</b>：用户选完色要回写到绑定源（如 <c>ConfigEntry.ThemeColor</c>），
+    /// 否则主题色既不生效也不会被保存。XAML 写 <c>Color="{Binding X}"</c> 时的绑定方向
+    /// 取的就是这里的 defaultBindingMode —— 别改成 OneWay。</para>
     /// </summary>
     public static readonly StyledProperty<Color> ColorProperty =
-        AvaloniaProperty.Register<FluentColorPicker, Color>(nameof(Color), Colors.White);
+        AvaloniaProperty.Register<FluentColorPicker, Color>(nameof(Color), Colors.White,
+            defaultBindingMode: BindingMode.TwoWay);
 
     /// <summary>
     /// 当前选中颜色的画刷（颜色驱动的同步只读属性）。
+    /// 给个初值，免得还没触发过变更时色块是空的。
     /// </summary>
     public static readonly StyledProperty<IBrush> ColorBrushProperty =
-        AvaloniaProperty.Register<FluentColorPicker, IBrush>(nameof(ColorBrush));
+        AvaloniaProperty.Register<FluentColorPicker, IBrush>(nameof(ColorBrush),
+            new ImmutableSolidColorBrush(Colors.White));
 
     /// <summary>
     /// 光谱形状（Box / Ring）。
