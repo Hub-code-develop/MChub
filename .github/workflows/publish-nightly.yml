@@ -5,6 +5,11 @@ on:
   schedule:
     - cron: "00 20 * * *"
 
+# 定时任务偶尔会与手动触发的构建撞车：排队而不是并发，避免互相删 / 覆盖同一个 release。
+concurrency:
+  group: publish-nightly
+  cancel-in-progress: false
+
 jobs:
   prepare:
     runs-on: ubuntu-latest
@@ -478,11 +483,9 @@ jobs:
           fi
           cat RELEASE_CHANGELOG.md
 
-      - name: Delete Previous Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release delete publish-nightly --cleanup-tag -y || true
-
+      # ⚠ 不要「先删除旧 release 再重建」：那样在"已删、未建"的窗口里
+      # GET /releases/tags/publish-nightly 会 404。action-gh-release 对已存在的 tag
+      # 是"更新"语义，原地覆盖资产即可，全程保持 release 可用。
       - name: Publish Release
         uses: softprops/action-gh-release@v3
         with:

@@ -33,6 +33,13 @@ public static class UpdateChecker
             Logger.Info($"Version {AppVersionService.Instance.Version.VersionTitle} Remote title: {release.Title}");
             return IsNewer(release) ? release.Title : "latest";
         }
+        catch (FlurlHttpException e) when (e.StatusCode == 404)
+        {
+            // 404 = 该更新通道目前没有构建产物（首次部署、通道迁移中、或 tag 被清理），
+            // 语义上是「暂无构建」而不是网络故障 —— 不该弹「网络请求错误」打扰用户，
+            // 记一条日志便于排查即可。
+            Logger.Info($"Update channel has no release yet (HTTP 404): {e.Message}");
+        }
         catch (FlurlHttpException e)
         {
             if (!noreply && sender is not null)

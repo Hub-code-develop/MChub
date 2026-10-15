@@ -6,6 +6,12 @@ on:
     branches:
       - main
 
+# 同一通道必须串行：多次推送并发跑会互相删除 / 覆盖同一个 release。
+# commit 通道只关心「最新快照」，所以新推送直接取消仍在跑的旧构建。
+concurrency:
+  group: publish-commit
+  cancel-in-progress: true
+
 jobs:
   prepare:
     runs-on: ubuntu-latest
@@ -459,12 +465,12 @@ jobs:
           fi
           cat RELEASE_CHANGELOG.md
 
-      # publish-commit 是移动式标签：先删除旧 Release 与标签，再在当前提交上重建
-      - name: Delete Previous Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release delete publish-commit --cleanup-tag -y || true
-
+      # ⚠ 不要「先删除旧 release 再重建」：那样在"已删、未建"的窗口里
+      # GET /releases/tags/publish-commit 会 404 —— 客户端更新检查会直接弹
+      # 「网络请求错误: 404」。action-gh-release 对**已存在的 tag** 是"更新"语义，
+      # 原地覆盖资产即可，全程保持 release 可用。
+      # 代价：tag 指针不再随构建移动 —— 对 commit 通道无影响，版本识别看
+      # release 标题里的 run_id + commit 短哈希。
       - name: Publish Release
         uses: softprops/action-gh-release@v3
         with:
