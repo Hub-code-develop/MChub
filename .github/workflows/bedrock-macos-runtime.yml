@@ -198,7 +198,11 @@ jobs:
           # v4:build-wine.sh 为 xgameruntime 的 QueryApiImpl 补了 CLSID_XUserImpl 分支
           # (未登录账户启动时游戏要 QueryApiImpl(CLSID_XUserImpl),否则 abort 退出码 3);
           # 旧缓存不含该补丁,必须重编。
-          key: wine-gdk-${{ env.WINE_GDK_REF }}-${{ runner.os }}-${{ runner.arch }}-v4
+          # v5:build-wine.sh 另按 GDK 语义实现了 XUser.cpp 的
+          # XUserAddAsync/XUserAddResult(未登录时以 E_GAMEUSER_NO_DEFAULT_USER
+          # 完成异步块,而不是返回 E_NOTIMPL 且永不完成 —— 后者会让基岩版抛 C++
+          # 异常并 abort)。旧缓存仍是桩实现,必须重编。
+          key: wine-gdk-${{ env.WINE_GDK_REF }}-${{ runner.os }}-${{ runner.arch }}-v5
 
       - name: 构建 Wine(WineGDK,x86_64)
         if: steps.wine-cache.outputs.cache-hit != 'true'

@@ -118,6 +118,103 @@ else:
     print("已为 QueryApiImpl 补上 CLSID_XUserImpl 分支")
 PYEOF
 
+# 上游 XUser.cpp 的 XUserAddAsync/XUserAddResult 是纯桩:直接返回 E_NOTIMPL,且
+# 从不完成调用方传入的异步块。基岩版启动时以
+# XUserAddOptions_AddDefaultUserSilently(0x01) 调 XUserAddAsync,紧接着调
+# XUserAddResult 取结果;拿到 E_NOTIMPL 后它的 C++ 侧抛未处理异常并 abort
+# (退出码 3,窗口虽已创建但随即退出:dwmapi/WTSRegisterSessionNotification 之后
+# 连续 44 层 __processing_throw 再 raise)。GDK 的文档语义是:找不到默认用户时该
+# 异步操作以 E_GAMEUSER_NO_DEFAULT_USER(0x89245106) 结束,标题据此进入未登录流程
+# —— Windows 上基岩版"未登录也能玩"依赖的正是这条路径。WineGDK 自带完整的
+# XAsync 实现(XAsyncBegin/Schedule/Complete/GetResult,XAsyncRunProvider 即范例),
+# 因此按 provider 模式补上即可,无需在 MChub 侧另注入 QueryApiImpl hook。
+log "补丁:XUser 未登录时按 GDK 语义完成 XUserAddAsync(免登录启动)"
+python3 - "$SRC/dlls/xgameruntime/GDKComponent/System/XUser.cpp" <<'PYEOF'
+import sys
+
+path = sys.argv[1]
+src = open(path).read()
+
+provider = """/* Xbox GDK semantics: when AddDefaultUserSilently finds no default user, the async
+ * operation completes with E_GAMEUSER_NO_DEFAULT_USER so the title can continue in a
+ * "not signed in" state. The upstream stub returned E_NOTIMPL and never completed the
+ * async block, which makes Bedrock Edition throw an unhandled C++ exception and abort
+ * (exit code 3). */
+static HRESULT __stdcall XUserAddProvider( XAsyncOp op, const XAsyncProviderData *data )
+{
+    switch (op)
+    {
+        case XAsyncOp::Begin:
+            return XAsyncSchedule( data->async, 0 );
+
+        case XAsyncOp::DoWork:
+            XAsyncComplete( data->async, E_GAMEUSER_NO_DEFAULT_USER, 0 );
+            return S_OK;
+
+        case XAsyncOp::Cancel:
+        case XAsyncOp::Cleanup:
+        case XAsyncOp::GetResult:
+            break;
+    }
+
+    return S_OK;
+}
+
+"""
+
+class_anchor = "class XUserImpl :"
+
+old_impl = """    HRESULT WINAPI XUserAddAsync( XUserAddOptions options, XAsyncBlock *async ) override
+    {
+        FIXME( "options %d, async %p stub!\\n", (int)options, async );
+        return E_NOTIMPL;
+    }
+
+    HRESULT WINAPI XUserAddResult( XAsyncBlock *async, XUserHandle *newUser ) override
+    {
+        FIXME( "async %p, newUser %p stub!\\n", async, newUser );
+        return E_NOTIMPL;
+    }
+"""
+
+new_impl = """    HRESULT WINAPI XUserAddAsync( XUserAddOptions options, XAsyncBlock *async ) override
+    {
+        TRACE( "options %d, async %p.\\n", (int)options, async );
+
+        /* No signed-in Xbox user exists in this runtime (a real session is handled
+         * outside of Wine by MChub). Complete the async block with the documented
+         * "no default user" result instead of leaving it pending, so the title can
+         * start in a not-signed-in state. */
+        if (!async)
+            return E_POINTER;
+
+        return XAsyncBegin( async, nullptr, (const void *)XUserAddProvider, "XUserAddAsync", XUserAddProvider );
+    }
+
+    HRESULT WINAPI XUserAddResult( XAsyncBlock *async, XUserHandle *newUser ) override
+    {
+        TRACE( "async %p, newUser %p.\\n", async, newUser );
+
+        if (!newUser)
+            return E_POINTER;
+
+        *newUser = nullptr;
+
+        return XAsyncGetResult( async, (const void *)XUserAddProvider, sizeof(XUserHandle), newUser, nullptr );
+    }
+"""
+
+if "XUserAddProvider" in src:
+    print("XUser.cpp 已含 XUserAddProvider,跳过")
+elif class_anchor not in src or old_impl not in src:
+    sys.exit("未找到 XUser.cpp 的补丁锚点,无法为 XUserAddAsync 打补丁")
+else:
+    src = src.replace(class_anchor, provider + class_anchor, 1)
+    src = src.replace(old_impl, new_impl, 1)
+    open(path, "w").write(src)
+    print("已按 GDK 语义实现 XUserAddAsync/XUserAddResult(未登录返回 E_GAMEUSER_NO_DEFAULT_USER)")
+PYEOF
+
 log "生成 configure / Makefile / spec"
 cd "$SRC"
 ./tools/make_requests
