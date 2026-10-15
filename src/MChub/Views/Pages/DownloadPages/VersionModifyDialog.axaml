@@ -94,12 +94,18 @@
                 FontWeight="SemiBold"
                 Margin="5,0,0,0"
                 Text="{Translate {x:Static loc:DownloadsLanguageManager+Keys.versionmodifydialog_selectLoaderHeading}}" />
+            <!--  装载器卡片数量较多，可能超出对话框高度：套一层限高滚动区。
+                  水平方向禁用滚动，让 WrapPanel 仍能拿到宽度约束并正常换行。  -->
+            <ScrollViewer
+                MaxHeight="200"
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
             <WrapPanel>
                 <CheckBox
                     IsChecked="{Binding IsForgeSelected, Mode=TwoWay}"
                     Margin="0,0,10,10"
                     Theme="{DynamicResource PureCardCheckBox}"
-                    Width="220">
+                    Width="210">
                     <StackPanel Spacing="4">
                         <TextBlock
                             FontSize="15"
@@ -112,7 +118,7 @@
                     IsChecked="{Binding IsNeoForgeSelected, Mode=TwoWay}"
                     Margin="0,0,10,10"
                     Theme="{DynamicResource PureCardCheckBox}"
-                    Width="220">
+                    Width="210">
                     <StackPanel Spacing="4">
                         <TextBlock
                             FontSize="15"
@@ -125,7 +131,7 @@
                     IsChecked="{Binding IsFabricSelected, Mode=TwoWay}"
                     Margin="0,0,10,10"
                     Theme="{DynamicResource PureCardCheckBox}"
-                    Width="220">
+                    Width="210">
                     <StackPanel Spacing="4">
                         <TextBlock
                             FontSize="15"
@@ -138,7 +144,7 @@
                     IsChecked="{Binding IsQuiltSelected, Mode=TwoWay}"
                     Margin="0,0,10,10"
                     Theme="{DynamicResource PureCardCheckBox}"
-                    Width="220">
+                    Width="210">
                     <StackPanel Spacing="4">
                         <TextBlock
                             FontSize="15"
@@ -151,7 +157,7 @@
                     IsChecked="{Binding IsOptiFineSelected, Mode=TwoWay}"
                     Margin="0,0,10,10"
                     Theme="{DynamicResource PureCardCheckBox}"
-                    Width="220">
+                    Width="210">
                     <StackPanel Spacing="4">
                         <TextBlock
                             FontSize="15"
@@ -164,7 +170,7 @@
                     IsChecked="{Binding IsOrnitheSelected, Mode=TwoWay}"
                     Margin="0,0,10,10"
                     Theme="{DynamicResource PureCardCheckBox}"
-                    Width="220">
+                    Width="210">
                     <StackPanel Spacing="4">
                         <TextBlock
                             FontSize="15"
@@ -177,7 +183,7 @@
                     IsChecked="{Binding IsLegacyFabricSelected, Mode=TwoWay}"
                     Margin="0,0,10,10"
                     Theme="{DynamicResource PureCardCheckBox}"
-                    Width="220">
+                    Width="210">
                     <StackPanel Spacing="4">
                         <TextBlock
                             FontSize="15"
@@ -190,7 +196,7 @@
                     IsChecked="{Binding IsBabricSelected, Mode=TwoWay}"
                     Margin="0,0,10,10"
                     Theme="{DynamicResource PureCardCheckBox}"
-                    Width="220">
+                    Width="210">
                     <StackPanel Spacing="4">
                         <TextBlock
                             FontSize="15"
@@ -203,7 +209,7 @@
                     IsChecked="{Binding IsRiftSelected, Mode=TwoWay}"
                     Margin="0,0,10,10"
                     Theme="{DynamicResource PureCardCheckBox}"
-                    Width="220">
+                    Width="210">
                     <StackPanel Spacing="4">
                         <TextBlock
                             FontSize="15"
@@ -216,7 +222,7 @@
                     IsChecked="{Binding IsBtaSelected, Mode=TwoWay}"
                     Margin="0,0,10,10"
                     Theme="{DynamicResource PureCardCheckBox}"
-                    Width="220">
+                    Width="210">
                     <StackPanel Spacing="4">
                         <TextBlock
                             FontSize="15"
@@ -229,7 +235,7 @@
                     IsChecked="{Binding IsLiteLoaderSelected, Mode=TwoWay}"
                     Margin="0,0,10,10"
                     Theme="{DynamicResource PureCardCheckBox}"
-                    Width="220">
+                    Width="210">
                     <StackPanel Spacing="4">
                         <TextBlock
                             FontSize="15"
@@ -239,6 +245,7 @@
                     </StackPanel>
                 </CheckBox>
             </WrapPanel>
+            </ScrollViewer>
             <Panel>
                 <StackPanel
                     DockPanel.Dock="Left"
