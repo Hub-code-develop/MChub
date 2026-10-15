@@ -133,7 +133,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: linux-${{ matrix.kind }}-artifacts
+          name: ${{ matrix.runtime }}-${{ matrix.kind }}-artifacts
           path: assets/conf/Deploy/OUT/${{ matrix.output }}
 
   win-exe:
