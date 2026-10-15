@@ -233,7 +233,16 @@ jobs:
           repo="$GITHUB_REPOSITORY"
           if ! gh release view "$TAG" --repo "$repo" >/dev/null 2>&1; then
             gh release create "$TAG" --repo "$repo" \
+              --prerelease \
               --title "Mobile runtime ($TAG)" \
-              --notes "Android arm64 运行时组件：Pojav 系 native（自建）+ LWJGL natives / OpenAL / ANGLE / SDL / GL 翻译层（上游 AAR）+ JRE 8/17/21/25 + 移动端 LWJGL jar。由 .github/workflows/build-mobile-runtime.yml 生成。"
+              --notes "Android arm64 运行时组件：Pojav 系 native（自建）+ LWJGL natives / OpenAL / ANGLE / SDL / GL 翻译层（上游 AAR）+ JRE 8/17/21/25 + 移动端 LWJGL jar。由 .github/workflows/build-mobile-runtime.yml 生成。仅供构建期依赖，勿手动下载。"
           fi
+          # ⚠ 运行时包是「构建期依赖」（由 build/android 的 Fetch prebuilt mobile runtime 用
+          # gh release download <tag> 拉取并打进 APK），不是给终端用户下载的应用版本。
+          # 因此它必须始终是 Pre-release：否则会抢占 GitHub 的 Latest，
+          # 使 /releases/latest 返回它 —— 官网页/第三方「下载最新版」会拿到运行时 zip（下载出错），
+          # 依赖 latest 的更新检查也会判错版本（更新出错）。
+          # 注意不能改成 draft：draft 不出现在 /releases/tags/{tag}，会让上面的 gh release download 失败。
+          # 这行是无条件的，保证历史遗留的正式版也会被纠正回 Pre-release。
+          gh release edit "$TAG" --repo "$repo" --prerelease >/dev/null
           gh release upload "$TAG" mobile-runtime-arm64.zip --clobber --repo "$repo"
