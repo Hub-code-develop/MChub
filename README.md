@@ -14,7 +14,7 @@
   <a href="https://github.com/hub-code-develop/MChub/stargazers"><img src="https://img.shields.io/github/stars/hub-code-develop/MChub?label=%E6%98%9F%E6%A0%87&logo=github&logoColor=white&color=eac54f&style=for-the-badge" alt="星标"></a>
   <a href="https://github.com/hub-code-develop/MChub/releases"><img src="https://img.shields.io/github/downloads/hub-code-develop/MChub/total?label=%E4%B8%8B%E8%BD%BD%E9%87%8F&logo=github&logoColor=white&color=388bfd&style=for-the-badge" alt="下载量"></a>
   <img src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-GPL--3.0--or--later-9d4edd?logoColor=white&style=for-the-badge" alt="许可证">
-  <a href="[https://codehub-develop.github.io/MChub/](https://codehub-develop.github.io/MChub/)"><img src="https://img.shields.io/static/v1?label=%E5%AE%98%E7%BD%91&message=https://codehub-develop.github.io/MChub/&color=38ce8f&logo=globe&logoColor=white&style=for-the-badge" alt="官网"></a>
+  <a href="https://codehub-develop.github.io/MChub/"><img src="https://img.shields.io/static/v1?label=%E5%AE%98%E7%BD%91&message=https://codehub-develop.github.io/MChub/&color=38ce8f&logo=globe&logoColor=white&style=for-the-badge" alt="官网"></a>
 </p>
 
 ---
