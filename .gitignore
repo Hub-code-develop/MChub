@@ -479,3 +479,6 @@ src/MChub.Android/Native/out/
 
 # 打包前从 release 装配的运行时资产（体积大，只在 CI 里生成）
 src/MChub.Android/RuntimeAssets/
+
+# ===== 本机专用的开发脚本（含 /Users/... 绝对路径，不入库） =====
+run-macos.command
