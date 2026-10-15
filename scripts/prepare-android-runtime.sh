@@ -4,8 +4,9 @@
 # APK 也开箱即用（不必只依赖 CI 出的包）。
 #
 # 为什么要内嵌：Android 侧要跑 MC Java 版，得有移植版 OpenJDK + Pojav 系 native +
-# 移动端 LWJGL。这些都由 .github/workflows/build-mobile-runtime.yml 构建成
-# release 资产 mobile-runtime-arm64.zip；本脚本把它取下来按 APK 需要的布局摊平。
+# 移动端 LWJGL。这些由**独立仓库** hub-code-develop/MChub-MobileRuntime 的
+# build/mobile-runtime workflow 构建成 release 资产 mobile-runtime-arm64.zip
+# （约 165 MB，属构建期依赖，故不占主仓库 Releases）；本脚本取下来按布局摊平。
 #
 # 用法：
 #   scripts/prepare-android-runtime.sh              # 缺啥拉啥
@@ -22,7 +23,8 @@ set -euo pipefail
 
 RUNTIME_TAG="${RUNTIME_TAG:-mobile-runtime-v1}"
 ASSET_NAME="mobile-runtime-arm64.zip"
-REPO_SLUG="${REPO_SLUG:-}"
+# 运行时包已迁到独立仓库（2026-10-16）。默认直接从那里取；仍可用 REPO_SLUG 覆盖。
+REPO_SLUG="${REPO_SLUG:-hub-code-develop/MChub-MobileRuntime}"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 dest="$repo_root/src/MChub.Android/RuntimeAssets"
@@ -32,7 +34,7 @@ zip_path="$work_dir/$ASSET_NAME"
 refresh=false
 [ "${1:-}" = "--refresh" ] && refresh=true
 
-# 仓库名以 origin 为准（组织改过名：CodeHub-develop → Hub-code-develop）。
+# 兜底：REPO_SLUG 被显式置空时才按 origin 推断（保留历史行为）。
 # 注意用**兼容 BSD/macOS 的 sed**：`+?` 非贪婪在 BSD sed 上会报 repetition-operator invalid。
 remote_url="$(git -C "$repo_root" remote get-url origin 2>/dev/null || true)"
 repo_slug="$REPO_SLUG"

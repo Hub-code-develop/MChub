@@ -57,17 +57,20 @@ jobs:
           src/MChub.Android/Native/build-android.sh arm64-v8a
 
       # 预置移动端运行时（JRE + Pojav 系 native + 移动端 LWJGL），让 APK 开箱即用、
-      # 装机后无需再联网下载。运行时包由 build/mobile-runtime workflow 构建并发布。
+      # 装机后无需再联网下载。运行时包由**独立仓库** hub-code-develop/MChub-MobileRuntime
+      # 的 build/mobile-runtime workflow 构建并发布：它约 165 MB，是构建期依赖而非
+      # 给终端用户下载的应用版本，因此不占用本仓库的 Releases/Latest。
       - name: Fetch prebuilt mobile runtime
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUNTIME_REPO: hub-code-develop/MChub-MobileRuntime
           RUNTIME_TAG: mobile-runtime-v1
         run: |
           set -euo pipefail
           rm -rf /tmp/mobile-runtime && mkdir -p /tmp/mobile-runtime
-          if ! gh release download "$RUNTIME_TAG" -p mobile-runtime-arm64.zip -D /tmp --clobber; then
-            echo "::error::取不到 mobile-runtime 包（tag=$RUNTIME_TAG）。请先跑 build/mobile-runtime workflow，否则 APK 不会带运行时。"
+          if ! gh release download "$RUNTIME_TAG" --repo "$RUNTIME_REPO" -p mobile-runtime-arm64.zip -D /tmp --clobber; then
+            echo "::error::取不到 mobile-runtime 包（$RUNTIME_REPO tag=$RUNTIME_TAG）。请先在 MChub-MobileRuntime 仓库跑 build/mobile-runtime workflow，否则 APK 不会带运行时。"
             exit 1
           fi
           unzip -q /tmp/mobile-runtime-arm64.zip -d /tmp/mobile-runtime
