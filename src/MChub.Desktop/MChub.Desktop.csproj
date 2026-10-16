@@ -71,6 +71,37 @@
                           Include="..\MChub.Bedrock.MacOS\MChub.Bedrock.MacOS.csproj"/>
     </ItemGroup>
 
+    <!-- macOS 运行时加固（写进 [app].runtimeconfig.json，让**所有产物**都带上）
+         ==================================================================
+         症状：Apple Silicon + macOS 27 下，应用运行中（例如登录时分配对象密集）随机 SIGSEGV，
+         崩溃栈固定为 WKS（工作站）GC 的标记阶段读空指针：
+             WKS::gc_heap::mark_object_simple1 ← mark_object_simple
+             ← mark_through_cards_for_uoh_objects ← mark_phase ← gc1 ← garbage_collect
+             ← GCHeap::GarbageCollectGeneration ← ... ← RhpNewObject（分配对象时触发 GC）
+         实测崩溃报告：MChub.Desktop-*.ips，EXC_BAD_ACCESS / KERN_INVALID_ADDRESS at 0x0，
+         触发线程 ".NET TP Worker"。
+
+         这组配置与本地 scripts 用的环境变量一一等价（本地脚本见仓库外的 run-macos.command）：
+             System.GC.Server                     ← COMPlus_gcServer=1          （换掉会崩的 WKS GC）
+             System.GC.Concurrent                 ← COMPlus_gcConcurrent=0
+             System.Runtime.TieredCompilation     ← COMPlus_TieredCompilation=0
+             System.Runtime.EnableWriteXorExecute ← COMPlus_EnableWriteXorExecute=0
+          其中 System.Runtime.EnableWriteXorExecute 这个键 **.NET 9 起**才支持（本仓库为 net10.0）。
+
+         为什么必须写进 runtimeconfig 而不是只靠脚本：CI 打出的 .app / .pkg 是终端用户直接双击
+         运行的，拿不到任何环境变量。此前加固只存在于本机启动脚本里，所以「本机跑得好好的、
+         下载安装的版本一登录就崩」—— 本项修复就是补这个缺口。
+
+         注：.NET 9+ 环境变量优先级高于 runtimeconfig，本机那套 COMPlus_* 依旧生效、不冲突。
+         只在目标平台为 macOS 时注入（TargetsMacOS 由 RID 含 osx 推导），
+         另加「macOS 主机且未指定 RID」这一档，让本机 dotnet build / dotnet run 也受益。 -->
+    <ItemGroup Condition="'$(TargetsMacOS)' == 'true' Or ('$(RuntimeIdentifier)' == '' And '$(RuntimeIdentifiers)' == '' And $([MSBuild]::IsOSPlatform('OSX')))">
+        <RuntimeHostConfigurationOption Include="System.GC.Server" Value="true"/>
+        <RuntimeHostConfigurationOption Include="System.GC.Concurrent" Value="false"/>
+        <RuntimeHostConfigurationOption Include="System.Runtime.TieredCompilation" Value="false"/>
+        <RuntimeHostConfigurationOption Include="System.Runtime.EnableWriteXorExecute" Value="0"/>
+    </ItemGroup>
+
     <ItemGroup>
         <AvaloniaResource Include="..\..\assets\MChub.ico" Link="Assets/MChub.ico"/>
         <AvaloniaResource Remove="publish\**"/>
