@@ -473,6 +473,40 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$PLIST"
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string mchub" "$PLIST"
 
+      # 打包前 MChub.app 只带着 apphost 的 ad-hoc 签名（.NET/DotNet.Bundle 自动施加）。
+      # 上面又往 Contents/MacOS 塞了 Bedrock 运行时、并用 PlistBuddy 改写了 Info.plist，
+      # bundle 级签名与内容因此不一致 —— codesign --verify 会报
+      #   "code has no resources but signature indicates they must be present"
+      # 这种包在 Gatekeeper 开启的机器上会被拒（本机因 Gatekeeper 已关而看不出来）。
+      # 所以必须在 ditto / 建 DMG / pkgbuild 之前整包重签一次。
+      # 用 ad-hoc（-）：不需要证书、不需要付费开发者账号，但能保证签名一致，
+      # 并满足 Apple Silicon「arm64 二进制必须带签名」的硬要求。
+      # 注意：ad-hoc 不等于公证 —— 用户从浏览器下载后首次打开仍需右键→打开。
+      - name: Sign app bundle (ad-hoc)
+        run: |
+          set -euo pipefail
+          APP="./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/MChub.app"
+          VULKAN_DIR="$APP/Contents/MacOS/mcbe-macos/render/vulkan"
+          # macOS 把 ".d" 目录当成 bundle，codesign --deep 扫到
+          #   .../render/vulkan/icd.d
+          # 会直接以 "bundle format unrecognized, invalid, or unsuitable" 失败。
+          # 绕过：真实目录留在 icd_d，用符号链接 icd.d 指回去 ——
+          # codesign 不跟随符号链接（因此跳过），而运行时路径
+          # ".../vulkan/icd.d/MoltenVK_icd.json" 仍能解析（实测可读）。
+          # 这与目录名无关：Vulkan 的 ICD 是由环境变量 VK_ICD_FILENAMES / VK_DRIVER_FILES
+          # 指向该 JSON 文件来定位的（见 MChub.Bedrock.MacOS/Runtime/WineEnvironment.cs）。
+          # 幂等；符号链接经 ditto 打包往返后仍保留（实测解包后 codesign --verify 通过）。
+          if [ -d "$VULKAN_DIR/icd.d" ] && [ ! -L "$VULKAN_DIR/icd.d" ]; then
+            mv "$VULKAN_DIR/icd.d" "$VULKAN_DIR/icd_d"
+            ln -s icd_d "$VULKAN_DIR/icd.d"
+            echo "已把 icd.d 换成符号链接（codesign --deep 不跟随符号链接）"
+          fi
+          # --force 覆盖 apphost 的旧 adhoc 签名；--deep 递归处理嵌套代码（含数百个托管 dll）
+          codesign --force --deep --sign - "$APP"
+          # 自检：刚签完必须校验通过，否则不要把签名坏的包发出去
+          codesign --verify --deep --verbose=2 "$APP"
+          codesign -dv "$APP" 2>&1 | grep -E "Identifier=|Signature=|Sealed" || true
+
       - name: Package APP to ZIP
         run: |
           cd ./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/
