@@ -44,13 +44,19 @@ MOLTENVK_LICENSE="$(find "$DL/moltenvk" -iname 'LICENSE*' | head -1)"
 [ -n "$MOLTENVK_LICENSE" ] && cp "$MOLTENVK_LICENSE" "$OUT/licenses/MoltenVK-LICENSE" || true
 
 # ICD 清单用 @loader_path 表达相对位置,整棵树搬走后仍然有效。
+#
+# is_portability_driver 必须为 false:置 true 时 Vulkan Loader 会拒绝枚举 MoltenVK,
+# 除非调用方在 VkInstanceCreateInfo 里置 VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
+# 并启用 VK_KHR_portability_enumeration。实测 DXVK 3.1.1 与 Wine 内置 D3D 都没有这么做,
+# 结果是 "Found no drivers!" → DxvkInstance::createInstance 失败 → 基岩版在 dxgi 里
+# 空指针崩溃(dxgi+0x8024 读 0x20(%rbx),rbx=0)。置 false 后 MoltenVK 可被正常枚举。
 cat > "$OUT/vulkan/icd.d/MoltenVK_icd.json" <<'JSON'
 {
   "file_format_version": "1.0.0",
   "ICD": {
     "library_path": "../../lib/libMoltenVK.dylib",
     "api_version": "1.2.0",
-    "is_portability_driver": true
+    "is_portability_driver": false
   }
 }
 JSON
