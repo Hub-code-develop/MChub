@@ -10,7 +10,9 @@ namespace MChub.Core.Minecraft;
 
 public static class NewsDetailsService
 {
-    private const string BaseContentUrl = "https://mcnews.cangcang.cc/v2/";
+    // 补丁说明正文同样取自 Mojang 官方内容接口：条目的 contentPath 形如
+    // "javaPatchNotes/26-4-snapshot-4.json"，拼上这个前缀即可。
+    private const string BaseContentUrl = "https://launchercontent.mojang.com/v2/";
 
     private const string BaseImageUrl = "https://launchercontent.mojang.com";
 

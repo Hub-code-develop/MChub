@@ -10,8 +10,11 @@ namespace MChub.Core.Minecraft;
 
 public static class NewsService
 {
-    private const string JavaApiUrl = "https://mcnews.cangcang.cc/v2/javaPatchNotes";
-    private const string BedrockApiUrl = "https://mcnews.cangcang.cc/v2/bedrockPatchNotes";
+    // 直接用 Mojang 官方启动器的内容接口（launchercontent 就是官方启动器拉
+    // 新闻 / 补丁说明的地方）。在此之前指向的是自建占位域名 mcnews.cangcang.cc ——
+    // 那个域名并不存在，导致启动时固定报「获取新闻失败」。
+    private const string JavaApiUrl = "https://launchercontent.mojang.com/v2/javaPatchNotes.json";
+    private const string BedrockApiUrl = "https://launchercontent.mojang.com/v2/bedrockPatchNotes.json";
     private const string BaseImageUrl = "https://launchercontent.mojang.com";
 
     public static List<NewsEntry> JavaNews { get; private set; } = [];
@@ -125,10 +128,8 @@ public static class NewsService
 
 internal static class NewsHttp
 {
-    public static readonly HttpClient Client = new(
-        new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
-        },
-        true);
+    // 不要再关掉证书校验：以前指向自建占位域名（证书不可信）才被迫这么写，
+    // 现在直连 launchercontent.mojang.com，走系统信任链即可（实测严格校验下三个
+    // 端点都正常）。关掉校验等于给中间人开绿灯 —— 本机还挂着 TUN 代理，风险更实在。
+    public static readonly HttpClient Client = new();
 }
