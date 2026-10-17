@@ -343,7 +343,7 @@ internal static class CacheDatabase
         command.Parameters.AddWithValue("$metadataFetched", entry.MetadataFetched == true ? 1 : 0);
     }
 
-    public static List<NewsEntry> ReadNews(NewsEdition edition)
+    public static List<NewsEntry> ReadNews(NewsEdition edition, string locale)
     {
         try
         {
@@ -353,10 +353,11 @@ internal static class CacheDatabase
                                   SELECT title, version, type, image_url, content_path, id, published_at, short_text, needs_translation,
                                          read_more_link, is_java, is_bedrock
                                   FROM news_cache_entry
-                                  WHERE edition = $edition
+                                  WHERE edition = $edition AND locale = $locale
                                   ORDER BY published_at DESC;
                                   """;
             command.Parameters.AddWithValue("$edition", edition.ToString());
+            command.Parameters.AddWithValue("$locale", locale);
             using var reader = command.ExecuteReader();
             var entries = new List<NewsEntry>();
             while (reader.Read())
@@ -391,7 +392,7 @@ internal static class CacheDatabase
         }
     }
 
-    public static void WriteNews(NewsEdition edition, IReadOnlyCollection<NewsEntry> entries)
+    public static void WriteNews(NewsEdition edition, string locale, IReadOnlyCollection<NewsEntry> entries)
     {
         try
         {
@@ -400,24 +401,26 @@ internal static class CacheDatabase
             using var command = connection.CreateCommand();
             command.Transaction = transaction;
             command.CommandText = """
-                                  DELETE FROM news_cache_entry WHERE edition = $edition;
+                                  DELETE FROM news_cache_entry WHERE edition = $edition AND locale = $locale;
                                   """;
             command.Parameters.AddWithValue("$edition", edition.ToString());
+            command.Parameters.AddWithValue("$locale", locale);
             command.ExecuteNonQuery();
 
             command.CommandText = """
                                   INSERT INTO news_cache_entry (
                                       edition, id, title, version, type, image_url, content_path, published_at, short_text, needs_translation,
-                                      read_more_link, is_java, is_bedrock
+                                      read_more_link, is_java, is_bedrock, locale
                                   ) VALUES (
                                       $edition, $id, $title, $version, $type, $imageUrl, $contentPath, $publishedAt, $shortText, $needsTranslation,
-                                      $readMoreLink, $isJava, $isBedrock
+                                      $readMoreLink, $isJava, $isBedrock, $locale
                                   );
                                   """;
             foreach (var entry in entries)
             {
                 command.Parameters.Clear();
                 command.Parameters.AddWithValue("$edition", edition.ToString());
+                command.Parameters.AddWithValue("$locale", locale);
                 command.Parameters.AddWithValue("$id", entry.Id);
                 command.Parameters.AddWithValue("$title", entry.Title);
                 command.Parameters.AddWithValue("$version", entry.Version);
@@ -570,7 +573,7 @@ internal static class CacheDatabase
                                       image_url TEXT NOT NULL, content_path TEXT NOT NULL, published_at INTEGER NOT NULL, short_text TEXT NOT NULL,
                                       needs_translation INTEGER NULL,
                                       read_more_link TEXT NOT NULL DEFAULT '', is_java INTEGER NOT NULL DEFAULT 0,
-                                      is_bedrock INTEGER NOT NULL DEFAULT 0,
+                                      is_bedrock INTEGER NOT NULL DEFAULT 0, locale TEXT NOT NULL DEFAULT '',
                                       PRIMARY KEY (edition, id)
                                   );
                                   CREATE INDEX IF NOT EXISTS idx_news_cache_entry_edition_published_at
@@ -623,6 +626,17 @@ internal static class CacheDatabase
             command.CommandText = "ALTER TABLE news_cache_entry ADD COLUMN is_bedrock INTEGER NOT NULL DEFAULT 0;";
             command.ExecuteNonQuery();
         }
+
+        // 新闻按界面语言分别缓存。老库没有 locale（默认 ''），那些行要么是补丁说明、
+        // 要么是不带语言的英文新闻 —— 直接清掉，让下一次拉取按当前语言重建。
+        if (!columns.Contains("locale"))
+        {
+            command.CommandText = "ALTER TABLE news_cache_entry ADD COLUMN locale TEXT NOT NULL DEFAULT '';";
+            command.ExecuteNonQuery();
+        }
+
+        command.CommandText = "DELETE FROM news_cache_entry WHERE locale = '';";
+        command.ExecuteNonQuery();
 
         if (isLegacySchema)
         {
