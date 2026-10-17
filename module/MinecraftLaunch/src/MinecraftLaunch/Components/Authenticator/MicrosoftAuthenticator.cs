@@ -21,15 +21,17 @@ public sealed class MicrosoftAuthenticator {
     }
 
     public async Task<MicrosoftAccount> RefreshAsync(MicrosoftAccount account, CancellationToken cancellationToken = default) {
-        var request = HttpUtil.Request("https://login.live.com/oauth20_token.srf");
-        Dictionary<string, string> payload = new() {
+        var payload = new Dictionary<string, string> {
             ["client_id"] = _clientId,
             ["refresh_token"] = account.RefreshToken,
             ["grant_type"] = "refresh_token"
         };
 
-        var result = await request.PostAsync(new FormUrlEncodedContent(payload),
-            cancellationToken: cancellationToken);
+        // 每次重试都要重建 Content —— HttpContent 被消费后不能重复发送
+        var result = await WithTransportRetryAsync(
+            () => HttpUtil.Request("https://login.live.com/oauth20_token.srf")
+                .PostAsync(new FormUrlEncodedContent(payload), cancellationToken: cancellationToken),
+            cancellationToken);
 
         await using var json = await result.GetStreamAsync();
         var response = await JsonSerializer.DeserializeAsync(json,OAuth2TokenResponseContext.Default.OAuth2TokenResponse, cancellationToken);
@@ -46,11 +48,21 @@ public sealed class MicrosoftAuthenticator {
         if (oAuth2Token is null)
             ArgumentException.ThrowIfNullOrEmpty(nameof(oAuth2Token));
 
-        using var xblToken = await GetXBLTokenAsync(oAuth2Token.AccessToken, cancellationToken);
-        using var xsts = await GetXSTSTokenAsync(xblToken.RootElement, cancellationToken);
-        using var minecraftAccessToken = await GetMinecraftAccessTokenAsync((xblToken.RootElement, xsts.RootElement), cancellationToken);
-        var profile = await GetMinecraftProfileAsync(minecraftAccessToken.RootElement.GetProperty("access_token"u8).GetString(),
-            oAuth2Token.RefreshToken, cancellationToken);
+        // 登录链路四步都做传输层重试：在 TUN / 假 IP 代理或 DNS 抖动的环境里，
+        // 任何一步的 TLS 握手都可能被中途切断（"Received an unexpected EOF ..."），
+        // 而登录是串行的 —— 一步失败就整体失败。重试会重新构建请求（HttpContent 不能复用）。
+        using var xblToken = await WithTransportRetryAsync(
+            () => GetXBLTokenAsync(oAuth2Token.AccessToken, cancellationToken), cancellationToken);
+        using var xsts = await WithTransportRetryAsync(
+            () => GetXSTSTokenAsync(xblToken.RootElement, cancellationToken), cancellationToken);
+        using var minecraftAccessToken = await WithTransportRetryAsync(
+            () => GetMinecraftAccessTokenAsync((xblToken.RootElement, xsts.RootElement), cancellationToken),
+            cancellationToken);
+        var profile = await WithTransportRetryAsync(
+            () => GetMinecraftProfileAsync(
+                minecraftAccessToken.RootElement.GetProperty("access_token"u8).GetString(),
+                oAuth2Token.RefreshToken, cancellationToken),
+            cancellationToken);
 
         return profile;
     }
@@ -210,6 +222,41 @@ public sealed class MicrosoftAuthenticator {
         {
             throw new InvalidOperationException("Failed to retrieve Minecraft profile", e);
         }
+    }
+
+    /// <summary>
+    /// 传输层瞬时故障重试（3 次，400/800ms 退避）。
+    /// 背景：在 TUN / 假 IP 代理（Clash、Surge 一类）或 DNS 抖动的环境里，
+    /// TLS 握手偶尔会被中途切断，表现为
+    /// "The SSL connection could not be established ... Received an unexpected EOF or 0 bytes
+    /// from the transport stream"。这类错误重试一次基本就过。
+    /// 只重试"没拿到响应的"传输层错误 —— 服务端明确返回的 4xx/5xx 属于业务错误，不重试。
+    /// </summary>
+    private static async Task<T> WithTransportRetryAsync<T>(Func<Task<T>> action,
+        CancellationToken cancellationToken, int maxAttempts = 3) {
+        for (var attempt = 1; ; attempt++) {
+            try {
+                return await action();
+            }
+            catch (Exception ex) when (attempt < maxAttempts
+                                       && !cancellationToken.IsCancellationRequested
+                                       && IsTransientTransportError(ex)) {
+                await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt), cancellationToken);
+            }
+        }
+    }
+
+    private static bool IsTransientTransportError(Exception ex) {
+        for (var e = ex; e is not null; e = e.InnerException) {
+            if (e is System.IO.IOException or TimeoutException or System.Net.Sockets.SocketException)
+                return true;
+
+            // 连 HTTP 状态码都没拿到，说明请求根本没走完（连接 / TLS 握手层失败）
+            if (e is HttpRequestException { StatusCode: null })
+                return true;
+        }
+
+        return ex is FlurlHttpException { StatusCode: null };
     }
 
     #endregion
