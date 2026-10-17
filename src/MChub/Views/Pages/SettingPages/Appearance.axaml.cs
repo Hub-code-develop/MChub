@@ -15,7 +15,6 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Irihi.Lingua;
 using MChub.Core.Const;
-using MChub.Core.Minecraft;
 using MChub.Core.Module.AggregatedSearch;
 using MChub.Localization;
 using MChub.ViewModels;
@@ -317,13 +316,7 @@ public partial class Appearance : Dsc, INotifyPropertyChanged
     private void OnCultureChanged(object? sender, CultureChangedEventArgs e)
     {
         if (e.Culture?.CultureName is { } name)
-        {
             Data.ConfigEntry.Language = name;
-
-            // 新闻有按语言的官方 feed（v2/news/zh-CN.json 等），切语言后重新拉一次；
-            // 缓存按 locale 分片，不会把两种语言的条目混在一起。
-            _ = Task.Run(NewsService.FetchAndRefreshAsync);
-        }
     }
 }
 

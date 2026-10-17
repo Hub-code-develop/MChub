@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Text.Json;
-using MChub.Core.Const;
 using MChub.Core.Json;
 using MChub.Core.Minecraft.Classes;
 using MChub.Core.Minecraft.Services;
@@ -11,16 +10,18 @@ namespace MChub.Core.Minecraft;
 
 public static class NewsService
 {
-    // 官方启动器「新闻」页用的就是这份 feed，而且**按语言分文件**：
-    //   https://launchercontent.mojang.com/v2/news/zh-CN.json
-    //   https://launchercontent.mojang.com/v2/news/en-US.json
-    //   …（de-DE / fr-FR / ru-RU 等也都有）
-    // 不存在的语言回落到无语言后缀的 news.json（英文）。
-    // 这比自己接机器翻译可靠：译文是官方给的，不含第三方服务与配额。
-    private const string NewsApiBase = "https://launchercontent.mojang.com/v2/news";
-    private const string DefaultNewsApiUrl = "https://launchercontent.mojang.com/v2/news.json";
+    // 官方启动器「新闻」页用的就是这份 feed：
+    //   https://launchercontent.mojang.com/v2/news.json
+    //
+    // 官方另有按语言分文件的版本（/v2/news/zh-CN.json 等），但**译文并不完整**：
+    // 实测 zh-CN 版本 100 条里只有 8 条是中文，其余仍是英文 —— 直接用会出现
+    // 中英混排的列表。既然拿不到 100% 中文，就统一用英文源，不做逐条混搭。
+    // （缓存里仍带 locale 列，值为 ContentLocale，将来若出现完整译文可直接切换。）
+    private const string NewsApiUrl = "https://launchercontent.mojang.com/v2/news.json";
     private const string BaseImageUrl = "https://launchercontent.mojang.com";
-    private const string FallbackLocale = "en-US";
+
+    /// <summary>新闻正文内容的语言。当前固定英文源。</summary>
+    private const string ContentLocale = "en-US";
 
     // newsType 里的分类标记：只有带 "News page" 的条目才进新闻页；
     // Java / Bedrock 决定版别，两个都有时同属两个版本。
@@ -36,29 +37,11 @@ public static class NewsService
 
     public static event EventHandler? NewsUpdated;
 
-    /// <summary>当前界面语言（zh-CN / en-US …）。配置未就绪时回落英文。</summary>
-    private static string CurrentLocale
-    {
-        get
-        {
-            try
-            {
-                var language = Data.ConfigEntry.Language;
-                return string.IsNullOrWhiteSpace(language) ? FallbackLocale : language.Trim();
-            }
-            catch (InvalidOperationException)
-            {
-                return FallbackLocale;
-            }
-        }
-    }
-
     public static void InitializeFromCache()
     {
         Logger.Info(LogLanguageManager.Instance.news_cacheLoadStart.CurrentValue());
-        var locale = CurrentLocale;
-        var java = LoadCache(NewsEdition.Java, locale);
-        var bedrock = LoadCache(NewsEdition.Bedrock, locale);
+        var java = LoadCache(NewsEdition.Java, ContentLocale);
+        var bedrock = LoadCache(NewsEdition.Bedrock, ContentLocale);
         SetCollections(java, bedrock);
         Logger.Info(string.Format(LogLanguageManager.Instance.news_cacheLoadComplete.CurrentValue(), java.Count, bedrock.Count));
     }
@@ -75,14 +58,7 @@ public static class NewsService
         Logger.Info(LogLanguageManager.Instance.news_fetchStart.CurrentValue());
         try
         {
-            var locale = CurrentLocale;
-            var localizedUrl = $"{NewsApiBase}/{locale}.json";
-
-            // 先试当前语言的 feed；该语言没有对应文件时（404）静默回落英文，
-            // 所以第一次失败不记日志，避免给用户刷一条「获取 News 新闻失败」。
-            var entries = await FetchAsync(localizedUrl, logFailure: false);
-            if (entries == null && !string.Equals(locale, FallbackLocale, StringComparison.OrdinalIgnoreCase))
-                entries = await FetchAsync(DefaultNewsApiUrl, logFailure: true);
+            var entries = await FetchAsync(NewsApiUrl);
 
             var changed = false;
 
@@ -91,8 +67,8 @@ public static class NewsService
                 var java = entries.Where(e => e.IsJava).ToList();
                 var bedrock = entries.Where(e => e.IsBedrock).ToList();
 
-                CacheDatabase.WriteNews(NewsEdition.Java, locale, java);
-                CacheDatabase.WriteNews(NewsEdition.Bedrock, locale, bedrock);
+                CacheDatabase.WriteNews(NewsEdition.Java, ContentLocale, java);
+                CacheDatabase.WriteNews(NewsEdition.Bedrock, ContentLocale, bedrock);
 
                 SetCollections(java, bedrock);
                 changed = true;
@@ -135,7 +111,7 @@ public static class NewsService
         }
     }
 
-    private static async Task<List<NewsEntry>?> FetchAsync(string url, bool logFailure)
+    private static async Task<List<NewsEntry>?> FetchAsync(string url)
     {
         try
         {
@@ -144,8 +120,7 @@ public static class NewsService
         }
         catch (Exception ex)
         {
-            if (logFailure)
-                Logger.Error(string.Format(LogLanguageManager.Instance.news_fetchEditionFailed.CurrentValue(), "News", url), ex);
+            Logger.Error(string.Format(LogLanguageManager.Instance.news_fetchEditionFailed.CurrentValue(), "News", url), ex);
             return null;
         }
     }
