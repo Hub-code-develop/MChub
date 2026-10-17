@@ -94,7 +94,8 @@
   },
   "newsdetailspage": {
     "LoadingNewsContent": "正在加载新闻正文…",
-    "Retry": "重试"
+    "Retry": "重试",
+    "ReadOriginal": "阅读原文"
   },
   "newspage": {
     "MinecraftNews": "Minecraft新闻"

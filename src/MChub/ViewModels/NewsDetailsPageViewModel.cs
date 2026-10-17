@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -26,6 +27,8 @@ public partial class NewsDetailsPageViewModel : ObservableObject
         Date = entry.Date;
         Edition = entry.Edition;
         RelativeDate = entry.RelativeDate;
+        Summary = entry.ShortText;
+        ReadMoreLink = entry.ReadMoreLink;
         NewsDetailsService.NewsDetailUpdated += OnNewsDetailUpdated;
     }
 
@@ -39,18 +42,38 @@ public partial class NewsDetailsPageViewModel : ObservableObject
     [ObservableProperty] public partial string RelativeDate { get; set; }
     [ObservableProperty] public partial NewsEdition Edition { get; set; }
 
+    /// <summary>新闻摘要。官方 news.json 只有摘要，正文在 minecraft.net 网页上。</summary>
+    [ObservableProperty] public partial string Summary { get; set; }
+
+    [ObservableProperty] public partial string ReadMoreLink { get; set; }
+
     [ObservableProperty] public partial bool IsLoading { get; set; } = true;
     [ObservableProperty] public partial bool HasError { get; set; }
     [ObservableProperty] public partial string ErrorText { get; set; } = string.Empty;
     [ObservableProperty] public partial bool IsCached { get; set; }
     [ObservableProperty] public partial DateTime? FetchedAt { get; set; }
 
-    public string EditionDisplay =>
-        Edition == NewsEdition.Bedrock
-            ? CommonLanguageManager.Instance.news_editionBedrock.CurrentValue()
-            : "Java";
+    public string EditionDisplay => _entry.EditionDisplay;
     public bool HasVersion => !string.IsNullOrWhiteSpace(Version);
     public bool HasType => !string.IsNullOrWhiteSpace(Type);
+    public bool HasSummary => !string.IsNullOrWhiteSpace(Summary);
+    public bool HasReadMoreLink => !string.IsNullOrWhiteSpace(ReadMoreLink);
+
+    [RelayCommand]
+    private void OpenReadMore()
+    {
+        if (!HasReadMoreLink) return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(ReadMoreLink) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            ErrorText = string.Format(CommonLanguageManager.Instance.news_loadFailedWithMessage.CurrentValue(), ex.Message);
+            HasError = true;
+        }
+    }
 
     public async Task LoadAsync()
     {
@@ -70,15 +93,7 @@ public partial class NewsDetailsPageViewModel : ObservableObject
             }
 
 
-            Title = detail.Title;
-            Version = detail.Version;
-            Type = detail.Type;
-            if (!string.IsNullOrEmpty(detail.ImageUrl)) ImageUrl = detail.ImageUrl;
-            Date = detail.Date;
-            FetchedAt = detail.FetchedAt;
-            IsCached = true;
-
-            await RenderBodyAsync(detail.Body);
+            await ApplyDetailAsync(detail);
         }
         catch (Exception ex)
         {
@@ -108,14 +123,7 @@ public partial class NewsDetailsPageViewModel : ObservableObject
                 return;
             }
 
-            Title = detail.Title;
-            Version = detail.Version;
-            Type = detail.Type;
-            if (!string.IsNullOrEmpty(detail.ImageUrl)) ImageUrl = detail.ImageUrl;
-            Date = detail.Date;
-            FetchedAt = detail.FetchedAt;
-            IsCached = true;
-            await RenderBodyAsync(detail.Body);
+            await ApplyDetailAsync(detail);
         }
         catch (Exception ex)
         {
@@ -126,6 +134,28 @@ public partial class NewsDetailsPageViewModel : ObservableObject
         {
             IsLoading = false;
         }
+    }
+
+    /// <summary>
+    /// 把详情数据铺到视图模型上。新闻条目没有正文（Body 为空），此时只更新摘要与原文链接。
+    /// </summary>
+    private async Task ApplyDetailAsync(NewsDetail detail)
+    {
+        Title = detail.Title;
+        Version = detail.Version;
+        Type = detail.Type;
+        if (!string.IsNullOrEmpty(detail.ImageUrl)) ImageUrl = detail.ImageUrl;
+        Date = detail.Date;
+        FetchedAt = detail.FetchedAt;
+        IsCached = true;
+
+        if (!string.IsNullOrWhiteSpace(detail.Summary)) Summary = detail.Summary;
+        if (!string.IsNullOrWhiteSpace(detail.ReadMoreLink)) ReadMoreLink = detail.ReadMoreLink;
+        OnPropertyChanged(nameof(HasSummary));
+        OnPropertyChanged(nameof(HasReadMoreLink));
+
+        if (!string.IsNullOrWhiteSpace(detail.Body))
+            await RenderBodyAsync(detail.Body);
     }
 
     private async Task RenderBodyAsync(string html)
@@ -169,14 +199,7 @@ public partial class NewsDetailsPageViewModel : ObservableObject
         Dispatcher.UIThread.Post(async () =>
         {
             if (_disposed) return;
-            Title = detail.Title;
-            Version = detail.Version;
-            Type = detail.Type;
-            if (!string.IsNullOrEmpty(detail.ImageUrl)) ImageUrl = detail.ImageUrl;
-            Date = detail.Date;
-            FetchedAt = detail.FetchedAt;
-            IsCached = true;
-            await RenderBodyAsync(detail.Body);
+            await ApplyDetailAsync(detail);
         });
     }
 }

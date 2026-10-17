@@ -10,9 +10,7 @@ namespace MChub.ViewModels;
 
 public partial class NewsPageViewModel : ObservableObject
 {
-    private List<NewsEntry> _bedrockNews = [];
-
-    private List<NewsEntry> _javaNews = [];
+    private List<NewsEntry> _allNews = [];
     private int _newsRefreshVersion;
 
 
@@ -55,10 +53,11 @@ public partial class NewsPageViewModel : ObservableObject
 
     private void HandleNewsUpdate()
     {
-        _javaNews = NewsService.JavaNews ?? [];
-        _bedrockNews = NewsService.BedrockNews ?? [];
+        // 用全量列表做基准：「全部」直接展示它，Java / 基岩按条目标记筛选。
+        // 同属两版的新闻只出现一次（若分别取 Java/Bedrock 两个列表再拼接就会重复）。
+        _allNews = NewsService.AllNews ?? [];
 
-        IsVisible = _javaNews.Count > 0 || _bedrockNews.Count > 0;
+        IsVisible = _allNews.Count > 0;
 
         ApplyFilter();
         ScheduleImageRefresh();
@@ -86,9 +85,9 @@ public partial class NewsPageViewModel : ObservableObject
         var filter = SelectedFilter?.Type ?? NewsFilterType.All;
         var list = filter switch
         {
-            NewsFilterType.Java => _javaNews,
-            NewsFilterType.Bedrock => _bedrockNews,
-            _ => _javaNews.Concat(_bedrockNews)
+            NewsFilterType.Java => _allNews.Where(x => x.IsJava),
+            NewsFilterType.Bedrock => _allNews.Where(x => x.IsBedrock),
+            _ => _allNews
         };
 
         if (SelectedStartDate.HasValue)

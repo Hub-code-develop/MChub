@@ -10,28 +10,38 @@ namespace MChub.Core.Minecraft;
 
 public static class NewsService
 {
-    // 直接用 Mojang 官方启动器的内容接口（launchercontent 就是官方启动器拉
-    // 新闻 / 补丁说明的地方）。在此之前指向的是自建占位域名 mcnews.cangcang.cc ——
-    // 那个域名并不存在，导致启动时固定报「获取新闻失败」。
-    private const string JavaApiUrl = "https://launchercontent.mojang.com/v2/javaPatchNotes.json";
-    private const string BedrockApiUrl = "https://launchercontent.mojang.com/v2/bedrockPatchNotes.json";
+    // 官方启动器「新闻」页用的就是这份 feed（launchercontent.mojang.com/v2/news.json）：
+    // 条目是新闻卡片（标题 + 摘要 + 配图 + readMoreLink），不是补丁说明。
+    // 补丁说明是另一套端点（javaPatchNotes / bedrockPatchNotes），模型也不同，别混用。
+    private const string NewsApiUrl = "https://launchercontent.mojang.com/v2/news.json";
     private const string BaseImageUrl = "https://launchercontent.mojang.com";
+
+    // newsType 里的分类标记：只有带 "News page" 的条目才进新闻页；
+    // Java / Bedrock 决定版别，两个都有时同属两个版本。
+    private const string NewsPageType = "News page";
+    private const string JavaType = "Java";
+    private const string BedrockType = "Bedrock";
 
     public static List<NewsEntry> JavaNews { get; private set; } = [];
     public static List<NewsEntry> BedrockNews { get; private set; } = [];
+
+    /// <summary>全量新闻（按 Id 去重后的并集）。页面「全部」用它，避免同属两版的条目重复出现。</summary>
+    public static List<NewsEntry> AllNews { get; private set; } = [];
+
     public static event EventHandler? NewsUpdated;
 
     public static void InitializeFromCache()
     {
         Logger.Info(LogLanguageManager.Instance.news_cacheLoadStart.CurrentValue());
-        JavaNews = LoadCache(NewsEdition.Java);
-        BedrockNews = LoadCache(NewsEdition.Bedrock);
-        Logger.Info(string.Format(LogLanguageManager.Instance.news_cacheLoadComplete.CurrentValue(), JavaNews.Count, BedrockNews.Count));
+        var java = LoadCache(NewsEdition.Java);
+        var bedrock = LoadCache(NewsEdition.Bedrock);
+        SetCollections(java, bedrock);
+        Logger.Info(string.Format(LogLanguageManager.Instance.news_cacheLoadComplete.CurrentValue(), java.Count, bedrock.Count));
     }
 
     public static void RaiseNewsUpdated()
     {
-        if (JavaNews.Count > 0 || BedrockNews.Count > 0)
+        if (AllNews.Count > 0)
             NewsUpdated?.Invoke(null, EventArgs.Empty);
     }
 
@@ -41,22 +51,18 @@ public static class NewsService
         Logger.Info(LogLanguageManager.Instance.news_fetchStart.CurrentValue());
         try
         {
-            var jTask = FetchAsync(JavaApiUrl, NewsEdition.Java);
-            var bTask = FetchAsync(BedrockApiUrl, NewsEdition.Bedrock);
-
-            var java = await jTask;
-            var bedrock = await bTask;
+            var entries = await FetchAsync(NewsApiUrl);
             var changed = false;
 
-            if (java?.Count > 0)
+            if (entries is { Count: > 0 })
             {
-                JavaNews = java;
-                changed = true;
-            }
+                var java = entries.Where(e => e.IsJava).ToList();
+                var bedrock = entries.Where(e => e.IsBedrock).ToList();
 
-            if (bedrock?.Count > 0)
-            {
-                BedrockNews = bedrock;
+                CacheDatabase.WriteNews(NewsEdition.Java, java);
+                CacheDatabase.WriteNews(NewsEdition.Bedrock, bedrock);
+
+                SetCollections(java, bedrock);
                 changed = true;
             }
 
@@ -67,6 +73,21 @@ public static class NewsService
         {
             Logger.Error(LogLanguageManager.Instance.news_fetchFailed.CurrentValue(), ex);
         }
+    }
+
+    /// <summary>
+    /// Java 列表 + 基岩列表 → 去重后的全量列表。
+    /// 同属两版的条目会同时出现在两个缓存分片里，并集时必须按 Id 去重，否则「全部」会重复。
+    /// </summary>
+    private static void SetCollections(List<NewsEntry> java, List<NewsEntry> bedrock)
+    {
+        JavaNews = java;
+        BedrockNews = bedrock;
+        AllNews = java.Concat(bedrock)
+            .GroupBy(e => e.Id, StringComparer.Ordinal)
+            .Select(g => g.First())
+            .OrderByDescending(e => e.Date)
+            .ToList();
     }
 
     private static List<NewsEntry> LoadCache(NewsEdition edition)
@@ -82,46 +103,81 @@ public static class NewsService
         }
     }
 
-    private static async Task<List<NewsEntry>?> FetchAsync(string url, NewsEdition edition)
+    private static async Task<List<NewsEntry>?> FetchAsync(string url)
     {
         try
         {
             var json = await NewsHttp.Client.GetStringAsync(url);
-            var entries = ParseJson(json, edition);
-            CacheDatabase.WriteNews(edition, entries);
-            return entries;
+            return ParseJson(json);
         }
         catch (Exception ex)
         {
-            Logger.Error(string.Format(LogLanguageManager.Instance.news_fetchEditionFailed.CurrentValue(), edition, url), ex);
+            Logger.Error(string.Format(LogLanguageManager.Instance.news_fetchEditionFailed.CurrentValue(), "News", url), ex);
             return null;
         }
     }
 
-    private static List<NewsEntry> ParseJson(string json, NewsEdition edition)
+    private static List<NewsEntry> ParseJson(string json)
     {
-        var response = JsonSerializer.Deserialize<PatchNotesResponse>(json, MChubJson.Options);
-        return response?.Entries?.Select(e => MapToNewsEntry(e, edition)).ToList() ?? [];
+        var response = JsonSerializer.Deserialize<NewsFeedResponse>(json, MChubJson.Options);
+        if (response?.Entries is not { Count: > 0 }) return [];
+
+        var result = new List<NewsEntry>(response.Entries.Count);
+        foreach (var entry in response.Entries)
+        {
+            var types = entry.NewsTypes ?? [];
+
+            // 只要新闻页条目；Dungeons / Legends 等其它产品线不进这个页面。
+            if (!Contains(types, NewsPageType)) continue;
+
+            var isJava = Contains(types, JavaType);
+            var isBedrock = Contains(types, BedrockType);
+
+            // 少数条目只有 Dungeons / DungeonsII 标记，既非 Java 也非基岩 —— 页面没有对应筛选，跳过。
+            if (!isJava && !isBedrock) continue;
+
+            result.Add(MapToNewsEntry(entry, isJava, isBedrock));
+        }
+
+        return result.OrderByDescending(e => e.Date).ToList();
     }
 
-    private static NewsEntry MapToNewsEntry(PatchNoteEntry entry, NewsEdition edition)
+    private static bool Contains(List<string> values, string target)
     {
+        foreach (var value in values)
+            if (string.Equals(value, target, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+        return false;
+    }
+
+    private static NewsEntry MapToNewsEntry(NewsFeedEntry entry, bool isJava, bool isBedrock)
+    {
+        // 卡片是 772×350 的横向图，优先用 newsPageImage；playPageImage(700×466) 作兜底。
+        var image = entry.NewsPageImage?.Url;
+        if (string.IsNullOrWhiteSpace(image)) image = entry.PlayPageImage?.Url;
+
         var imageUrl = string.Empty;
-        if (!string.IsNullOrEmpty(entry.Image?.Url))
-            imageUrl = entry.Image.Url.StartsWith("http") ? entry.Image.Url : BaseImageUrl + entry.Image.Url;
+        if (!string.IsNullOrWhiteSpace(image))
+            imageUrl = image.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? image : BaseImageUrl + image;
 
         return new NewsEntry
         {
             Title = entry.Title,
-            Version = entry.Version,
-            Type = !string.IsNullOrEmpty(entry.Type) ? entry.Type : entry.PatchNoteType,
+            // 新闻没有版本号，留空让详情页隐藏版本角标。
+            Version = string.Empty,
+            Type = entry.Category,
+            Tag = entry.Tag,
             ImageUrl = imageUrl,
-            ContentPath = entry.ContentPath,
+            ReadMoreLink = entry.ReadMoreLink,
+            IsJava = isJava,
+            IsBedrock = isBedrock,
             Id = entry.Id,
-            Date = entry.Date.ToLocalTime(),
-            ShortText = entry.ShortText,
+            Date = entry.Date == default ? DateTime.Now : entry.Date.ToLocalTime(),
+            ShortText = entry.Text,
             NeedsTranslation = entry.NeedsTranslation,
-            Edition = edition
+            // 只属于基岩的条目记成 Bedrock；其余（含两版共有）记 Java，真实版别由 IsJava/IsBedrock 表达。
+            Edition = isBedrock && !isJava ? NewsEdition.Bedrock : NewsEdition.Java
         };
     }
 }
@@ -129,7 +185,7 @@ public static class NewsService
 internal static class NewsHttp
 {
     // 不要再关掉证书校验：以前指向自建占位域名（证书不可信）才被迫这么写，
-    // 现在直连 launchercontent.mojang.com，走系统信任链即可（实测严格校验下三个
-    // 端点都正常）。关掉校验等于给中间人开绿灯 —— 本机还挂着 TUN 代理，风险更实在。
+    // 现在直连 launchercontent.mojang.com，走系统信任链即可（实测严格校验下端点正常）。
+    // 关掉校验等于给中间人开绿灯 —— 本机还挂着 TUN 代理，风险更实在。
     public static readonly HttpClient Client = new();
 }

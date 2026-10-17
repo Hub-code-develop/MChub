@@ -350,7 +350,8 @@ internal static class CacheDatabase
             using var connection = OpenConnection();
             using var command = connection.CreateCommand();
             command.CommandText = """
-                                  SELECT title, version, type, image_url, content_path, id, published_at, short_text, needs_translation
+                                  SELECT title, version, type, image_url, content_path, id, published_at, short_text, needs_translation,
+                                         read_more_link, is_java, is_bedrock
                                   FROM news_cache_entry
                                   WHERE edition = $edition
                                   ORDER BY published_at DESC;
@@ -370,6 +371,9 @@ internal static class CacheDatabase
                     Date = DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64(6)).LocalDateTime,
                     ShortText = reader.GetString(7),
                     NeedsTranslation = reader.IsDBNull(8) ? null : reader.GetInt64(8) != 0,
+                    ReadMoreLink = reader.IsDBNull(9) ? string.Empty : reader.GetString(9),
+                    IsJava = !reader.IsDBNull(10) && reader.GetInt64(10) != 0,
+                    IsBedrock = !reader.IsDBNull(11) && reader.GetInt64(11) != 0,
                     Edition = edition
                 });
 
@@ -403,9 +407,11 @@ internal static class CacheDatabase
 
             command.CommandText = """
                                   INSERT INTO news_cache_entry (
-                                      edition, id, title, version, type, image_url, content_path, published_at, short_text, needs_translation
+                                      edition, id, title, version, type, image_url, content_path, published_at, short_text, needs_translation,
+                                      read_more_link, is_java, is_bedrock
                                   ) VALUES (
-                                      $edition, $id, $title, $version, $type, $imageUrl, $contentPath, $publishedAt, $shortText, $needsTranslation
+                                      $edition, $id, $title, $version, $type, $imageUrl, $contentPath, $publishedAt, $shortText, $needsTranslation,
+                                      $readMoreLink, $isJava, $isBedrock
                                   );
                                   """;
             foreach (var entry in entries)
@@ -423,6 +429,9 @@ internal static class CacheDatabase
                 command.Parameters.AddWithValue("$needsTranslation", entry.NeedsTranslation.HasValue
                     ? entry.NeedsTranslation.Value ? 1 : 0
                     : DBNull.Value);
+                command.Parameters.AddWithValue("$readMoreLink", entry.ReadMoreLink ?? string.Empty);
+                command.Parameters.AddWithValue("$isJava", entry.IsJava ? 1 : 0);
+                command.Parameters.AddWithValue("$isBedrock", entry.IsBedrock ? 1 : 0);
                 command.ExecuteNonQuery();
             }
 
@@ -559,7 +568,10 @@ internal static class CacheDatabase
                                   CREATE TABLE IF NOT EXISTS news_cache_entry (
                                       edition TEXT NOT NULL, id TEXT NOT NULL, title TEXT NOT NULL, version TEXT NOT NULL, type TEXT NOT NULL,
                                       image_url TEXT NOT NULL, content_path TEXT NOT NULL, published_at INTEGER NOT NULL, short_text TEXT NOT NULL,
-                                      needs_translation INTEGER NULL, PRIMARY KEY (edition, id)
+                                      needs_translation INTEGER NULL,
+                                      read_more_link TEXT NOT NULL DEFAULT '', is_java INTEGER NOT NULL DEFAULT 0,
+                                      is_bedrock INTEGER NOT NULL DEFAULT 0,
+                                      PRIMARY KEY (edition, id)
                                   );
                                   CREATE INDEX IF NOT EXISTS idx_news_cache_entry_edition_published_at
                                       ON news_cache_entry (edition, published_at DESC);
@@ -571,15 +583,56 @@ internal static class CacheDatabase
             command.ExecuteNonQuery();
             EnsureModCacheColumns(connection);
             EnsureNewsDetailColumns(connection);
+            EnsureNewsEntryColumns(connection);
             MigrateLegacyNews(connection);
             _initialized = true;
             Logger.Info(LogLanguageManager.Instance.cacheDatabase_initComplete.CurrentValue());
         }
     }
 
-    private static void EnsureNewsDetailColumns(SqliteConnection connection)
+    private static void EnsureNewsEntryColumns(SqliteConnection connection)
     {
         var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA table_info(news_cache_entry);";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+            columns.Add(reader.GetString(1));
+
+        reader.Close();
+
+        // 老库没有 read_more_link，说明里面存的是「补丁说明」缓存（没有原文链接、也没有版别标记），
+        // 与新闻模型不兼容 —— 补列之后整体清空，等下一次拉取重新填充，避免旧数据混进新闻页。
+        var isLegacySchema = !columns.Contains("read_more_link");
+
+        if (isLegacySchema)
+        {
+            command.CommandText =
+                "ALTER TABLE news_cache_entry ADD COLUMN read_more_link TEXT NOT NULL DEFAULT '';";
+            command.ExecuteNonQuery();
+        }
+
+        if (!columns.Contains("is_java"))
+        {
+            command.CommandText = "ALTER TABLE news_cache_entry ADD COLUMN is_java INTEGER NOT NULL DEFAULT 0;";
+            command.ExecuteNonQuery();
+        }
+
+        if (!columns.Contains("is_bedrock"))
+        {
+            command.CommandText = "ALTER TABLE news_cache_entry ADD COLUMN is_bedrock INTEGER NOT NULL DEFAULT 0;";
+            command.ExecuteNonQuery();
+        }
+
+        if (isLegacySchema)
+        {
+            command.CommandText = "DELETE FROM news_cache_entry;";
+            command.ExecuteNonQuery();
+        }
+    }
+
+    private static void EnsureNewsDetailColumns(SqliteConnection connection)
+    {        var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         using var command = connection.CreateCommand();
         command.CommandText = "PRAGMA table_info(news_detail_cache);";
         using var reader = command.ExecuteReader();
@@ -696,77 +749,14 @@ internal static class CacheDatabase
 
     private static void MigrateLegacyNews(SqliteConnection connection)
     {
+        // 远古版本的 news_cache 存的是「补丁说明」JSON。现在新闻页改用官方 news.json
+        // （新闻卡片模型，与补丁说明不兼容），迁移过来只会污染新闻列表，直接丢弃。
         using var tableCommand = connection.CreateCommand();
         tableCommand.CommandText = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'news_cache';";
         if (tableCommand.ExecuteScalar() == null) return;
 
-        var cachedResponses = new List<(NewsEdition Edition, PatchNotesResponse Response)>();
-        using (var selectCommand = connection.CreateCommand())
-        {
-            selectCommand.CommandText = "SELECT edition, content FROM news_cache;";
-            using var reader = selectCommand.ExecuteReader();
-            while (reader.Read())
-            {
-                if (!Enum.TryParse<NewsEdition>(reader.GetString(0), out var edition)) continue;
-                PatchNotesResponse? response;
-                try
-                {
-                    response = JsonSerializer.Deserialize<PatchNotesResponse>(reader.GetString(1), MChubJson.Options);
-                }
-                catch (JsonException exception)
-                {
-                    Logger.Error(LogLanguageManager.Instance.cacheDatabase_migrateOldNewsFailed.CurrentValue(), exception);
-                    return;
-                }
-
-                if (response == null) return;
-                cachedResponses.Add((edition, response));
-            }
-        }
-
-        using var transaction = connection.BeginTransaction();
-        foreach (var (edition, response) in cachedResponses)
-        foreach (var entry in response.Entries)
-        {
-            using var insertCommand = connection.CreateCommand();
-            insertCommand.Transaction = transaction;
-            insertCommand.CommandText = """
-                                        INSERT OR REPLACE INTO news_cache_entry (
-                                            edition, id, title, version, type, image_url, content_path, published_at, short_text, needs_translation
-                                        ) VALUES (
-                                            $edition, $id, $title, $version, $type, $imageUrl, $contentPath, $publishedAt, $shortText, $needsTranslation
-                                        );
-                                        """;
-            insertCommand.Parameters.AddWithValue("$edition", edition.ToString());
-            insertCommand.Parameters.AddWithValue("$id", entry.Id);
-            insertCommand.Parameters.AddWithValue("$title", entry.Title);
-            insertCommand.Parameters.AddWithValue("$version", entry.Version);
-            insertCommand.Parameters.AddWithValue("$type",
-                string.IsNullOrEmpty(entry.Type) ? entry.PatchNoteType : entry.Type);
-            insertCommand.Parameters.AddWithValue("$imageUrl", ToAbsoluteImageUrl(entry.Image?.Url));
-            insertCommand.Parameters.AddWithValue("$contentPath", entry.ContentPath);
-            insertCommand.Parameters.AddWithValue("$publishedAt",
-                new DateTimeOffset(entry.Date.ToLocalTime()).ToUnixTimeSeconds());
-            insertCommand.Parameters.AddWithValue("$shortText", entry.ShortText);
-            insertCommand.Parameters.AddWithValue("$needsTranslation", entry.NeedsTranslation.HasValue
-                ? entry.NeedsTranslation.Value ? 1 : 0
-                : DBNull.Value);
-            insertCommand.ExecuteNonQuery();
-        }
-
         using var dropCommand = connection.CreateCommand();
-        dropCommand.Transaction = transaction;
         dropCommand.CommandText = "DROP TABLE news_cache;";
         dropCommand.ExecuteNonQuery();
-        transaction.Commit();
-    }
-
-    private static string ToAbsoluteImageUrl(string? imageUrl)
-    {
-        return string.IsNullOrEmpty(imageUrl)
-            ? string.Empty
-            : imageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-                ? imageUrl
-                : "https://launchercontent.mojang.com" + imageUrl;
     }
 }

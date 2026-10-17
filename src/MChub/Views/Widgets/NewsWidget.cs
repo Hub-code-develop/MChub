@@ -267,7 +267,7 @@ public sealed class NewsWidget : IWidgetContent
         {
             NewsFilterType.Java => NewsService.JavaNews,
             NewsFilterType.Bedrock => NewsService.BedrockNews,
-            _ => NewsService.JavaNews.Concat(NewsService.BedrockNews)
+            _ => NewsService.AllNews
         };
         _current = list.OrderByDescending(x => x.Date).FirstOrDefault();
         UpdateDisplay();
@@ -296,8 +296,7 @@ public sealed class NewsWidget : IWidgetContent
         _titleText.Text = entry.Title;
         _descText.Text = string.IsNullOrEmpty(entry.ShortText) ? string.Empty : entry.ShortText + "...";
         _dateText.Text = entry.RelativeDate;
-        _editionText.Text = entry.Edition == NewsEdition.Java ? "Java" :
-            CommonLanguageManager.Instance.news_editionBedrock.CurrentValue();
+        _editionText.Text = entry.EditionDisplay;
         _typeText.Text = entry.Type;
         _typeTag.IsVisible = !string.IsNullOrEmpty(entry.Type);
     }

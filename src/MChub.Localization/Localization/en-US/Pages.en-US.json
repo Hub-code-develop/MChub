@@ -94,7 +94,8 @@
   },
   "newsdetailspage": {
     "LoadingNewsContent": "Loading news content…",
-    "Retry": "Retry"
+    "Retry": "Retry",
+    "ReadOriginal": "Read the original article"
   },
   "newspage": {
     "MinecraftNews": "Minecraft News"

@@ -141,7 +141,7 @@
                                                 <TextBlock
                                                     FontSize="11"
                                                     Foreground="{DynamicResource InnerForegroundColor}"
-                                                    Text="{Binding Edition}" />
+                                                    Text="{Binding EditionDisplay}" />
                                             </Border>
                                             <Border
                                                 Background="{DynamicResource TranslucentBackgroundColor}"
@@ -153,7 +153,9 @@
                                                 <TextBlock
                                                     FontSize="11"
                                                     Foreground="{DynamicResource InnerForegroundColor}"
-                                                    Text="{Binding Type}" />
+                                                    MaxWidth="118"
+                                                    Text="{Binding Type}"
+                                                    TextTrimming="CharacterEllipsis" />
                                             </Border>
                                         </StackPanel>
                                     </Panel>

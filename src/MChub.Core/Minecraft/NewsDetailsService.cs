@@ -29,6 +29,11 @@ public static class NewsDetailsService
     {
         if (string.IsNullOrEmpty(entry.Id)) return null;
 
+        // 新闻条目没有正文文件（官方 news.json 里 articleBody 恒为空，原文在 minecraft.net 网页上），
+        // 直接按条目本身构造详情：摘要 + 原文链接。无需联网，也不写缓存。
+        if (string.IsNullOrEmpty(entry.ContentPath))
+            return FromEntry(entry);
+
         if (MemoryCache.TryGetValue(entry.Id, out var cached))
         {
             TryBackgroundRefreshIfNeedsTranslation(entry, cached);
@@ -58,6 +63,8 @@ public static class NewsDetailsService
     public static async Task<NewsDetail?> RefreshAsync(NewsEntry entry)
     {
         if (string.IsNullOrEmpty(entry.Id)) return null;
+        if (string.IsNullOrEmpty(entry.ContentPath))
+            return FromEntry(entry);
         var fetched = await FetchAsync(entry);
         if (fetched != null)
         {
@@ -68,6 +75,28 @@ public static class NewsDetailsService
         }
 
         return fetched;
+    }
+
+    /// <summary>
+    /// 用列表条目本身构造详情（新闻没有独立正文文件）。
+    /// Body 为空，摘要走 <see cref="NewsDetail.Summary"/>，详情页据 <see cref="NewsDetail.ReadMoreLink"/> 显示「阅读原文」。
+    /// </summary>
+    private static NewsDetail FromEntry(NewsEntry entry)
+    {
+        return new NewsDetail
+        {
+            Id = entry.Id,
+            Title = entry.Title,
+            Version = entry.Version,
+            Type = entry.Type,
+            ImageUrl = entry.ImageUrl,
+            Date = entry.Date,
+            Body = string.Empty,
+            Summary = entry.ShortText,
+            ReadMoreLink = entry.ReadMoreLink,
+            NeedsTranslation = entry.NeedsTranslation,
+            FetchedAt = DateTime.Now
+        };
     }
 
     private static void TryBackgroundRefreshIfNeedsTranslation(NewsEntry entry, NewsDetail? cached)
