@@ -202,7 +202,11 @@ jobs:
           # XUserAddAsync/XUserAddResult(未登录时以 E_GAMEUSER_NO_DEFAULT_USER
           # 完成异步块,而不是返回 E_NOTIMPL 且永不完成 —— 后者会让基岩版抛 C++
           # 异常并 abort)。旧缓存仍是桩实现,必须重编。
-          key: wine-gdk-${{ env.WINE_GDK_REF }}-${{ runner.os }}-${{ runner.arch }}-v5
+          # v6:build-wine.sh 把 XAsyncSchedule 的 TRACE 移到 state.Detach() 之前。
+          # 原来 Detach() 之后才打印 state->queue,而此时智能指针已置空,只要开启
+          # gdkc 日志通道就会在 xgameruntime+0x5490 空指针崩溃(读 0x78),使任何
+          # gdkc 调试都变成假崩溃。旧缓存含该缺陷,必须重编。
+          key: wine-gdk-${{ env.WINE_GDK_REF }}-${{ runner.os }}-${{ runner.arch }}-v6
 
       - name: 构建 Wine(WineGDK,x86_64)
         if: steps.wine-cache.outputs.cache-hit != 'true'

@@ -215,6 +215,46 @@ else:
     print("已按 GDK 语义实现 XUserAddAsync/XUserAddResult(未登录返回 E_GAMEUSER_NO_DEFAULT_USER)")
 PYEOF
 
+# XAsyncSchedule 在 state.Detach() 之后仍打印 TRACE("Before completion, queue here
+# was %p", state->queue):Detach() 已把智能指针置空,m_state 变为 nullptr,于是这条
+# TRACE 读 nullptr + queue 偏移(0x78)。后果是**只要开启 gdkc 日志通道,任何走到
+# XAsyncSchedule 的运行都会在 xgameruntime+0x5490 触发访问违例(info[1]=0x78)并
+# 被杀掉** —— 表现为"开日志就崩,不开日志正常",极易被误判成业务缺陷。
+# 把 TRACE 提到 Detach 之前即可消除空指针解引用,同时保留原有日志语义。
+log "补丁:XAsyncSchedule 的 TRACE 移到 Detach 之前(修掉 gdkc 日志通道下的空指针崩溃)"
+python3 - "$SRC/dlls/xgameruntime/GDKComponent/System/Threading/XAsync.cpp" <<'PYEOF'
+import sys
+
+path = sys.argv[1]
+src = open(path).read()
+
+marker = 'TRACE("Before completion, queue here was %p\\n", state->queue);'
+
+old = """    state.Detach();
+
+    TRACE("Before completion, queue here was %p\\n", state->queue);
+
+    return S_OK;
+}"""
+
+new = """    TRACE("Before completion, queue here was %p\\n", state->queue);
+
+    state.Detach();
+
+    return S_OK;
+}"""
+
+if marker not in src:
+    sys.exit("未找到 XAsyncSchedule 的 TRACE 锚点,无法打补丁")
+elif new in src:
+    print("XAsync.cpp 的 TRACE 已在 Detach 之前,跳过")
+elif old in src:
+    open(path, "w").write(src.replace(old, new, 1))
+    print("已把 XAsyncSchedule 的 TRACE 移到 state.Detach() 之前(消除空指针解引用)")
+else:
+    sys.exit("XAsyncSchedule 结构与预期不符,无法安全打补丁")
+PYEOF
+
 log "生成 configure / Makefile / spec"
 cd "$SRC"
 ./tools/make_requests
