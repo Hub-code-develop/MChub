@@ -119,7 +119,11 @@ public partial class App : Application
             else if (Data.ConfigEntry.IsInitialized)
             {
                 Initializer.Oobe();
-                ShowMainWindow(desktop);
+                // 合规闸门：必须先登录微软正版账号，否则只给登录窗口。
+                if (AccountGate.IsSatisfied)
+                    ShowMainWindow(desktop);
+                else
+                    ShowLoginWindow(desktop);
             }
             else
             {
@@ -133,8 +137,16 @@ public partial class App : Application
                     Logger.Info(LogLanguageManager.Instance.app_initCompleteShowMainWindow.CurrentValue());
                     Data.ConfigEntry.IsInitialized = true;
                     ConfigSaver.FlushConfig();
-                    ShowMainWindow(desktop);
-                    _win.Show();
+                    if (AccountGate.IsSatisfied)
+                    {
+                        ShowMainWindow(desktop);
+                        _win!.Show();
+                    }
+                    else
+                    {
+                        ShowLoginWindow(desktop);
+                    }
+
                     oobe.Close();
                 };
             }
@@ -192,6 +204,28 @@ public partial class App : Application
         LogWindowShowElapsed(_win);
         desktop.MainWindow = _win;
         _win.Loaded += Function;
+    }
+
+    /// <summary>
+    /// 强制登录：没有微软正版账号时用它顶替主窗口。登录成功后由回调打开主窗口。
+    /// 关掉登录窗口等于退出启动器（此时主窗口还没创建）。
+    /// </summary>
+    private void ShowLoginWindow(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        Logger.Info("未登录微软正版账号，显示强制登录窗口");
+        var login = new LoginWindow
+        {
+            WindowStartupLocation = WindowStartupLocation.CenterScreen
+        };
+        LogWindowShowElapsed(login);
+        desktop.MainWindow = login;
+        login.Completed += () =>
+        {
+            ShowMainWindow(desktop);
+            _win!.Show();
+            login.Close();
+        };
+        login.Show();
     }
 
     private static void LogWindowShowElapsed(Window window)
