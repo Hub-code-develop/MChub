@@ -116,36 +116,5 @@ public partial class LoginWindow : FAAppWindow
         _ = StartAuthAsync();
     }
 
-    /// <summary>
-    /// 从 PCL / SJMCL / 官方启动器迁移：把它们的 .minecraft 目录注册成 MChub 游戏目录
-    /// （版本、实例、存档、资源、设置都在里面），能读懂的账号顺手导入。
-    /// </summary>
-    private async void ImportFromOtherLaunchers(object? sender, RoutedEventArgs e)
-    {
-        var sources = MChub.Core.Migration.MigrationService.Scan();
-        if (sources.Count == 0)
-        {
-            StatusText.Text = "没找到可迁移的启动器目录。可以先登录，进主界面后手动添加游戏目录。";
-            return;
-        }
-
-        StatusText.Text = $"检测到 {sources.Count} 个来源，正在导入…";
-
-        var lines = new List<string>();
-        foreach (var source in sources)
-        {
-            var result = await MChub.Core.Migration.MigrationService.ImportAsync(source);
-            var parts = new List<string> { result.Source.DisplayName };
-            if (result.FolderRegistered) parts.Add("已注册游戏目录");
-            else parts.Add("目录已在列表中");
-            if (result.AccountsImported > 0) parts.Add($"导入 {result.AccountsImported} 个离线账号");
-            lines.Add(string.Join("，", parts));
-            foreach (var warning in result.Warnings) lines.Add($"  · {warning}");
-        }
-
-        MChub.Core.Module.Initialize.ConfigSaver.FlushConfig();
-        StatusText.Text = string.Join(Environment.NewLine, lines);
-    }
-
     private void Quit(object? sender, RoutedEventArgs e) => Close();
 }

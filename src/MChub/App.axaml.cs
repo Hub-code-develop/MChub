@@ -137,16 +137,12 @@ public partial class App : Application
                     Logger.Info(LogLanguageManager.Instance.app_initCompleteShowMainWindow.CurrentValue());
                     Data.ConfigEntry.IsInitialized = true;
                     ConfigSaver.FlushConfig();
-                    if (AccountGate.IsSatisfied)
-                    {
-                        ShowMainWindow(desktop);
-                        _win!.Show();
-                    }
-                    else
-                    {
-                        ShowLoginWindow(desktop);
-                    }
 
+                    // 首次启动多一步：先给迁移页。迁移里可能就带进来一个正版账号，
+                    // 那样就不用再登录（闸门在迁移结束后统一判定）。
+                    // 注意顺序：先让新窗口成为 MainWindow，再关 OOBE，
+                    // 否则 ShutdownMode=OnMainWindowClose 时关掉主窗会直接退出。
+                    ShowMigrationWindow(desktop);
                     oobe.Close();
                 };
             }
@@ -204,6 +200,35 @@ public partial class App : Application
         LogWindowShowElapsed(_win);
         desktop.MainWindow = _win;
         _win.Loaded += Function;
+    }
+
+    /// <summary>
+    /// 首次启动的迁移页：迁移完（或跳过）再判定闸门 ——
+    /// 如果迁移进来一个可用的微软账号，直接进主界面，不再要求登录。
+    /// </summary>
+    private void ShowMigrationWindow(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var migration = new MigrationWindow
+        {
+            WindowStartupLocation = WindowStartupLocation.CenterScreen
+        };
+        LogWindowShowElapsed(migration);
+        desktop.MainWindow = migration;
+        migration.Completed += () =>
+        {
+            if (AccountGate.IsSatisfied)
+            {
+                ShowMainWindow(desktop);
+                _win!.Show();
+            }
+            else
+            {
+                ShowLoginWindow(desktop);
+            }
+
+            migration.Close();
+        };
+        migration.Show();
     }
 
     /// <summary>

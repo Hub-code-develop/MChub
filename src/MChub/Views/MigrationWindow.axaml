@@ -1,0 +1,40 @@
+<faApp:FAAppWindow
+    CanResize="False"
+    Height="500"
+    Title="从其他启动器迁移"
+    Width="700"
+    WindowStartupLocation="CenterScreen"
+    x:Class="MChub.Views.MigrationWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:faApp="using:FluentAvalonia.UI.Windowing"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <faApp:FAAppWindow.Resources>
+        <SolidColorBrush Color="Transparent" x:Key="TitleBarBackgroundColor" />
+    </faApp:FAAppWindow.Resources>
+
+    <Grid Margin="28,20,28,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Spacing="8">
+            <TextBlock FontSize="22" FontWeight="SemiBold" Text="从其他启动器迁移" />
+            <TextBlock Opacity="0.75" TextWrapping="Wrap"
+                       Text="检测到本机已有其它启动器的游戏目录。勾选后会把它们注册成 MChub 的游戏目录，版本、实例、存档、资源与设置都会跟着来（不复制大文件）。" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" Margin="0,16,0,0">
+            <StackPanel x:Name="SourcesPanel" Spacing="10" />
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" Margin="0,16,0,0">
+            <TextBlock x:Name="StatusText" VerticalAlignment="Center" TextWrapping="Wrap" Width="420" HorizontalAlignment="Left" />
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+                <Button x:Name="ImportButton" Click="Import" Content="开始导入" />
+                <Button x:Name="SkipButton" Click="Skip" Content="跳过" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</faApp:FAAppWindow>
