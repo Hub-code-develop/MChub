@@ -179,7 +179,7 @@ public partial class CreatorPage : Dsc, ITioTabPage
 
         foreach (var structure in _structures)
         {
-            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto") };
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto") };
             row.Children.Add(new StackPanel
             {
                 Spacing = 2,
@@ -200,9 +200,14 @@ public partial class CreatorPage : Dsc, ITioTabPage
             Grid.SetColumn(preview, 1);
             row.Children.Add(preview);
 
+            var edit = new Button { Content = "编辑", Margin = new Avalonia.Thickness(8, 0, 0, 0) };
+            edit.Click += (_, _) => OpenInEditor(structure.FilePath);
+            Grid.SetColumn(edit, 2);
+            row.Children.Add(edit);
+
             var folder = new Button { Content = "打开文件夹", Margin = new Avalonia.Thickness(8, 0, 0, 0) };
             folder.Click += (_, _) => OpenPath(Path.GetDirectoryName(structure.FilePath)!);
-            Grid.SetColumn(folder, 2);
+            Grid.SetColumn(folder, 3);
             row.Children.Add(folder);
 
             StructurePanel.Children.Add(row);
@@ -294,6 +299,27 @@ public partial class CreatorPage : Dsc, ITioTabPage
         catch (Exception ex)
         {
             StructureStatusText.Text = $"打开失败：{ex.Message}";
+        }
+    }
+
+    /// <summary>在结构编辑器里打开（带 3D 预览与方块替换）。</summary>
+    private void OpenInEditor(string filePath)
+    {
+        try
+        {
+            if (MChub.App.MainWindow is not { } window)
+                return;
+
+            var page = new StructureEditorPage();
+            var tab = new TabEntry(window, page);
+            window.CreateTab(tab);
+            window.SelectTab(tab);
+            page.OpenFile(filePath);
+            StructureStatusText.Text = $"正在编辑：{Path.GetFileName(filePath)}";
+        }
+        catch (Exception ex)
+        {
+            StructureStatusText.Text = $"打开编辑器失败：{ex.Message}";
         }
     }
 
