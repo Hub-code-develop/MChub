@@ -10,6 +10,7 @@
         </StackPanel>
 
         <TabControl Grid.Row="1" Margin="0,12,0,0">
+            <!--  截图库  -->
             <TabItem Header="截图库">
                 <Grid Margin="0,8,0,0" RowDefinitions="Auto,*">
                     <StackPanel Margin="0,0,0,8" Orientation="Horizontal" Spacing="8">
@@ -22,6 +23,7 @@
                 </Grid>
             </TabItem>
 
+            <!--  素材清单  -->
             <TabItem Header="素材清单">
                 <Grid Margin="0,8,0,0" RowDefinitions="Auto,*,Auto">
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -44,6 +46,105 @@
                         Opacity="0.7"
                         TextWrapping="Wrap" />
                 </Grid>
+            </TabItem>
+
+            <!--  ReplayMod 录像  -->
+            <TabItem Header="录像">
+                <Grid Margin="0,8,0,0" RowDefinitions="Auto,*">
+                    <StackPanel Margin="0,0,0,8" Orientation="Horizontal" Spacing="8">
+                        <Button Click="OpenReplayFolder" Content="打开录像目录" />
+                        <TextBlock x:Name="ReplayCountText" Opacity="0.7" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="1">
+                        <StackPanel x:Name="ReplayPanel" Spacing="6" />
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
+            <!--  结构文件（Litematica）  -->
+            <TabItem Header="结构">
+                <Grid Margin="0,8,0,0" RowDefinitions="Auto,*,Auto">
+                    <StackPanel Margin="0,0,0,8" Orientation="Horizontal" Spacing="8">
+                        <Button Click="OpenStructureFolder" Content="打开结构目录" />
+                        <TextBlock x:Name="StructureCountText" Opacity="0.7" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="1">
+                        <StackPanel x:Name="StructurePanel" Spacing="6" />
+                    </ScrollViewer>
+                    <TextBlock
+                        x:Name="StructureStatusText"
+                        Grid.Row="2"
+                        Margin="0,8,0,0"
+                        Opacity="0.65"
+                        TextWrapping="Wrap"
+                        Text="点「预览」会在新标签页里用 Litematica 查看器打开（带方块统计、替换与导出）。" />
+                </Grid>
+            </TabItem>
+
+            <!--  资源包 / 光影对比  -->
+            <TabItem Header="对比">
+                <Grid Margin="0,8,0,0" RowDefinitions="Auto,*,Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ComboBox x:Name="PackABox" MinWidth="200" />
+                        <ComboBox x:Name="PackBBox" MinWidth="200" />
+                        <TextBox
+                            x:Name="TexturePathBox"
+                            Width="240"
+                            Watermark="block/stone" />
+                        <Button Click="CompareTexture" Content="对比" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="1" Margin="0,10,0,0" ColumnDefinitions="*,*">
+                        <StackPanel Spacing="6">
+                            <TextBlock x:Name="PackALabel" Opacity="0.75" />
+                            <Border
+                                Background="#22000000"
+                                CornerRadius="8"
+                                Height="260"
+                                Padding="8">
+                                <Image x:Name="PackAImage" Stretch="Uniform" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="6">
+                            <TextBlock x:Name="PackBLabel" Opacity="0.75" />
+                            <Border
+                                Background="#22000000"
+                                CornerRadius="8"
+                                Height="260"
+                                Padding="8">
+                                <Image x:Name="PackBImage" Stretch="Uniform" />
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock
+                        x:Name="CompareStatus"
+                        Grid.Row="2"
+                        Margin="0,8,0,0"
+                        Opacity="0.7"
+                        TextWrapping="Wrap"
+                        Text="贴图路径示例：block/stone、item/diamond_sword、gui/widgets。光影包没有贴图可比，只能对比资源包。" />
+                </Grid>
+            </TabItem>
+
+            <!--  设置  -->
+            <TabItem Header="设置">
+                <StackPanel Margin="0,14,0,0" Spacing="12">
+                    <CheckBox x:Name="IncludeDisabledBox" Content="模组清单包含已禁用的模组" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="截图墙一次显示上限" VerticalAlignment="Center" />
+                        <NumericUpDown
+                            x:Name="ThumbLimitBox"
+                            Width="170"
+                            Increment="20"
+                            Maximum="500"
+                            Minimum="20"
+                            Value="120" />
+                    </StackPanel>
+                    <TextBox x:Name="DefaultTextureBox" Width="320" Watermark="block/stone" />
+                    <Button Click="SaveSettings" Content="保存设置" />
+                    <TextBlock x:Name="SettingsStatus" Opacity="0.7" />
+                </StackPanel>
             </TabItem>
         </TabControl>
     </Grid>

@@ -9,6 +9,15 @@ namespace MChub.Core.Creator;
 /// <summary>一张截图。</summary>
 public sealed record ScreenshotEntry(string FilePath, DateTime TakenAt, long SizeBytes);
 
+/// <summary>一段 ReplayMod 录像。</summary>
+public sealed record ReplayEntry(string FilePath, DateTime Modified, long SizeBytes);
+
+/// <summary>一个可对比的资源包 / 光影包。</summary>
+public sealed record PackEntry(string Name, string Path, bool IsShader);
+
+/// <summary>一个结构文件（.litematic / .schematic）。</summary>
+public sealed record StructureEntry(string FilePath, DateTime Modified, long SizeBytes);
+
 /// <summary>一个模组（从 jar 里读出来的元数据）。</summary>
 public sealed record ModEntry(string Name, string Version, string FileName, bool Enabled);
 
@@ -88,6 +97,182 @@ public static class CreatorAssetService
         assets.ShaderPackCount = CountEntries(Path.Combine(instancePath, "shaderpacks"));
         assets.ScreenshotCount = SafeScreenshotCount(Path.Combine(instancePath, "screenshots"));
         return assets;
+    }
+
+    /// <summary>ReplayMod 录像（默认在 replay_recordings/ 下）。</summary>
+    public static IReadOnlyList<ReplayEntry> FindReplays()
+    {
+        var results = new List<ReplayEntry>();
+        foreach (var folder in SafeFolders())
+        {
+            CollectReplays(Path.Combine(folder, "replay_recordings"), results);
+            foreach (var instance in EnumerateInstanceDirectories(folder))
+                CollectReplays(Path.Combine(instance, "replay_recordings"), results);
+        }
+
+        return results
+            .GroupBy(entry => entry.FilePath, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .OrderByDescending(entry => entry.Modified)
+            .ToList();
+    }
+
+    /// <summary>结构文件（Litematica 的 schematics/ 等）。</summary>
+    public static IReadOnlyList<StructureEntry> FindStructures()
+    {
+        var results = new List<StructureEntry>();
+        foreach (var folder in SafeFolders())
+        {
+            CollectStructures(Path.Combine(folder, "schematics"), results);
+            CollectStructures(Path.Combine(folder, "litematica"), results);
+            foreach (var instance in EnumerateInstanceDirectories(folder))
+            {
+                CollectStructures(Path.Combine(instance, "schematics"), results);
+                CollectStructures(Path.Combine(instance, "litematica"), results);
+            }
+        }
+
+        return results
+            .GroupBy(entry => entry.FilePath, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .OrderByDescending(entry => entry.Modified)
+            .ToList();
+    }
+
+    /// <summary>可对比的资源包与光影包（目录或 zip）。</summary>
+    public static IReadOnlyList<PackEntry> FindPacks()
+    {
+        var results = new List<PackEntry>();
+        foreach (var folder in SafeFolders())
+        {
+            CollectPacks(Path.Combine(folder, "resourcepacks"), false, results);
+            CollectPacks(Path.Combine(folder, "shaderpacks"), true, results);
+            foreach (var instance in EnumerateInstanceDirectories(folder))
+            {
+                CollectPacks(Path.Combine(instance, "resourcepacks"), false, results);
+                CollectPacks(Path.Combine(instance, "shaderpacks"), true, results);
+            }
+        }
+
+        return results
+            .GroupBy(entry => entry.Path, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    /// <summary>
+    /// 从资源包里取一张贴图（支持目录包与 zip 包）。
+    /// texturePath 形如 <c>block/stone</c> 或 <c>assets/minecraft/textures/block/stone.png</c>。
+    /// 返回 null 表示这个包里没有这张图。
+    /// </summary>
+    public static byte[]? ReadTexture(PackEntry pack, string texturePath)
+    {
+        var relative = NormalizeTexturePath(texturePath);
+        if (relative is null) return null;
+
+        try
+        {
+            if (Directory.Exists(pack.Path))
+            {
+                var candidates = new[]
+                {
+                    Path.Combine(pack.Path, relative),
+                    Path.Combine(pack.Path, "assets", "minecraft", "textures", relative)
+                };
+                foreach (var candidate in candidates)
+                    if (File.Exists(candidate))
+                        return File.ReadAllBytes(candidate);
+                return null;
+            }
+
+            if (!File.Exists(pack.Path)) return null;
+
+            using var archive = ZipFile.OpenRead(pack.Path);
+            foreach (var name in new[]
+                     {
+                         relative.Replace('\\', '/'),
+                         $"assets/minecraft/textures/{relative.Replace('\\', '/')}"
+                     })
+            {
+                var entry = archive.GetEntry(name);
+                if (entry is null) continue;
+                using var stream = entry.Open();
+                using var memory = new MemoryStream();
+                stream.CopyTo(memory);
+                return memory.ToArray();
+            }
+        }
+        catch
+        {
+            // 包损坏 / 权限问题都当作「没有这张图」
+        }
+
+        return null;
+    }
+
+    private static string? NormalizeTexturePath(string texturePath)
+    {
+        if (string.IsNullOrWhiteSpace(texturePath)) return null;
+        var value = texturePath.Trim().Replace('\\', '/');
+        const string prefix = "assets/minecraft/textures/";
+        if (value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            value = value[prefix.Length..];
+        else if (value.StartsWith("textures/", StringComparison.OrdinalIgnoreCase))
+            value = value["textures/".Length..];
+        if (!value.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            value += ".png";
+        return value;
+    }
+
+    private static void CollectReplays(string path, List<ReplayEntry> results)
+    {
+        if (!Directory.Exists(path)) return;
+        foreach (var file in Directory.EnumerateFiles(path))
+        {
+            if (!file.EndsWith(".mcpr", StringComparison.OrdinalIgnoreCase)) continue;
+            try
+            {
+                var info = new FileInfo(file);
+                results.Add(new ReplayEntry(info.FullName, info.LastWriteTime, info.Length));
+            }
+            catch
+            {
+                // 忽略单个文件失败
+            }
+        }
+    }
+
+    private static void CollectStructures(string path, List<StructureEntry> results)
+    {
+        if (!Directory.Exists(path)) return;
+        foreach (var file in Directory.EnumerateFiles(path))
+        {
+            var extension = Path.GetExtension(file);
+            if (!extension.Equals(".litematic", StringComparison.OrdinalIgnoreCase) &&
+                !extension.Equals(".schematic", StringComparison.OrdinalIgnoreCase))
+                continue;
+            try
+            {
+                var info = new FileInfo(file);
+                results.Add(new StructureEntry(info.FullName, info.LastWriteTime, info.Length));
+            }
+            catch
+            {
+                // 忽略单个文件失败
+            }
+        }
+    }
+
+    private static void CollectPacks(string path, bool isShader, List<PackEntry> results)
+    {
+        if (!Directory.Exists(path)) return;
+
+        foreach (var directory in Directory.EnumerateDirectories(path))
+            results.Add(new PackEntry(Path.GetFileName(directory), directory, isShader));
+
+        foreach (var file in Directory.EnumerateFiles(path, "*.zip"))
+            results.Add(new PackEntry(Path.GetFileNameWithoutExtension(file), file, isShader));
     }
 
     /// <summary>生成可直接贴进视频简介的 Markdown。</summary>
