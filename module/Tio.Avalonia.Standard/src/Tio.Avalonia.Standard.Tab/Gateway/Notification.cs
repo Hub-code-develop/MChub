@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls.Notifications;
+using Avalonia.Controls.Notifications;
 using Tio.Avalonia.Standard.Modules.DiskIO;
 using Tio.Avalonia.Standard.Tab.Extensions;
 using TioUi.Common.Classes;
@@ -9,7 +9,7 @@ namespace Tio.Avalonia.Standard.Tab.Gateway;
 public static class NotificationGateway
 {
     /// <summary>通知卡片左上角显示的启动器名（旧品牌 "Portal" 已弃用）。</summary>
-    private const string NotificationTitle = "MChub";
+    private const string NotificationTitle = "MCStudio";
 
     public static Func<bool> IsToastFunc = null;
     

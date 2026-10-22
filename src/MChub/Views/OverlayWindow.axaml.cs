@@ -152,7 +152,7 @@ public partial class OverlayWindow : Window
 
         VersionBox.Text = !string.IsNullOrEmpty(AppVersionService.Instance.Version.VersionTitle)
             ? $"MChub {AppVersionService.Instance.Version.VersionTitle}"
-            : "MChub";
+            : "MCStudio";
 
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _clockTimer.Tick += (_, _) =>

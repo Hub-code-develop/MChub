@@ -115,7 +115,7 @@ public static class DesktopShortcutService
         foreach (var c in name)
             builder.Append(invalid.Contains(c) ? '_' : c);
         var result = builder.ToString().Trim();
-        return string.IsNullOrEmpty(result) ? "MChub" : result;
+        return string.IsNullOrEmpty(result) ? "MCStudio" : result;
     }
 
     private static string CreateWindowsShortcut(string url, string displayName, Bitmap? icon)

@@ -25,7 +25,7 @@
                             <TextBlock
                                 FontSize="15"
                                 Margin="5,0,0,0"
-                                Text="MChub" />
+                                Text="MCStudio" />
                             <Border
                                 CornerRadius="10"
                                 HorizontalAlignment="Left"
