@@ -1,0 +1,50 @@
+<UserControl
+    x:Class="MChub.Views.Pages.CreatorPage"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="16" RowDefinitions="Auto,*">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock FontSize="20" FontWeight="SemiBold" Text="创作台" VerticalAlignment="Center" />
+            <TextBlock x:Name="SummaryText" Opacity="0.7" VerticalAlignment="Center" />
+            <Button x:Name="RefreshButton" Click="Refresh" Content="刷新" />
+        </StackPanel>
+
+        <TabControl Grid.Row="1" Margin="0,12,0,0">
+            <TabItem Header="截图库">
+                <Grid Margin="0,8,0,0" RowDefinitions="Auto,*">
+                    <StackPanel Margin="0,0,0,8" Orientation="Horizontal" Spacing="8">
+                        <Button Click="OpenScreenshotFolder" Content="打开截图目录" />
+                        <TextBlock x:Name="ShotCountText" Opacity="0.7" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="1">
+                        <WrapPanel x:Name="ShotPanel" Orientation="Horizontal" />
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="素材清单">
+                <Grid Margin="0,8,0,0" RowDefinitions="Auto,*,Auto">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ComboBox x:Name="InstanceBox" MinWidth="320" />
+                        <Button Click="GenerateMarkdown" Content="生成清单" />
+                        <Button Click="CopyMarkdown" Content="复制" />
+                    </StackPanel>
+                    <TextBox
+                        x:Name="MarkdownBox"
+                        Grid.Row="1"
+                        Margin="0,8,0,0"
+                        AcceptsReturn="True"
+                        FontFamily="Menlo,Consolas,monospace"
+                        IsReadOnly="True"
+                        TextWrapping="NoWrap" />
+                    <TextBlock
+                        x:Name="ModSummaryText"
+                        Grid.Row="2"
+                        Margin="0,8,0,0"
+                        Opacity="0.7"
+                        TextWrapping="Wrap" />
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>
