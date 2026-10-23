@@ -13,6 +13,9 @@ namespace MChub.Core.Classes.Config;
 public partial class ConfigEntry : ObservableObject
 {
     [ObservableProperty] public partial bool IsInitialized { get; set; } = true;
+
+    /// <summary>首次启动的「必须有正版账号」闸门是否已经通过（通过后不再检查）。</summary>
+    [ObservableProperty] public partial bool AccountGateCompleted { get; set; }
     [ObservableProperty] public partial string? TelemetryUserId { get; set; }
     [ObservableProperty] public partial bool EnableCustomForegroundColor { get; set; } = false;
     [ObservableProperty] public partial bool EnableCheckAutoUpdate { get; set; } = true;

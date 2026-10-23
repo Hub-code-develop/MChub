@@ -119,6 +119,7 @@ public partial class App : Application
                 {
                     ShowLoginWindow(desktop, afterLogin: () =>
                     {
+                        CompleteAccountGate();
                         var importWindow = new BedrockPackageImportWindow(packagePath);
                         LogWindowShowElapsed(importWindow);
                         desktop.MainWindow = importWindow;
@@ -229,17 +230,8 @@ public partial class App : Application
         desktop.MainWindow = migration;
         migration.Completed += () =>
         {
-            var accountReady = AccountGate.IsSatisfied;
-            if (accountReady)
-            {
-                ShowMainWindow(desktop);
-                _win!.Show();
-            }
-            else
-            {
-                ShowLoginWindow(desktop);
-            }
-
+            // 迁移里可能带进来一个正版账号；交给统一入口判断是否还需要登录
+            EnterLauncher(desktop);
             migration.Close();
         };
         migration.Show();
@@ -250,27 +242,45 @@ public partial class App : Application
     /// 关掉登录窗口等于退出启动器（此时主窗口还没创建）。
     /// </summary>
     /// <summary>
-    /// 统一入口：所有「能不能进界面」的判断都走这里。
-    /// - 没有可刷新的微软账号 → 登录
-    /// - 有账号但凭证过期（超过 24h） → 先联网复核，复核不过就要求重新登录
-    /// - 刚验证过 → 直接进主界面
+    /// 统一入口。闸门**只在软件首次启动时检查一次**：
+    /// - 已经通过过（AccountGateCompleted）→ 以后每次启动都直接进主界面
+    /// - 首次启动且已经存在正版账号（比如迁移进来的）→ 直接放行，不要求重新登录
+    /// - 首次启动没有正版账号 → 强制登录，成功后记下「已通过」
     /// </summary>
     private void EnterLauncher(IClassicDesktopStyleApplicationLifetime desktop)
     {
-        if (!AccountGate.IsSatisfied)
-        {
-            ShowLoginWindow(desktop);
-            return;
-        }
-
-        if (AccountGate.IsFresh)
+        if (Data.ConfigEntry.AccountGateCompleted)
         {
             ShowMainWindow(desktop);
             _win?.Show();
             return;
         }
 
-        ShowLoginWindow(desktop, verify: true);
+        if (AccountGate.IsSatisfied)
+        {
+            CompleteAccountGate();
+            ShowMainWindow(desktop);
+            _win?.Show();
+            return;
+        }
+
+        ShowLoginWindow(desktop, afterLogin: () =>
+        {
+            CompleteAccountGate();
+            ShowMainWindow(desktop);
+            _win!.Show();
+        });
+    }
+
+    /// <summary>标记「首次启动的账号闸门已通过」，之后不再检查。</summary>
+    private static void CompleteAccountGate()
+    {
+        if (Data.ConfigEntry.AccountGateCompleted)
+            return;
+
+        Data.ConfigEntry.AccountGateCompleted = true;
+        ConfigSaver.FlushConfig();
+        Logger.Info("首次启动账号闸门已通过，后续启动不再检查");
     }
 
     /// <param name="afterLogin">登录成功后要做什么；为空表示进主界面。</param>
