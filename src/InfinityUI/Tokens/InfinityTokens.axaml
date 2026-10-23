@@ -1,0 +1,71 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        infinityUI design tokens.
+
+        五色纪律：整个库里只有三种"彩色"——Danger / Warning / Success，
+        其余全部是无彩色的黑白灰阶。不得新增第四个彩色令牌。
+    -->
+
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+            <Color x:Key="InfSurfaceColor">#0A0A0A</Color>
+            <Color x:Key="InfSurfaceAltColor">#141414</Color>
+            <Color x:Key="InfSurfaceRaisedColor">#1F1F1F</Color>
+            <Color x:Key="InfBorderColor">#2E2E2E</Color>
+            <Color x:Key="InfBorderStrongColor">#4A4A4A</Color>
+            <Color x:Key="InfOnSurfaceColor">#F5F5F5</Color>
+            <Color x:Key="InfMutedColor">#9A9A9A</Color>
+            <Color x:Key="InfAccentColor">#F5F5F5</Color>
+            <Color x:Key="InfOnAccentColor">#0A0A0A</Color>
+
+            <SolidColorBrush Color="{StaticResource InfSurfaceColor}" x:Key="InfSurface" />
+            <SolidColorBrush Color="{StaticResource InfSurfaceAltColor}" x:Key="InfSurfaceAlt" />
+            <SolidColorBrush Color="{StaticResource InfSurfaceRaisedColor}" x:Key="InfSurfaceRaised" />
+            <SolidColorBrush Color="{StaticResource InfBorderColor}" x:Key="InfBorder" />
+            <SolidColorBrush Color="{StaticResource InfBorderStrongColor}" x:Key="InfBorderStrong" />
+            <SolidColorBrush Color="{StaticResource InfOnSurfaceColor}" x:Key="InfOnSurface" />
+            <SolidColorBrush Color="{StaticResource InfMutedColor}" x:Key="InfMuted" />
+            <SolidColorBrush Color="{StaticResource InfAccentColor}" x:Key="InfAccent" />
+            <SolidColorBrush Color="{StaticResource InfOnAccentColor}" x:Key="InfOnAccent" />
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Light">
+            <Color x:Key="InfSurfaceColor">#FFFFFF</Color>
+            <Color x:Key="InfSurfaceAltColor">#F5F5F5</Color>
+            <Color x:Key="InfSurfaceRaisedColor">#EBEBEB</Color>
+            <Color x:Key="InfBorderColor">#D6D6D6</Color>
+            <Color x:Key="InfBorderStrongColor">#A8A8A8</Color>
+            <Color x:Key="InfOnSurfaceColor">#0A0A0A</Color>
+            <Color x:Key="InfMutedColor">#616161</Color>
+            <Color x:Key="InfAccentColor">#0A0A0A</Color>
+            <Color x:Key="InfOnAccentColor">#FFFFFF</Color>
+
+            <SolidColorBrush Color="{StaticResource InfSurfaceColor}" x:Key="InfSurface" />
+            <SolidColorBrush Color="{StaticResource InfSurfaceAltColor}" x:Key="InfSurfaceAlt" />
+            <SolidColorBrush Color="{StaticResource InfSurfaceRaisedColor}" x:Key="InfSurfaceRaised" />
+            <SolidColorBrush Color="{StaticResource InfBorderColor}" x:Key="InfBorder" />
+            <SolidColorBrush Color="{StaticResource InfBorderStrongColor}" x:Key="InfBorderStrong" />
+            <SolidColorBrush Color="{StaticResource InfOnSurfaceColor}" x:Key="InfOnSurface" />
+            <SolidColorBrush Color="{StaticResource InfMutedColor}" x:Key="InfMuted" />
+            <SolidColorBrush Color="{StaticResource InfAccentColor}" x:Key="InfAccent" />
+            <SolidColorBrush Color="{StaticResource InfOnAccentColor}" x:Key="InfOnAccent" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!--  语义色：两套主题共用，允许出现在通知、校验、状态上  -->
+    <SolidColorBrush Color="#E81123" x:Key="InfDanger" />
+    <SolidColorBrush Color="#F2C811" x:Key="InfWarning" />
+    <SolidColorBrush Color="#107C10" x:Key="InfSuccess" />
+    <SolidColorBrush Color="#E81123" x:Key="InfDangerSoft" Opacity="0.16" />
+    <SolidColorBrush Color="#F2C811" x:Key="InfWarningSoft" Opacity="0.16" />
+    <SolidColorBrush Color="#107C10" x:Key="InfSuccessSoft" Opacity="0.16" />
+
+    <!--  尺寸与节奏：直角体系，全靠间距和描边分层  -->
+    <x:Double x:Key="InfControlHeight">34</x:Double>
+    <x:Double x:Key="InfControlHeightCompact">28</x:Double>
+    <x:Double x:Key="InfFontSize">13</x:Double>
+    <x:Double x:Key="InfFontSizeSmall">12</x:Double>
+    <x:Double x:Key="InfStrokeThickness">1</x:Double>
+    <Thickness x:Key="InfControlPadding">14,0</Thickness>
+    <CornerRadius x:Key="InfRadius">0</CornerRadius>
+</ResourceDictionary>

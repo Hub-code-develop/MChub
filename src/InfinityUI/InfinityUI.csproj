@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <RootNamespace>InfinityUI</RootNamespace>
+        <AssemblyName>InfinityUI</AssemblyName>
+        <PackageId>InfinityUI</PackageId>
+        <Version>0.1.0</Version>
+        <Description>infinityUI：直角 + 五色的 Avalonia 控件库。Button / IconButton / ToggleSwitch / Card / NavItem / Toast，模板全部自绘，无圆角、无阴影，彩色仅用于错误/警告/成功语义。</Description>
+        <Authors>Xlord-Heliukum</Authors>
+        <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/Hub-code-develop/MChub</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/Hub-code-develop/MChub</PackageProjectUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>avalonia;ui;controls;theme;metro;infinityui</PackageTags>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AvaloniaResource Include="Assets/**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+</Project>

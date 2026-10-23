@@ -1,0 +1,69 @@
+name: Publish InfinityUI
+
+# 用 NuGet Trusted Publishing（OIDC）发布 src/InfinityUI，不需要长期 API Key。
+# 前置条件见 docs/InfinityUI-发布指南.md：nuget.org 上要先建一条指向本仓库的 Trusted Publishing Policy。
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "包版本（留空则用 csproj 里的 Version）"
+        required: false
+        type: string
+  push:
+    tags:
+      - "infinityui-v*"
+
+permissions:
+  contents: read
+  id-token: write # Trusted Publishing 必需：换取 nuget.org 的短期 token
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # 这个 environment 名要和 nuget.org 上 Policy 里填的一致
+    environment: nuget
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ] && [[ "${GITHUB_REF_NAME}" == infinityui-v* ]]; then
+            VERSION="${GITHUB_REF_NAME#infinityui-v}"
+          fi
+          if [ -n "$VERSION" ]; then
+            dotnet pack src/InfinityUI/InfinityUI.csproj -c Release -o artifacts -p:Version="$VERSION"
+          else
+            dotnet pack src/InfinityUI/InfinityUI.csproj -c Release -o artifacts
+          fi
+          ls -la artifacts
+
+      - name: NuGet login (OIDC → 临时 API Key)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          # nuget.org 用户名（Profile 里的 account name），配在仓库 Secrets 里
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push to nuget.org
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet nuget push artifacts/*.nupkg \
+            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+          dotnet nuget push artifacts/*.snupkg \
+            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate || true
