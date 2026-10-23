@@ -8,6 +8,7 @@ using MChub.Core.Const;
 using MChub.Core.Minecraft.Classes;
 using MChub.Core.Module.Initialize;
 using MChub.Core.Services;
+using MChub.Module;
 
 namespace MChub.Views;
 
@@ -18,6 +19,7 @@ namespace MChub.Views;
 public partial class LoginWindow : FAAppWindow
 {
     private bool _started;
+    private bool _verifyRequested;
 
     public LoginWindow()
     {
@@ -26,12 +28,39 @@ public partial class LoginWindow : FAAppWindow
         {
             if (_started) return;
             _started = true;
-            _ = StartAuthAsync();
+            if (_verifyRequested)
+                _ = VerifyThenAuthenticateAsync();
+            else
+                _ = StartAuthAsync();
         };
     }
 
     /// <summary>登录成功（已写入配置）。</summary>
     public event Action? Completed;
+
+    /// <summary>
+    /// 以「复核已有凭证」模式启动：先联网验证本地账号是否还是正版，
+    /// 验证不过就自动落到重新登录的设备码流程。必须在 Show 之前调用。
+    /// </summary>
+    public void BeginVerify()
+    {
+        _verifyRequested = true;
+    }
+
+    private async Task VerifyThenAuthenticateAsync()
+    {
+        SetBusy("正在验证正版账号…");
+
+        if (await AccountGate.ValidateAsync())
+        {
+            await Dispatcher.UIThread.InvokeAsync(() => Completed?.Invoke());
+            return;
+        }
+
+        ErrorText.Text = "本地登录凭证已失效，需要重新登录一次才能继续使用。";
+        ErrorText.IsVisible = true;
+        await StartAuthAsync();
+    }
 
     private async Task StartAuthAsync()
     {

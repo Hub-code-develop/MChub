@@ -112,18 +112,31 @@ public partial class App : Application
             {
                 Initializer.Oobe();
                 desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
-                var importWindow = new BedrockPackageImportWindow(packagePath);
-                LogWindowShowElapsed(importWindow);
-                desktop.MainWindow = importWindow;
+
+                // 合规闸门对「双击包文件启动」同样生效：没登录正版就先登录，
+                // 登录完成后再弹导入窗口。
+                if (!AccountGate.IsSatisfied)
+                {
+                    ShowLoginWindow(desktop, afterLogin: () =>
+                    {
+                        var importWindow = new BedrockPackageImportWindow(packagePath);
+                        LogWindowShowElapsed(importWindow);
+                        desktop.MainWindow = importWindow;
+                        importWindow.Show();
+                    });
+                }
+                else
+                {
+                    var importWindow = new BedrockPackageImportWindow(packagePath);
+                    LogWindowShowElapsed(importWindow);
+                    desktop.MainWindow = importWindow;
+                }
             }
             else if (Data.ConfigEntry.IsInitialized)
             {
                 Initializer.Oobe();
                 // 合规闸门：必须先登录微软正版账号，否则只给登录窗口。
-                if (AccountGate.IsSatisfied)
-                    ShowMainWindow(desktop);
-                else
-                    ShowLoginWindow(desktop);
+                EnterLauncher(desktop);
             }
             else
             {
@@ -216,7 +229,8 @@ public partial class App : Application
         desktop.MainWindow = migration;
         migration.Completed += () =>
         {
-            if (AccountGate.IsSatisfied)
+            var accountReady = AccountGate.IsSatisfied;
+            if (accountReady)
             {
                 ShowMainWindow(desktop);
                 _win!.Show();
@@ -235,17 +249,56 @@ public partial class App : Application
     /// 强制登录：没有微软正版账号时用它顶替主窗口。登录成功后由回调打开主窗口。
     /// 关掉登录窗口等于退出启动器（此时主窗口还没创建）。
     /// </summary>
-    private void ShowLoginWindow(IClassicDesktopStyleApplicationLifetime desktop)
+    /// <summary>
+    /// 统一入口：所有「能不能进界面」的判断都走这里。
+    /// - 没有可刷新的微软账号 → 登录
+    /// - 有账号但凭证过期（超过 24h） → 先联网复核，复核不过就要求重新登录
+    /// - 刚验证过 → 直接进主界面
+    /// </summary>
+    private void EnterLauncher(IClassicDesktopStyleApplicationLifetime desktop)
     {
-        Logger.Info("未登录微软正版账号，显示强制登录窗口");
+        if (!AccountGate.IsSatisfied)
+        {
+            ShowLoginWindow(desktop);
+            return;
+        }
+
+        if (AccountGate.IsFresh)
+        {
+            ShowMainWindow(desktop);
+            _win?.Show();
+            return;
+        }
+
+        ShowLoginWindow(desktop, verify: true);
+    }
+
+    /// <param name="afterLogin">登录成功后要做什么；为空表示进主界面。</param>
+    /// <param name="verify">true = 先复核本地凭证，失败再走设备码登录。</param>
+    private void ShowLoginWindow(IClassicDesktopStyleApplicationLifetime desktop,
+        Action? afterLogin = null, bool verify = false)
+    {
+        Logger.Info("显示登录窗口（" + (verify ? "复核凭证" : "首次登录") + "）");
+
         var login = new LoginWindow
         {
             WindowStartupLocation = WindowStartupLocation.CenterScreen
         };
+
+        if (verify)
+            login.BeginVerify();
+
         LogWindowShowElapsed(login);
         desktop.MainWindow = login;
         login.Completed += () =>
         {
+            if (afterLogin is not null)
+            {
+                afterLogin();
+                login.Close();
+                return;
+            }
+
             ShowMainWindow(desktop);
             _win!.Show();
             login.Close();
