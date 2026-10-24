@@ -33,12 +33,13 @@ public static class MinecraftEntryExtensions {
                         if (Path.GetExtension(zipEntry.Name) is ".sha1" or ".git" or ".pom" or ".txt" or ".md")
                             continue;
 
+                        // 必须覆盖：同一实例升级过 LWJGL 之后，目录里留着的是旧版本的
+                        // 原生库，而 Java 包已经是新版本 —— 两者不一致会直接让游戏起不来
+                        // （LWJGL: Incompatible Java and native library versions detected）。
                         var target = Path.Combine(directory, zipEntry.Name);
-                        if (File.Exists(target))
-                            continue;
 
                         Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                        zipEntry.ExtractToFile(target, overwrite: false);
+                        zipEntry.ExtractToFile(target, overwrite: true);
                     }
                 } catch {
                     // Corrupt native jar; skip.
