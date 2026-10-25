@@ -385,13 +385,36 @@ public abstract partial class MinecraftLibrary : MinecraftDependency {
         }
     }
 
+    /// <summary>
+    /// 取当前平台的原生分类器。
+    ///
+    /// <p>版本 JSON 的 <c>natives</c> 映射不保证包含当前平台：1.16 的
+    /// <c>com.mojang:text2speech:1.11.3</c> 只声明了 linux/windows，且没有 rules
+    /// 排除 macOS，于是会正常进入解析。此时说明该库在本平台没有原生变体，必须按
+    /// 普通库处理 —— 直接索引会抛
+    /// <c>KeyNotFoundException: The given key 'osx' was not present in the dictionary</c>，
+    /// 表现为整个整合包安装失败。</p>
+    /// </summary>
+    private static bool TryGetNativeClassifier(LibraryEntry libNode, out string classifier) {
+        classifier = string.Empty;
+        if (libNode.NativeClassifierNames is null)
+            return false;
+        if (!libNode.NativeClassifierNames.TryGetValue(EnvironmentUtil.GetPlatformName(), out var template)
+            || string.IsNullOrWhiteSpace(template))
+            return false;
+
+        classifier = template.Replace("${arch}", EnvironmentUtil.Arch, StringComparison.Ordinal);
+        return true;
+    }
+
     public static MinecraftLibrary ParseJsonNode(LibraryEntry libNode, string minecraftFolderPath) {
         // Check platform-specific library name
         if (libNode.MavenName is null)
             throw new InvalidDataException("Invalid library name");
 
-        if (libNode.NativeClassifierNames is not null)
-            libNode.MavenName += ":" + libNode.NativeClassifierNames[EnvironmentUtil.GetPlatformName()].Replace("${arch}", EnvironmentUtil.Arch,StringComparison.Ordinal);
+        var hasNativeClassifier = TryGetNativeClassifier(libNode, out var nativeClassifier);
+        if (hasNativeClassifier)
+            libNode.MavenName += ":" + nativeClassifier;
 
         if (libNode.DownloadInformation != null) {
             DownloadArtifactEntry artifactNode = GetLibraryArtifactInfo(libNode);
@@ -405,7 +428,7 @@ public abstract partial class MinecraftLibrary : MinecraftDependency {
                     MinecraftFolderPath = minecraftFolderPath,
                     Sha1 = artifactNode.Sha1,
                     Size = (long)artifactNode.Size,
-                    IsNativeLibrary = libNode.NativeClassifierNames is not null
+                    IsNativeLibrary = hasNativeClassifier
                 };
             }
 
@@ -445,7 +468,7 @@ public abstract partial class MinecraftLibrary : MinecraftDependency {
         if (libNode.MavenName.StartsWith("net.minecraft:launchwrapper", StringComparison.Ordinal)) {
             return new DownloadableDependency(libNode.MavenName, $"https://libraries.minecraft.net/{GetLibraryPath(libNode.MavenName).Replace('\\', '/')}") {
                 MinecraftFolderPath = minecraftFolderPath,
-                IsNativeLibrary = libNode.NativeClassifierNames is not null
+                IsNativeLibrary = hasNativeClassifier
             };
         }
 
@@ -515,14 +538,14 @@ public abstract partial class MinecraftLibrary : MinecraftDependency {
             return new DownloadableDependency(libNode.MavenName,
                 libNode.MavenUrl.TrimEnd('/') + "/" + GetLibraryPath(libNode.MavenName).Replace('\\', '/')) {
                 MinecraftFolderPath = minecraftFolderPath,
-                IsNativeLibrary = libNode.NativeClassifierNames is not null
+                IsNativeLibrary = hasNativeClassifier
             };
         }
 
         #endregion
 
         return new VanillaLibrary(libNode.MavenName) {
-            IsNativeLibrary = libNode.NativeClassifierNames is not null,
+            IsNativeLibrary = hasNativeClassifier,
             Size = null,
             Sha1 = null,
             MinecraftFolderPath = minecraftFolderPath
@@ -541,9 +564,7 @@ public abstract partial class MinecraftLibrary : MinecraftDependency {
             throw new InvalidDataException("The library does not contain download information");
 
         DownloadArtifactEntry artifact = libNode.DownloadInformation.Artifact;
-        if (libNode.NativeClassifierNames is not null) {
-            string nativeClassifier = libNode.NativeClassifierNames[EnvironmentUtil.GetPlatformName()]
-                .Replace("${arch}", EnvironmentUtil.Arch);
+        if (TryGetNativeClassifier(libNode, out var nativeClassifier)) {
             artifact = libNode.DownloadInformation.Classifiers?[nativeClassifier];
         }
 
