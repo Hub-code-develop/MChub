@@ -12,7 +12,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:faApp="using:FluentAvalonia.UI.Windowing"
-    xmlns:local="clr-namespace:MChub.Views.Pages.InstancePages"
+    xmlns:local="clr-namespace:MChub.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:tio="https://github.com/tiouoo/TioUi.Avalonia"
     xmlns:views="clr-namespace:MChub.Views"

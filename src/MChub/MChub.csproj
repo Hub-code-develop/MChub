@@ -13,6 +13,9 @@
         <Authors>github.com/hub-code-develop/MChub</Authors>
         <ApplicationIcon>..\..\assets\MChub.ico</ApplicationIcon>
         <Title>MChub</Title>
+        <!-- 本机没有可用的 Avalonia XAML 编译器时改走运行时解析；
+             CI 上若显式指定了该属性则以 CI 为准。 -->
+        <EnableAvaloniaXamlCompilation Condition="'$(EnableAvaloniaXamlCompilation)' == ''">false</EnableAvaloniaXamlCompilation>
     </PropertyGroup>
 
     <ItemGroup>
