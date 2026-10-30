@@ -20,54 +20,54 @@
                  只放在窗口资源里的话，子视图取不到，换主题时会花。 -->
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Default">
-                    <SolidColorBrush Color="#1E1F22" x:Key="WbEditorBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbSidebarBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbActivityBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbTitleBarBg" />
-                    <SolidColorBrush Color="#1E1F22" x:Key="WbPanelBg" />
-                    <SolidColorBrush Color="#393B40" x:Key="WbBorder" />
-                    <SolidColorBrush Color="#DFE1E5" x:Key="WbFg" />
-                    <SolidColorBrush Color="#9DA0A8" x:Key="WbFgMuted" />
-                    <SolidColorBrush Color="#6F737A" x:Key="WbFgFaint" />
-                    <SolidColorBrush Color="#3574F0" x:Key="WbAccent" />
-                    <SolidColorBrush Color="#2E436E" x:Key="WbSelectionBg" />
-                    <SolidColorBrush Color="#393B40" x:Key="WbHoverBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbTabInactiveBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbStatusBg" />
-                    <SolidColorBrush Color="#DFE1E5" x:Key="WbStatusFg" />
-                    <SolidColorBrush Color="#DB5C5F" x:Key="WbDanger" />
-                    <SolidColorBrush Color="#62B543" x:Key="WbSuccess" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbToolbarBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbStripeBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbToolHeaderBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbTabStripBg" />
-                    <SolidColorBrush Color="#393B40" x:Key="WbWidgetHover" />
-                    <SolidColorBrush Color="#43454A" x:Key="WbBorderStrong" />
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbEditorBg" />
+                    <SolidColorBrush Color="#252526" x:Key="WbSidebarBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbActivityBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbTitleBarBg" />
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbPanelBg" />
+                    <SolidColorBrush Color="#3F3F46" x:Key="WbBorder" />
+                    <SolidColorBrush Color="#F1F1F1" x:Key="WbFg" />
+                    <SolidColorBrush Color="#A6A6A6" x:Key="WbFgMuted" />
+                    <SolidColorBrush Color="#6D6D6D" x:Key="WbFgFaint" />
+                    <SolidColorBrush Color="#007ACC" x:Key="WbAccent" />
+                    <SolidColorBrush Color="#04395E" x:Key="WbSelectionBg" />
+                    <SolidColorBrush Color="#2A2D2E" x:Key="WbHoverBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbTabInactiveBg" />
+                    <SolidColorBrush Color="#68217A" x:Key="WbStatusBg" />
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbStatusFg" />
+                    <SolidColorBrush Color="#F48771" x:Key="WbDanger" />
+                    <SolidColorBrush Color="#4E9A44" x:Key="WbSuccess" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbToolbarBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbStripeBg" />
+                    <SolidColorBrush Color="#252526" x:Key="WbToolHeaderBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbTabStripBg" />
+                    <SolidColorBrush Color="#3E3E40" x:Key="WbWidgetHover" />
+                    <SolidColorBrush Color="#4A4A4F" x:Key="WbBorderStrong" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
-                    <SolidColorBrush Color="#1E1F22" x:Key="WbEditorBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbSidebarBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbActivityBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbTitleBarBg" />
-                    <SolidColorBrush Color="#1E1F22" x:Key="WbPanelBg" />
-                    <SolidColorBrush Color="#393B40" x:Key="WbBorder" />
-                    <SolidColorBrush Color="#DFE1E5" x:Key="WbFg" />
-                    <SolidColorBrush Color="#9DA0A8" x:Key="WbFgMuted" />
-                    <SolidColorBrush Color="#6F737A" x:Key="WbFgFaint" />
-                    <SolidColorBrush Color="#3574F0" x:Key="WbAccent" />
-                    <SolidColorBrush Color="#2E436E" x:Key="WbSelectionBg" />
-                    <SolidColorBrush Color="#393B40" x:Key="WbHoverBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbTabInactiveBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbStatusBg" />
-                    <SolidColorBrush Color="#DFE1E5" x:Key="WbStatusFg" />
-                    <SolidColorBrush Color="#DB5C5F" x:Key="WbDanger" />
-                    <SolidColorBrush Color="#62B543" x:Key="WbSuccess" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbToolbarBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbStripeBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbToolHeaderBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbTabStripBg" />
-                    <SolidColorBrush Color="#393B40" x:Key="WbWidgetHover" />
-                    <SolidColorBrush Color="#43454A" x:Key="WbBorderStrong" />
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbEditorBg" />
+                    <SolidColorBrush Color="#252526" x:Key="WbSidebarBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbActivityBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbTitleBarBg" />
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbPanelBg" />
+                    <SolidColorBrush Color="#3F3F46" x:Key="WbBorder" />
+                    <SolidColorBrush Color="#F1F1F1" x:Key="WbFg" />
+                    <SolidColorBrush Color="#A6A6A6" x:Key="WbFgMuted" />
+                    <SolidColorBrush Color="#6D6D6D" x:Key="WbFgFaint" />
+                    <SolidColorBrush Color="#007ACC" x:Key="WbAccent" />
+                    <SolidColorBrush Color="#04395E" x:Key="WbSelectionBg" />
+                    <SolidColorBrush Color="#2A2D2E" x:Key="WbHoverBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbTabInactiveBg" />
+                    <SolidColorBrush Color="#68217A" x:Key="WbStatusBg" />
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbStatusFg" />
+                    <SolidColorBrush Color="#F48771" x:Key="WbDanger" />
+                    <SolidColorBrush Color="#4E9A44" x:Key="WbSuccess" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbToolbarBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbStripeBg" />
+                    <SolidColorBrush Color="#252526" x:Key="WbToolHeaderBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbTabStripBg" />
+                    <SolidColorBrush Color="#3E3E40" x:Key="WbWidgetHover" />
+                    <SolidColorBrush Color="#4A4A4F" x:Key="WbBorderStrong" />
                 </ResourceDictionary>
                 <!--
                     工作台是「极简深色」风格，浅色变体也走同一套深色值：
@@ -75,29 +75,29 @@
                     以后要做真正的浅色工作台，再单独补一套完整的 Light 色板。
                 -->
                 <ResourceDictionary x:Key="Light">
-                    <SolidColorBrush Color="#1E1F22" x:Key="WbEditorBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbSidebarBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbActivityBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbTitleBarBg" />
-                    <SolidColorBrush Color="#1E1F22" x:Key="WbPanelBg" />
-                    <SolidColorBrush Color="#393B40" x:Key="WbBorder" />
-                    <SolidColorBrush Color="#DFE1E5" x:Key="WbFg" />
-                    <SolidColorBrush Color="#9DA0A8" x:Key="WbFgMuted" />
-                    <SolidColorBrush Color="#6F737A" x:Key="WbFgFaint" />
-                    <SolidColorBrush Color="#3574F0" x:Key="WbAccent" />
-                    <SolidColorBrush Color="#2E436E" x:Key="WbSelectionBg" />
-                    <SolidColorBrush Color="#393B40" x:Key="WbHoverBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbTabInactiveBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbStatusBg" />
-                    <SolidColorBrush Color="#DFE1E5" x:Key="WbStatusFg" />
-                    <SolidColorBrush Color="#DB5C5F" x:Key="WbDanger" />
-                    <SolidColorBrush Color="#62B543" x:Key="WbSuccess" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbToolbarBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbStripeBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbToolHeaderBg" />
-                    <SolidColorBrush Color="#2B2D30" x:Key="WbTabStripBg" />
-                    <SolidColorBrush Color="#393B40" x:Key="WbWidgetHover" />
-                    <SolidColorBrush Color="#43454A" x:Key="WbBorderStrong" />
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbEditorBg" />
+                    <SolidColorBrush Color="#252526" x:Key="WbSidebarBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbActivityBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbTitleBarBg" />
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbPanelBg" />
+                    <SolidColorBrush Color="#3F3F46" x:Key="WbBorder" />
+                    <SolidColorBrush Color="#F1F1F1" x:Key="WbFg" />
+                    <SolidColorBrush Color="#A6A6A6" x:Key="WbFgMuted" />
+                    <SolidColorBrush Color="#6D6D6D" x:Key="WbFgFaint" />
+                    <SolidColorBrush Color="#007ACC" x:Key="WbAccent" />
+                    <SolidColorBrush Color="#04395E" x:Key="WbSelectionBg" />
+                    <SolidColorBrush Color="#2A2D2E" x:Key="WbHoverBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbTabInactiveBg" />
+                    <SolidColorBrush Color="#68217A" x:Key="WbStatusBg" />
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbStatusFg" />
+                    <SolidColorBrush Color="#F48771" x:Key="WbDanger" />
+                    <SolidColorBrush Color="#4E9A44" x:Key="WbSuccess" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbToolbarBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbStripeBg" />
+                    <SolidColorBrush Color="#252526" x:Key="WbToolHeaderBg" />
+                    <SolidColorBrush Color="#2D2D30" x:Key="WbTabStripBg" />
+                    <SolidColorBrush Color="#3E3E40" x:Key="WbWidgetHover" />
+                    <SolidColorBrush Color="#4A4A4F" x:Key="WbBorderStrong" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 

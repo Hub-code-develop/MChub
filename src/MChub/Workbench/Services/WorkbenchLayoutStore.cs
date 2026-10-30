@@ -17,9 +17,9 @@ public sealed class WorkbenchLayoutState
 
     public bool Maximized { get; set; }
 
-    public double SideBarWidth { get; set; } = 260;
+    public double SideBarWidth { get; set; } = 272;
 
-    public double PanelHeight { get; set; } = 190;
+    public double PanelHeight { get; set; } = 148;
 
     public bool SideBarVisible { get; set; } = true;
 
@@ -32,7 +32,7 @@ public sealed class WorkbenchLayoutState
     public string? ActivePanel { get; set; } = "output";
 
     /// <summary>右侧工具窗口宽度（IDEA 式布局新增）。</summary>
-    public double RightBarWidth { get; set; } = 300;
+    public double RightBarWidth { get; set; } = 264;
 
     /// <summary>右侧工具窗口是否展开。默认收起——右侧放的是新闻/皮肤这类辅助信息。</summary>
     public bool RightBarVisible { get; set; }

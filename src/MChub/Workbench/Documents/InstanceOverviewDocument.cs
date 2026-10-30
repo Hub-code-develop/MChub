@@ -45,7 +45,9 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
             Margin = new Thickness(32, 26, 32, 40),
             Spacing = 26,
             MaxWidth = ContentWidth,
-            HorizontalAlignment = HorizontalAlignment.Left
+            // 必须 Stretch：StackPanel 默认按内容收缩，分区那几条细线就撑不到右边，
+            // 看起来像半截线。
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
 
         var scroll = new ScrollViewer
@@ -112,7 +114,7 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
         var name = new TextBlock
         {
             Text = _instance.InstanceName,
-            FontSize = 20,
+            FontSize = 18,
             FontWeight = FontWeight.SemiBold,
             Foreground = WorkbenchTheme.Foreground,
             TextTrimming = TextTrimming.CharacterEllipsis
@@ -154,31 +156,24 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
         top.Children.Add(texts);
         top.Children.Add(actions);
 
-        return new StackPanel
-        {
-            Spacing = 18,
-            Children = { top, Divider() }
-        };
+        // 头部不再补分隔线：下面每个分区自带一条，双线会显得碎。
+        return top;
     }
 
+    /// <summary>方角描边小标签，VS 属性页的写法；不用胶囊，胶囊偏"移动端"。</summary>
     private static Border Chip(string text) => new()
     {
-        Background = WorkbenchTheme.Brush("WbHoverBg", "#393B40"),
-        CornerRadius = new CornerRadius(9),
-        Padding = new Thickness(9, 2, 9, 3),
+        BorderBrush = WorkbenchTheme.Border,
+        BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(2),
+        Padding = new Thickness(7, 1, 7, 2),
         Child = new TextBlock
         {
             Text = text,
-            FontSize = 11,
+            FontSize = 10,
             Foreground = WorkbenchTheme.ForegroundMuted,
             VerticalAlignment = VerticalAlignment.Center
         }
-    };
-
-    private static Border Divider() => new()
-    {
-        Height = 1,
-        Background = WorkbenchTheme.Border
     };
 
     private Control BuildIcon()
@@ -207,10 +202,10 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
         _launchButton = new Button
         {
             Content = BuildLaunchButtonContent(),
-            Height = 30,
-            Padding = new Thickness(16, 0),
-            CornerRadius = new CornerRadius(4),
-            Background = WorkbenchTheme.Brush("WbAccent", "#3574F0"),
+            Height = 28,
+            Padding = new Thickness(14, 0),
+            CornerRadius = new CornerRadius(2),
+            Background = WorkbenchTheme.Brush("WbSuccess", "#4E9A44"),
             Foreground = Brushes.White,
             BorderThickness = new Thickness(0),
             VerticalAlignment = VerticalAlignment.Center
@@ -225,11 +220,12 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
         {
             Content = "打开目录",
             Classes = { "wb-flat" },
-            Height = 30,
+            Height = 28,
             Padding = new Thickness(12, 0),
+            Background = Brushes.Transparent,
             BorderBrush = WorkbenchTheme.Border,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = new CornerRadius(2),
             VerticalAlignment = VerticalAlignment.Center
         };
         button.Click += (_, _) => RevealFolder();
@@ -327,7 +323,22 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
             Foreground = WorkbenchTheme.ForegroundMuted
         };
 
-        return new StackPanel { Spacing = 0, Children = { header, content } };
+        // 分区前压一条细线：属性页靠这条线分组，否则一列键值对会飘在空白里。
+        return new StackPanel
+        {
+            Spacing = 0,
+            Children =
+            {
+                new Border
+                {
+                    Height = 1,
+                    Margin = new Thickness(0, 0, 0, 12),
+                    Background = WorkbenchTheme.Border
+                },
+                header,
+                content
+            }
+        };
     }
 
     private static void AddRow(StackPanel host, string label, string? value)

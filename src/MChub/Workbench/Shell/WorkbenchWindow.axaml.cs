@@ -60,7 +60,6 @@ public partial class WorkbenchWindow : Window
     private readonly WorkbenchLayoutState _layout;
 
     private readonly List<ToolWindowEntry> _toolWindows = new();
-    private readonly Dictionary<string, (TextBlock Icon, Border Indicator)> _toolVisuals = new();
     private readonly List<Button> _paletteItems = new();
     private readonly List<PaletteEntry> _paletteEntries = new();
 
@@ -84,7 +83,6 @@ public partial class WorkbenchWindow : Window
     private TextBlock? _statusMemory;
     private TextBlock? _statusAccount;
     private TextBlock? _statusInstances;
-    private StackPanel? _breadcrumb;
 
     private PaletteMode _paletteMode = PaletteMode.Actions;
     private int _paletteIndex = -1;
@@ -313,11 +311,11 @@ public partial class WorkbenchWindow : Window
 
         _layout.Maximized = WindowState == WindowState.Maximized;
 
-        var leftWidth = MainArea.ColumnDefinitions[1].Width;
+        var leftWidth = MainArea.ColumnDefinitions[0].Width;
         if (leftWidth.IsAbsolute && leftWidth.Value > 120)
             _layout.SideBarWidth = leftWidth.Value;
 
-        var rightWidth = MainArea.ColumnDefinitions[5].Width;
+        var rightWidth = MainArea.ColumnDefinitions[4].Width;
         if (rightWidth.IsAbsolute && rightWidth.Value > 160)
             _layout.RightBarWidth = rightWidth.Value;
 
@@ -340,49 +338,39 @@ public partial class WorkbenchWindow : Window
 
     // ───────────────────────── 工具窗口（左 / 右 / 底） ─────────────────────────
 
+    /// <summary>
+    /// 注册工具窗口。VS 2022 不在屏幕边上摆图标竖条，
+    /// 所以这里只登记「有哪些工具窗口」和它们的唤出命令，界面入口是菜单与快捷键。
+    /// </summary>
     private void BuildToolWindows()
     {
         AddToolWindow("explorer", "\ue611", L(AppLanguageManager.Instance.workbench_activityInstances.CurrentValue()),
-            ToolStripe.Left, LeftStripeTop, "Alt+1");
+            ToolStripe.Left, "Ctrl+Shift+E");
         AddToolWindow("accounts", "\ue63e", L(AppLanguageManager.Instance.workbench_activityAccounts.CurrentValue()),
-            ToolStripe.Left, LeftStripeTop, "Alt+2");
+            ToolStripe.Left, "Ctrl+Shift+A");
         AddToolWindow("downloads", "\ue622", L(AppLanguageManager.Instance.workbench_activityDownloads.CurrentValue()),
-            ToolStripe.Left, LeftStripeTop, "Alt+3");
+            ToolStripe.Left);
         AddToolWindow("creator", "\ue60a", L(AppLanguageManager.Instance.workbench_activityCreator.CurrentValue()),
-            ToolStripe.Left, LeftStripeTop);
+            ToolStripe.Left);
         AddToolWindow("tools", "\ue641", L(AppLanguageManager.Instance.workbench_activityTools.CurrentValue()),
-            ToolStripe.Left, LeftStripeTop);
+            ToolStripe.Left);
 
         AddToolWindow("news", "\ue62a", L(AppLanguageManager.Instance.workbench_activityNews.CurrentValue()),
-            ToolStripe.Right, RightStripeTop);
+            ToolStripe.Right);
         AddToolWindow("skins", "\ue618", L(AppLanguageManager.Instance.workbench_activitySkins.CurrentValue()),
-            ToolStripe.Right, RightStripeTop);
+            ToolStripe.Right);
         AddToolWindow("stats", "\ue63b", L(AppLanguageManager.Instance.workbench_activityStats.CurrentValue()),
-            ToolStripe.Right, RightStripeTop);
+            ToolStripe.Right);
 
-        // 底部工具窗口的按钮先建到临时容器，再按 IDEA 的习惯塞进左条下半段（设置之上）。
-        var bottomButtons = new StackPanel();
         AddToolWindow("output", "\ue633", L(AppLanguageManager.Instance.workbench_panelOutput.CurrentValue()),
-            ToolStripe.Bottom, bottomButtons, "Alt+F12");
+            ToolStripe.Bottom, "Alt+F12");
         AddToolWindow("problems", "\ue63a", L(AppLanguageManager.Instance.workbench_panelProblems.CurrentValue()),
-            ToolStripe.Bottom, bottomButtons, "Alt+6");
+            ToolStripe.Bottom, "Alt+6");
         AddToolWindow("notifications", "\ue60d", L(AppLanguageManager.Instance.workbench_panelNotifications.CurrentValue()),
-            ToolStripe.Bottom, bottomButtons);
-
-        foreach (var child in bottomButtons.Children.ToList())
-        {
-            bottomButtons.Children.Remove(child);
-            LeftStripeBottom.Children.Add(child);
-        }
-
-        LeftStripeBottom.Children.Add(BuildStripeSeparator());
-        LeftStripeBottom.Children.Add(BuildStripeButton("settings", "\ue617",
-            L(AppLanguageManager.Instance.workbench_activitySettings.CurrentValue()),
-            () => _commands.Execute("workbench.openSettings")));
+            ToolStripe.Bottom);
     }
 
-    private void AddToolWindow(string id, string glyph, string title, ToolStripe stripe, StackPanel host,
-        string? gesture = null)
+    private void AddToolWindow(string id, string glyph, string title, ToolStripe stripe, string? gesture = null)
     {
         var entry = new ToolWindowEntry(id, glyph, title, stripe);
         _toolWindows.Add(entry);
@@ -396,61 +384,7 @@ public partial class WorkbenchWindow : Window
             Gesture = gesture,
             Execute = () => ShowToolWindow(id)
         });
-
-        var grid = BuildStripeButton(id, glyph, title, () => ToggleToolWindow(id));
-        host.Children.Add(grid);
-
-        var button = (Button)grid.Children[1];
-        var indicator = (Border)grid.Children[0];
-        _toolVisuals[id] = ((TextBlock)button.Content!, indicator);
     }
-
-    private static Grid BuildStripeButton(string id, string glyph, string title, Action onClick)
-    {
-        var indicator = new Border
-        {
-            Width = 2,
-            HorizontalAlignment = HorizontalAlignment.Left,
-            Background = WorkbenchTheme.Accent,
-            IsVisible = false
-        };
-
-        var icon = new TextBlock
-        {
-            Text = glyph,
-            FontFamily = WorkbenchTheme.IconFont,
-            FontSize = 19,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Foreground = WorkbenchTheme.ForegroundMuted
-        };
-
-        var button = new Button
-        {
-            Classes = { "wb-stripe" },
-            Content = icon
-        };
-        ToolTip.SetTip(button, title);
-        button.Click += (_, _) => onClick();
-
-        var grid = new Grid
-        {
-            Width = 44,
-            Height = 40,
-            Tag = id
-        };
-        grid.Children.Add(indicator);
-        grid.Children.Add(button);
-        return grid;
-    }
-
-    private static Border BuildStripeSeparator() => new()
-    {
-        Width = 28,
-        Height = 1,
-        Margin = new Thickness(8, 4, 8, 4),
-        Background = WorkbenchTheme.Border
-    };
 
     private void ToggleToolWindow(string id)
     {
@@ -526,15 +460,13 @@ public partial class WorkbenchWindow : Window
     {
         _leftVisible = visible;
         LeftToolWindow.IsVisible = visible;
-        MainArea.ColumnDefinitions[1].Width = visible
-            ? new GridLength(Math.Max(180, _layout.SideBarWidth))
+        MainArea.ColumnDefinitions[0].Width = visible
+            ? new GridLength(Math.Max(200, _layout.SideBarWidth))
             : new GridLength(0);
-        MainArea.ColumnDefinitions[2].Width = visible ? new GridLength(4) : new GridLength(0);
+        MainArea.ColumnDefinitions[1].Width = visible ? new GridLength(4) : new GridLength(0);
 
         if (visible)
             RenderLeftTool();
-
-        UpdateToolVisuals();
 
         if (save)
             CaptureCurrentLayout();
@@ -544,15 +476,13 @@ public partial class WorkbenchWindow : Window
     {
         _rightVisible = visible;
         RightToolWindow.IsVisible = visible;
-        MainArea.ColumnDefinitions[5].Width = visible
-            ? new GridLength(Math.Max(200, _layout.RightBarWidth))
+        MainArea.ColumnDefinitions[4].Width = visible
+            ? new GridLength(Math.Max(220, _layout.RightBarWidth))
             : new GridLength(0);
-        MainArea.ColumnDefinitions[4].Width = visible ? new GridLength(4) : new GridLength(0);
+        MainArea.ColumnDefinitions[3].Width = visible ? new GridLength(4) : new GridLength(0);
 
         if (visible)
             RenderRightTool();
-
-        UpdateToolVisuals();
 
         if (save)
             CaptureCurrentLayout();
@@ -571,8 +501,6 @@ public partial class WorkbenchWindow : Window
         if (visible)
             RenderBottomTool();
 
-        UpdateToolVisuals();
-
         if (save)
             CaptureCurrentLayout();
     }
@@ -582,7 +510,7 @@ public partial class WorkbenchWindow : Window
         if (_leftTool is null)
             return;
 
-        LeftToolTitle.Text = _leftTool.Title.ToUpperInvariant();
+        LeftToolTitle.Text = _leftTool.Title;
         BuildToolWindowActions(LeftToolActions, _leftTool);
         LeftToolHost.Content = BuildToolContent(_leftTool);
     }
@@ -592,7 +520,7 @@ public partial class WorkbenchWindow : Window
         if (_rightTool is null)
             return;
 
-        RightToolTitle.Text = _rightTool.Title.ToUpperInvariant();
+        RightToolTitle.Text = _rightTool.Title;
         BuildToolWindowActions(RightToolActions, _rightTool);
         RightToolHost.Content = BuildToolContent(_rightTool);
     }
@@ -624,7 +552,8 @@ public partial class WorkbenchWindow : Window
                 () => _ = RefreshInstancesAsync()));
         }
 
-        host.Children.Add(BuildToolHeaderButton("\ue608",
+        // VS 的工具窗口标题栏右侧是「关闭 ×」，不是最小化横线。
+        host.Children.Add(BuildToolHeaderButton("\ue609",
             L(AppLanguageManager.Instance.workbench_hideToolWindow.CurrentValue()),
             () => ToggleToolWindow(entry.Id)));
     }
@@ -638,33 +567,13 @@ public partial class WorkbenchWindow : Window
             {
                 Text = glyph,
                 FontFamily = WorkbenchTheme.IconFont,
-                FontSize = 11,
+                FontSize = 12,
                 Foreground = WorkbenchTheme.ForegroundMuted
             }
         };
         ToolTip.SetTip(button, tip);
         button.Click += (_, _) => onClick();
         return button;
-    }
-
-    private void UpdateToolVisuals()
-    {
-        foreach (var (id, visual) in _toolVisuals)
-        {
-            var entry = _toolWindows.FirstOrDefault(t => t.Id == id);
-            if (entry is null)
-                continue;
-
-            var active = entry.Stripe switch
-            {
-                ToolStripe.Left => _leftTool?.Id == id && _leftVisible,
-                ToolStripe.Right => _rightTool?.Id == id && _rightVisible,
-                _ => _bottomTool?.Id == id && _bottomVisible
-            };
-
-            visual.Indicator.IsVisible = active;
-            visual.Icon.Foreground = active ? WorkbenchTheme.Foreground : WorkbenchTheme.ForegroundMuted;
-        }
     }
 
     private Control BuildToolContent(ToolWindowEntry entry)
@@ -779,13 +688,11 @@ public partial class WorkbenchWindow : Window
         BuildProjectWidget();
         BuildRunWidget();
 
-        ToolbarRight.Children.Add(BuildToolbarIcon("\ue615",
+        // 标题栏右侧只留两样：搜索和账户。设置已经在菜单里，不必再摆一个齿轮。
+        TitleBarRight.Children.Add(BuildToolbarIcon("\ue615",
             L(AppLanguageManager.Instance.workbench_searchEverywhere.CurrentValue()),
             () => OpenPalette(PaletteMode.SearchEverywhere)));
-        ToolbarRight.Children.Add(BuildToolbarIcon("\ue617",
-            L(AppLanguageManager.Instance.workbench_activitySettings.CurrentValue()),
-            () => _commands.Execute("workbench.openSettings")));
-        ToolbarRight.Children.Add(BuildAccountWidget());
+        TitleBarRight.Children.Add(BuildAccountWidget());
     }
 
     private void BuildProjectWidget()
@@ -793,7 +700,9 @@ public partial class WorkbenchWindow : Window
         var label = new TextBlock
         {
             Text = L(AppLanguageManager.Instance.workbench_toolbarNoInstance.CurrentValue()),
-            FontSize = 12,
+            FontSize = 11,
+            MaxWidth = 180,
+            TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
             Foreground = WorkbenchTheme.Foreground
         };
@@ -802,7 +711,7 @@ public partial class WorkbenchWindow : Window
         var content = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 7,
+            Spacing = 6,
             VerticalAlignment = VerticalAlignment.Center,
             Children =
             {
@@ -810,9 +719,9 @@ public partial class WorkbenchWindow : Window
                 {
                     Text = "\ue651",
                     FontFamily = WorkbenchTheme.IconFont,
-                    FontSize = 13,
+                    FontSize = 11,
                     VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = WorkbenchTheme.Accent
+                    Foreground = WorkbenchTheme.ForegroundMuted
                 },
                 label,
                 new TextBlock
@@ -828,7 +737,7 @@ public partial class WorkbenchWindow : Window
 
         var button = new Button
         {
-            Classes = { "wb-toolbar" },
+            Classes = { "wb-action" },
             Content = content
         };
         ToolTip.SetTip(button, "当前实例 · 切换或打开其他实例");
@@ -897,7 +806,7 @@ public partial class WorkbenchWindow : Window
                 new TextBlock
                 {
                     Text = L(AppLanguageManager.Instance.workbench_toolbarRun.CurrentValue()),
-                    FontSize = 12,
+                    FontSize = 11,
                     VerticalAlignment = VerticalAlignment.Center,
                     Foreground = WorkbenchTheme.Foreground
                 }
@@ -906,7 +815,7 @@ public partial class WorkbenchWindow : Window
 
         _runButton = new Button
         {
-            Classes = { "wb-toolbar" },
+            Classes = { "wb-action" },
             Content = content,
             IsEnabled = false
         };
@@ -915,7 +824,7 @@ public partial class WorkbenchWindow : Window
 
         var more = new Button
         {
-            Classes = { "wb-toolbar" },
+            Classes = { "wb-action" },
             Padding = new Thickness(6, 0),
             Content = new TextBlock
             {
@@ -945,13 +854,12 @@ public partial class WorkbenchWindow : Window
     {
         var button = new Button
         {
-            Classes = { "wb-toolbar" },
-            Padding = new Thickness(7, 0),
+            Classes = { "wb-tool-action" },
             Content = new TextBlock
             {
                 Text = glyph,
                 FontFamily = WorkbenchTheme.IconFont,
-                FontSize = 13,
+                FontSize = 12,
                 VerticalAlignment = VerticalAlignment.Center,
                 Foreground = WorkbenchTheme.ForegroundMuted
             }
@@ -988,7 +896,7 @@ public partial class WorkbenchWindow : Window
 
         var button = new Button
         {
-            Classes = { "wb-toolbar" },
+            Classes = { "wb-action" },
             Padding = new Thickness(5, 0),
             Content = avatar
         };
@@ -1010,22 +918,9 @@ public partial class WorkbenchWindow : Window
             Foreground = WorkbenchTheme.StatusFg
         };
 
+        // VS 的状态栏左侧只有状态文字，面包屑交给编辑器标签，
+        // 三个词挤在紫条上只会显得吵。
         StatusLeft.Children.Add(_statusMode);
-        StatusLeft.Children.Add(new Border
-        {
-            Width = 1,
-            Height = 12,
-            Margin = new Thickness(0, 0, 6, 0),
-            Background = WorkbenchTheme.BorderStrong
-        });
-
-        _breadcrumb = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 2,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        StatusLeft.Children.Add(_breadcrumb);
 
         _statusMemory = new TextBlock
         {
@@ -1064,71 +959,7 @@ public partial class WorkbenchWindow : Window
         StatusRight.Children.Add(_statusMemory);
         StatusRight.Children.Add(_statusInstances);
         StatusRight.Children.Add(accountButton);
-
-        RebuildBreadcrumb();
     }
-
-    private void RebuildBreadcrumb()
-    {
-        if (_breadcrumb is null)
-            return;
-
-        _breadcrumb.Children.Clear();
-
-        var instance = _documents.Active is InstanceOverviewDocument document
-            ? document.Instance
-            : InstanceContext.Current;
-
-        _breadcrumb.Children.Add(BuildBreadcrumbLink(
-            L(AppLanguageManager.Instance.workbench_activityInstances.CurrentValue()),
-            () => ShowToolWindow("explorer")));
-        _breadcrumb.Children.Add(BuildBreadcrumbChevron());
-
-        if (instance is null)
-        {
-            _breadcrumb.Children.Add(BuildBreadcrumbText(
-                L(AppLanguageManager.Instance.workbench_statusNoInstance.CurrentValue())));
-            return;
-        }
-
-        _breadcrumb.Children.Add(BuildBreadcrumbLink(instance.InstanceName, () => OpenInstanceOverview(instance)));
-        _breadcrumb.Children.Add(BuildBreadcrumbChevron());
-        _breadcrumb.Children.Add(BuildBreadcrumbText(instance.VersionId));
-    }
-
-    private static Button BuildBreadcrumbLink(string text, Action onClick)
-    {
-        var button = new Button
-        {
-            Classes = { "wb-widget" },
-            Content = new TextBlock
-            {
-                Text = text,
-                FontSize = 11,
-                VerticalAlignment = VerticalAlignment.Center
-            }
-        };
-        button.Click += (_, _) => onClick();
-        return button;
-    }
-
-    private static TextBlock BuildBreadcrumbChevron() => new()
-    {
-        Text = "\ue612",
-        FontFamily = WorkbenchTheme.IconFont,
-        FontSize = 8,
-        VerticalAlignment = VerticalAlignment.Center,
-        Foreground = WorkbenchTheme.ForegroundFaint
-    };
-
-    private static TextBlock BuildBreadcrumbText(string text) => new()
-    {
-        Text = text,
-        FontSize = 11,
-        VerticalAlignment = VerticalAlignment.Center,
-        Margin = new Thickness(4, 0, 0, 0),
-        Foreground = WorkbenchTheme.ForegroundMuted
-    };
 
     private void StartMemoryTimer()
     {
@@ -1184,8 +1015,6 @@ public partial class WorkbenchWindow : Window
 
         if (_runButton is not null)
             _runButton.IsEnabled = target is not null && !InstanceLauncher.IsLaunching;
-
-        RebuildBreadcrumb();
     }
 
     // ───────────────────────── 菜单栏 ─────────────────────────
@@ -1236,9 +1065,7 @@ public partial class WorkbenchWindow : Window
         var button = new Button
         {
             Content = header,
-            Classes = { "wb-flat" },
-            Height = 30,
-            Padding = new Thickness(10, 0)
+            Classes = { "wb-menu" }
         };
 
         var flyout = new MenuFlyout();
@@ -1292,29 +1119,13 @@ public partial class WorkbenchWindow : Window
         {
             var active = _bottomTool?.Id == entry.Id;
 
-            var content = new StackPanel
+            // 底部面板标签只留文字：图标只会让这条窄带变吵。
+            var content = new TextBlock
             {
-                Orientation = Orientation.Horizontal,
-                Spacing = 6,
+                Text = entry.Title,
+                FontSize = 11,
                 VerticalAlignment = VerticalAlignment.Center,
-                Children =
-                {
-                    new TextBlock
-                    {
-                        Text = entry.Glyph,
-                        FontFamily = WorkbenchTheme.IconFont,
-                        FontSize = 11,
-                        VerticalAlignment = VerticalAlignment.Center,
-                        Foreground = active ? WorkbenchTheme.Foreground : WorkbenchTheme.ForegroundFaint
-                    },
-                    new TextBlock
-                    {
-                        Text = entry.Title,
-                        FontSize = 11,
-                        VerticalAlignment = VerticalAlignment.Center,
-                        Foreground = active ? WorkbenchTheme.Foreground : WorkbenchTheme.ForegroundMuted
-                    }
-                }
+                Foreground = active ? WorkbenchTheme.Foreground : WorkbenchTheme.ForegroundMuted
             };
 
             var button = new Button
@@ -1322,7 +1133,7 @@ public partial class WorkbenchWindow : Window
                 Content = content,
                 Classes = { "wb-flat" },
                 Height = 29,
-                Padding = new Thickness(10, 0)
+                Padding = new Thickness(12, 0)
             };
             var id = entry.Id;
             button.Click += (_, _) => ShowToolWindow(id);
@@ -1350,7 +1161,7 @@ public partial class WorkbenchWindow : Window
         {
             ItemsSource = channelNames,
             SelectedIndex = Math.Max(0, Array.IndexOf(channelNames, _activeChannel)),
-            Width = 118,
+            Width = 96,
             Height = 24,
             FontSize = 11,
             Margin = new Thickness(0, 0, 6, 0),
@@ -1481,7 +1292,7 @@ public partial class WorkbenchWindow : Window
             FontFamily = WorkbenchTheme.IconFont,
             FontSize = 12,
             VerticalAlignment = VerticalAlignment.Center,
-            Foreground = isActive ? WorkbenchTheme.Accent : WorkbenchTheme.ForegroundFaint
+            Foreground = isActive ? WorkbenchTheme.Foreground : WorkbenchTheme.ForegroundFaint
         };
 
         var title = new TextBlock
@@ -1511,12 +1322,14 @@ public partial class WorkbenchWindow : Window
         };
         close.Click += (_, _) => _documents.Close(document);
 
+        // VS 2022 的文档标签是方角、等高的：激活的那个换成编辑器底色，
+        // 和下面的内容区连成一片，不用边框去强调。
         var tab = new Border
         {
-            Height = 30,
-            CornerRadius = new CornerRadius(7, 7, 0, 0),
-            Padding = new Thickness(10, 0, 6, 0),
-            Margin = new Thickness(0, 6, 2, 0),
+            Height = 33,
+            CornerRadius = new CornerRadius(0),
+            Padding = new Thickness(12, 0, 8, 0),
+            Margin = new Thickness(0),
             Child = new StackPanel
             {
                 Orientation = Orientation.Horizontal,

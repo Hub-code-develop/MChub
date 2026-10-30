@@ -22,7 +22,7 @@ namespace MChub.Workbench.Views;
 /// </summary>
 public sealed class ExplorerView : UserControl
 {
-    private readonly StackPanel _tree = new() { Spacing = 1 };
+    private readonly StackPanel _tree = new() { Spacing = 0 };
     private readonly TextBox _filter;
     private readonly HashSet<string> _collapsed = new(StringComparer.Ordinal);
     private bool _suppressRefresh;
@@ -40,11 +40,13 @@ public sealed class ExplorerView : UserControl
     {
         _filter = new TextBox
         {
-            Watermark = "按名称筛选实例",
-            FontSize = 12,
-            Height = 28,
-            Margin = new Thickness(8, 8, 8, 6),
-            Background = WorkbenchTheme.Brush("WbEditorBg", "#1E1E1E"),
+            Watermark = "筛选实例",
+            FontSize = 11,
+            Height = 24,
+            Padding = new Thickness(8, 0, 6, 0),
+            MinHeight = 24,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Background = WorkbenchTheme.Brush("WbPanelBg", "#1E1E1E"),
             BorderBrush = WorkbenchTheme.Border,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(2),
@@ -52,16 +54,15 @@ public sealed class ExplorerView : UserControl
         };
         _filter.TextChanged += (_, _) => Rebuild();
 
+        // 刷新按钮在面板标题栏上，这里只留筛选框和「新建」。
         var toolbar = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"),
-            Margin = new Thickness(0, 0, 8, 0)
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            Margin = new Thickness(10, 6, 8, 6)
         };
         Grid.SetColumn(_filter, 0);
         toolbar.Children.Add(_filter);
-        toolbar.Children.Add(ToolButton("\ue63c", "刷新实例列表", 1, () =>
-            WorkbenchServices.Commands.Execute("mchub.instances.refresh")));
-        toolbar.Children.Add(ToolButton("\ue645", "新建实例", 2, () => CreateRequested?.Invoke()));
+        toolbar.Children.Add(ToolButton("\ue645", "新建实例", 1, () => CreateRequested?.Invoke()));
 
         Content = new Grid
         {
@@ -92,14 +93,11 @@ public sealed class ExplorerView : UserControl
             {
                 Text = glyph,
                 FontFamily = WorkbenchTheme.IconFont,
-                FontSize = 13,
+                FontSize = 11,
                 Foreground = WorkbenchTheme.ForegroundMuted
             },
-            Classes = { "wb-flat" },
-            Width = 24,
-            Height = 24,
-            Padding = new Thickness(0),
-            Margin = new Thickness(2, 8, 0, 6),
+            Classes = { "wb-tool-action" },
+            Margin = new Thickness(4, 0, 0, 0),
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center
         };
@@ -177,36 +175,39 @@ public sealed class ExplorerView : UserControl
         {
             Text = collapsed ? "\ue60c" : "\ue60b",
             FontFamily = WorkbenchTheme.IconFont,
-            FontSize = 10,
-            Margin = new Thickness(0, 0, 4, 0),
+            FontSize = 8,
+            Margin = new Thickness(0, 0, 5, 0),
             VerticalAlignment = VerticalAlignment.Center,
-            Foreground = WorkbenchTheme.ForegroundMuted
+            Foreground = WorkbenchTheme.ForegroundFaint
         };
 
-        var content = new StackPanel
+        var titleText = new TextBlock
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 4,
-            Children =
-            {
-                chevron,
-                new TextBlock
-                {
-                    Text = title,
-                    FontSize = 11,
-                    FontWeight = FontWeight.SemiBold,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = WorkbenchTheme.Foreground
-                },
-                new TextBlock
-                {
-                    Text = count.ToString(),
-                    FontSize = 11,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = WorkbenchTheme.ForegroundFaint
-                }
-            }
+            Text = title,
+            FontSize = 11,
+            FontWeight = FontWeight.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            Foreground = WorkbenchTheme.Foreground
         };
+
+        var countText = new TextBlock
+        {
+            Text = count.ToString(),
+            FontSize = 10,
+            Margin = new Thickness(6, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Foreground = WorkbenchTheme.ForegroundFaint
+        };
+
+        var content = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto") };
+        Grid.SetColumn(chevron, 0);
+        Grid.SetColumn(titleText, 1);
+        Grid.SetColumn(countText, 2);
+        content.Children.Add(chevron);
+        content.Children.Add(titleText);
+        content.Children.Add(countText);
 
         var button = new Button
         {
@@ -214,8 +215,8 @@ public sealed class ExplorerView : UserControl
             Classes = { "wb-flat" },
             Height = 24,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Left,
-            Padding = new Thickness(10, 0, 8, 0),
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            Padding = new Thickness(8, 0, 10, 0),
             Margin = new Thickness(0)
         };
         button.Click += (_, _) =>
@@ -228,52 +229,58 @@ public sealed class ExplorerView : UserControl
         _tree.Children.Add(button);
     }
 
+    /// <summary>
+    /// 单行实例行：图标 + 名称 + 右侧版本号。
+    /// VS 的解决方案资源管理器就是这个密度 —— 一行一个条目，
+    /// 版本这类次要信息靠右、用小字、淡色，不占第二行。
+    /// </summary>
     private Control BuildInstanceRow(MinecraftInstance instance)
     {
         var icon = BuildIcon(instance);
+        icon.Margin = new Thickness(0, 0, 9, 0);
 
         var name = new TextBlock
         {
             Text = instance.InstanceName,
             FontSize = 12,
+            VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
             Foreground = WorkbenchTheme.Foreground
         };
 
-        var detail = new TextBlock
-        {
-            Text = string.IsNullOrEmpty(instance.ShortDisplay) ? instance.VersionId : instance.ShortDisplay,
-            FontSize = 10,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            Foreground = WorkbenchTheme.ForegroundFaint
-        };
+        // 实例名大多已经带版本号（"1.21.11 LiteMC Fabric"），右边再重复一遍只是噪音；
+        // 名字里没有版本才补一个。
+        var showVersion = !string.IsNullOrEmpty(instance.VersionId) &&
+                          !instance.InstanceName.Contains(instance.VersionId, StringComparison.OrdinalIgnoreCase);
 
-        var text = new StackPanel
-        {
-            Spacing = 1,
-            VerticalAlignment = VerticalAlignment.Center,
-            Children = { name, detail }
-        };
-
-        var row = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
-            Margin = new Thickness(0, 1, 0, 1)
-        };
-        icon.Margin = new Thickness(0, 0, 8, 0);
+        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto") };
         Grid.SetColumn(icon, 0);
-        Grid.SetColumn(text, 1);
+        Grid.SetColumn(name, 1);
         row.Children.Add(icon);
-        row.Children.Add(text);
+        row.Children.Add(name);
+
+        if (showVersion)
+        {
+            var version = new TextBlock
+            {
+                Text = instance.VersionId,
+                FontSize = 10,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(8, 0, 0, 0),
+                Foreground = WorkbenchTheme.ForegroundFaint
+            };
+            Grid.SetColumn(version, 2);
+            row.Children.Add(version);
+        }
 
         var button = new Button
         {
             Content = row,
             Classes = { "wb-flat" },
-            Height = 40,
-            Padding = new Thickness(22, 0, 8, 0),
+            Height = 24,
+            Padding = new Thickness(26, 0, 12, 0),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Left,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
             Margin = new Thickness(0),
             ContextFlyout = BuildContextMenu(instance)
         };
@@ -293,8 +300,8 @@ public sealed class ExplorerView : UserControl
             return new Image
             {
                 Source = bitmap,
-                Width = 20,
-                Height = 20,
+                Width = 16,
+                Height = 16,
                 VerticalAlignment = VerticalAlignment.Center,
                 Stretch = Stretch.UniformToFill
             };
@@ -305,9 +312,9 @@ public sealed class ExplorerView : UserControl
             {
                 Text = "\ue638",
                 FontFamily = WorkbenchTheme.IconFont,
-                FontSize = 15,
-                Width = 20,
-                Height = 20,
+                FontSize = 13,
+                Width = 16,
+                Height = 16,
                 VerticalAlignment = VerticalAlignment.Center,
                 Foreground = WorkbenchTheme.ForegroundFaint
             };

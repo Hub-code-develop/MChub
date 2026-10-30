@@ -31,7 +31,7 @@ public sealed class AccountsView : UserControl
             {
                 Orientation = Orientation.Horizontal,
                 Spacing = 6,
-                HorizontalAlignment = HorizontalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left,
                 Children =
                 {
                     new TextBlock
@@ -45,20 +45,20 @@ public sealed class AccountsView : UserControl
                     new TextBlock
                     {
                         Text = "添加账户",
-                        FontSize = 12,
+                        FontSize = 11,
                         VerticalAlignment = VerticalAlignment.Center
                     }
                 }
             },
-            Height = 28,
-            Margin = new Thickness(8, 8, 8, 0),
+            Height = 26,
+            Margin = new Thickness(8, 6, 8, 0),
+            Padding = new Thickness(8, 0, 0, 0),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center,
+            HorizontalContentAlignment = HorizontalAlignment.Left,
             Background = Brushes.Transparent,
-            BorderBrush = WorkbenchTheme.Border,
-            BorderThickness = new Thickness(1),
-            Foreground = WorkbenchTheme.Foreground,
-            CornerRadius = new CornerRadius(4)
+            BorderThickness = new Thickness(0),
+            Foreground = WorkbenchTheme.ForegroundMuted,
+            CornerRadius = new CornerRadius(0)
         };
         addButton.Click += (_, _) => WorkbenchServices.Commands.Execute("mchub.accounts.add");
 
@@ -111,8 +111,8 @@ public sealed class AccountsView : UserControl
 
         var head = new Border
         {
-            Width = 28,
-            Height = 28,
+            Width = 24,
+            Height = 24,
             CornerRadius = new CornerRadius(2),
             Background = WorkbenchTheme.Brush("WbPanelBg", "#1E1E1E"),
             ClipToBounds = true,
@@ -123,20 +123,23 @@ public sealed class AccountsView : UserControl
         {
             Text = account.Name,
             FontSize = 12,
+            VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
-            Foreground = isCurrent ? WorkbenchTheme.Foreground : WorkbenchTheme.Foreground
+            Foreground = WorkbenchTheme.Foreground
         };
 
         var type = new TextBlock
         {
             Text = account.ShortType,
             FontSize = 10,
+            Margin = new Thickness(6, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
             Foreground = WorkbenchTheme.ForegroundFaint
         };
 
         var text = new StackPanel
         {
-            Spacing = 1,
+            Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
             Children = { name, type }
         };
@@ -145,14 +148,14 @@ public sealed class AccountsView : UserControl
         {
             Text = "\ue62d",
             FontFamily = WorkbenchTheme.IconFont,
-            FontSize = 12,
+            FontSize = 11,
             VerticalAlignment = VerticalAlignment.Center,
             IsVisible = isCurrent,
-            Foreground = WorkbenchTheme.Brush("WbAccent", "#007ACC")
+            Foreground = WorkbenchTheme.Accent
         };
 
         var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto") };
-        head.Margin = new Thickness(0, 0, 10, 0);
+        head.Margin = new Thickness(0, 0, 9, 0);
         Grid.SetColumn(head, 0);
         Grid.SetColumn(text, 1);
         Grid.SetColumn(check, 2);
@@ -164,10 +167,10 @@ public sealed class AccountsView : UserControl
         {
             Content = row,
             Classes = { "wb-flat" },
-            Height = 42,
-            Padding = new Thickness(14, 0, 12, 0),
+            Height = 30,
+            Padding = new Thickness(14, 0, 10, 0),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Left,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
             Background = isCurrent ? WorkbenchTheme.SelectionBg : Brushes.Transparent,
             Margin = new Thickness(0)
         };
