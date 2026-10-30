@@ -91,6 +91,7 @@
     "menuTools": "Tools",
     "menuHelp": "Help",
     "activityExplorer": "Explorer",
+    "activityAccounts": "Accounts",
     "activitySearch": "Search",
     "activityInstances": "Instances",
     "activityDownloads": "Downloads",
@@ -107,6 +108,8 @@
     "ready": "Ready",
     "sidebarPlaceholder": "This view will be migrated to the new workbench in a later phase",
     "statusNoInstance": "No instance",
-    "statusNoAccount": "Not signed in"
+    "statusNoAccount": "Not signed in",
+    "statusLaunching": "Launching…",
+    "statusInstanceCount": "{0} instances"
   }
 }

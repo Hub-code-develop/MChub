@@ -8,65 +8,7 @@
     MinWidth="920"
     MinHeight="560"
     Background="{DynamicResource WbEditorBg}">
-    <Window.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Default">
-                    <SolidColorBrush Color="#1E1E1E" x:Key="WbEditorBg" />
-                    <SolidColorBrush Color="#252526" x:Key="WbSidebarBg" />
-                    <SolidColorBrush Color="#333333" x:Key="WbActivityBg" />
-                    <SolidColorBrush Color="#3C3C3C" x:Key="WbTitleBarBg" />
-                    <SolidColorBrush Color="#1E1E1E" x:Key="WbPanelBg" />
-                    <SolidColorBrush Color="#2B2B2B" x:Key="WbBorder" />
-                    <SolidColorBrush Color="#CCCCCC" x:Key="WbFg" />
-                    <SolidColorBrush Color="#8C8C8C" x:Key="WbFgMuted" />
-                    <SolidColorBrush Color="#6E7681" x:Key="WbFgFaint" />
-                    <SolidColorBrush Color="#007ACC" x:Key="WbAccent" />
-                    <SolidColorBrush Color="#094771" x:Key="WbSelectionBg" />
-                    <SolidColorBrush Color="#2A2D2E" x:Key="WbHoverBg" />
-                    <SolidColorBrush Color="#2D2D2D" x:Key="WbTabInactiveBg" />
-                    <SolidColorBrush Color="#007ACC" x:Key="WbStatusBg" />
-                    <SolidColorBrush Color="#FFFFFF" x:Key="WbStatusFg" />
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Dark">
-                    <SolidColorBrush Color="#1E1E1E" x:Key="WbEditorBg" />
-                    <SolidColorBrush Color="#252526" x:Key="WbSidebarBg" />
-                    <SolidColorBrush Color="#333333" x:Key="WbActivityBg" />
-                    <SolidColorBrush Color="#3C3C3C" x:Key="WbTitleBarBg" />
-                    <SolidColorBrush Color="#1E1E1E" x:Key="WbPanelBg" />
-                    <SolidColorBrush Color="#2B2B2B" x:Key="WbBorder" />
-                    <SolidColorBrush Color="#CCCCCC" x:Key="WbFg" />
-                    <SolidColorBrush Color="#8C8C8C" x:Key="WbFgMuted" />
-                    <SolidColorBrush Color="#6E7681" x:Key="WbFgFaint" />
-                    <SolidColorBrush Color="#007ACC" x:Key="WbAccent" />
-                    <SolidColorBrush Color="#094771" x:Key="WbSelectionBg" />
-                    <SolidColorBrush Color="#2A2D2E" x:Key="WbHoverBg" />
-                    <SolidColorBrush Color="#2D2D2D" x:Key="WbTabInactiveBg" />
-                    <SolidColorBrush Color="#007ACC" x:Key="WbStatusBg" />
-                    <SolidColorBrush Color="#FFFFFF" x:Key="WbStatusFg" />
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Light">
-                    <SolidColorBrush Color="#FFFFFF" x:Key="WbEditorBg" />
-                    <SolidColorBrush Color="#F3F3F3" x:Key="WbSidebarBg" />
-                    <SolidColorBrush Color="#2C2C2C" x:Key="WbActivityBg" />
-                    <SolidColorBrush Color="#DDDDDD" x:Key="WbTitleBarBg" />
-                    <SolidColorBrush Color="#FFFFFF" x:Key="WbPanelBg" />
-                    <SolidColorBrush Color="#E5E5E5" x:Key="WbBorder" />
-                    <SolidColorBrush Color="#333333" x:Key="WbFg" />
-                    <SolidColorBrush Color="#6E6E6E" x:Key="WbFgMuted" />
-                    <SolidColorBrush Color="#8A8A8A" x:Key="WbFgFaint" />
-                    <SolidColorBrush Color="#005FB8" x:Key="WbAccent" />
-                    <SolidColorBrush Color="#E4E6F1" x:Key="WbSelectionBg" />
-                    <SolidColorBrush Color="#E8E8E8" x:Key="WbHoverBg" />
-                    <SolidColorBrush Color="#ECECEC" x:Key="WbTabInactiveBg" />
-                    <SolidColorBrush Color="#005FB8" x:Key="WbStatusBg" />
-                    <SolidColorBrush Color="#FFFFFF" x:Key="WbStatusFg" />
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
-            <FontFamily x:Key="WbIconFont">avares://MChub/Assets/Fonts/iconfont.ttf#iconfont</FontFamily>
-            <FontFamily x:Key="WbCodeFont">Menlo,Consolas,Monaco,monospace</FontFamily>
-        </ResourceDictionary>
-    </Window.Resources>
+    <!--  配色与字体定义在 App.axaml（应用级），子视图用 C# 构建控件时也能解析到同一套。  -->
 
     <Window.Styles>
         <Style Selector="Button.wb-flat">
@@ -93,16 +35,26 @@
         <Style Selector="Button.wb-activity:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="#1AFFFFFF" />
         </Style>
-        <Style Selector="TextBlock.wb-icon">
-            <Setter Property="FontFamily" Value="{StaticResource WbIconFont}" />
-            <Setter Property="FontSize" Value="21" />
-            <Setter Property="Foreground" Value="{DynamicResource WbFgMuted}" />
+        <Style Selector="Button.wb-status">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Foreground" Value="{DynamicResource WbStatusFg}" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+        <Style Selector="Button.wb-status:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#22000000" />
         </Style>
     </Window.Styles>
 
     <Grid RowDefinitions="32,*,22">
         <!--  标题栏 + 菜单栏  -->
-        <Grid Grid.Row="0" Background="{DynamicResource WbTitleBarBg}" ColumnDefinitions="76,Auto,*">
+        <Grid
+            Grid.Row="0"
+            Background="{DynamicResource WbTitleBarBg}"
+            ColumnDefinitions="76,Auto,*">
             <TextBlock
                 Grid.Column="1"
                 Margin="4,0,14,0"
@@ -119,7 +71,7 @@
         </Grid>
 
         <!--  主体：活动栏 / 侧边栏 / 编辑区  -->
-        <Grid Grid.Row="1" ColumnDefinitions="48,260,4,*">
+        <Grid x:Name="MainArea" Grid.Row="1" ColumnDefinitions="48,260,4,*">
             <Border Grid.Column="0" Background="{DynamicResource WbActivityBg}">
                 <StackPanel
                     x:Name="ActivityBar"
@@ -133,17 +85,16 @@
                 Background="{DynamicResource WbSidebarBg}"
                 BorderBrush="{DynamicResource WbBorder}"
                 BorderThickness="0,0,1,0">
-                <Grid RowDefinitions="36,*">
+                <Grid RowDefinitions="36,*,Auto">
                     <TextBlock
                         x:Name="SideBarTitle"
                         Margin="16,0"
                         VerticalAlignment="Center"
                         FontSize="11"
                         FontWeight="SemiBold"
-                        Foreground="{DynamicResource WbFgMuted}"/>
-                    <ContentControl
-                        x:Name="SideBarHost"
-                        Grid.Row="1" />
+                        Foreground="{DynamicResource WbFgMuted}" />
+                    <ContentControl x:Name="SideBarHost" Grid.Row="1" />
+                    <ContentControl x:Name="SideBarFooter" Grid.Row="2" />
                 </Grid>
             </Border>
 
@@ -153,7 +104,7 @@
                 Background="Transparent"
                 ResizeDirection="Columns" />
 
-            <Grid Grid.Column="3" RowDefinitions="*,4,190">
+            <Grid x:Name="EditorArea" Grid.Column="3" RowDefinitions="*,4,190">
                 <!--  编辑区  -->
                 <Grid Grid.Row="0" RowDefinitions="35,*">
                     <Border
@@ -190,19 +141,30 @@
                 </Grid>
 
                 <GridSplitter
+                    x:Name="PanelSplitter"
                     Grid.Row="1"
                     Background="{DynamicResource WbBorder}"
                     ResizeDirection="Rows" />
 
                 <!--  底部面板  -->
-                <Grid Grid.Row="2" RowDefinitions="32,*" Background="{DynamicResource WbPanelBg}">
+                <Grid
+                    x:Name="PanelRoot"
+                    Grid.Row="2"
+                    RowDefinitions="32,*"
+                    Background="{DynamicResource WbPanelBg}">
                     <Border BorderBrush="{DynamicResource WbBorder}" BorderThickness="0,0,0,1">
-                        <StackPanel Orientation="Horizontal">
+                        <Grid ColumnDefinitions="*,Auto">
                             <StackPanel
                                 x:Name="PanelTabs"
                                 Margin="8,0,0,0"
                                 Orientation="Horizontal" />
-                        </StackPanel>
+                            <StackPanel
+                                x:Name="PanelTools"
+                                Grid.Column="1"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal" />
+                        </Grid>
                     </Border>
                     <ContentControl
                         x:Name="PanelHost"
@@ -235,7 +197,7 @@
             Background="#66000000"
             IsVisible="False">
             <Border
-                Width="620"
+                Width="640"
                 Margin="0,88,0,0"
                 VerticalAlignment="Top"
                 Background="{DynamicResource WbSidebarBg}"
@@ -250,7 +212,7 @@
                         BorderThickness="0"
                         FontSize="13" />
                     <Border Height="1" Background="{DynamicResource WbBorder}" />
-                    <ScrollViewer MaxHeight="330">
+                    <ScrollViewer MaxHeight="360">
                         <StackPanel
                             x:Name="PaletteList"
                             Margin="4" />

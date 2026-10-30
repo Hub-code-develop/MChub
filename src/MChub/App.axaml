@@ -14,6 +14,72 @@
                 <ResourceInclude Source="/Styles/Theme/Mirage.axaml" />
                 <ResourceInclude Source="/Styles/Resources.axaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- 工作台（IDE 风格）配色。放在应用级，是因为侧边栏 / 编辑器 / 输出面板
+                 这些视图都用 C# 构建控件，需要按主题解析同一套颜色；
+                 只放在窗口资源里的话，子视图取不到，换主题时会花。 -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbEditorBg" />
+                    <SolidColorBrush Color="#252526" x:Key="WbSidebarBg" />
+                    <SolidColorBrush Color="#333333" x:Key="WbActivityBg" />
+                    <SolidColorBrush Color="#3C3C3C" x:Key="WbTitleBarBg" />
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbPanelBg" />
+                    <SolidColorBrush Color="#2B2B2B" x:Key="WbBorder" />
+                    <SolidColorBrush Color="#CCCCCC" x:Key="WbFg" />
+                    <SolidColorBrush Color="#8C8C8C" x:Key="WbFgMuted" />
+                    <SolidColorBrush Color="#6E7681" x:Key="WbFgFaint" />
+                    <SolidColorBrush Color="#007ACC" x:Key="WbAccent" />
+                    <SolidColorBrush Color="#094771" x:Key="WbSelectionBg" />
+                    <SolidColorBrush Color="#2A2D2E" x:Key="WbHoverBg" />
+                    <SolidColorBrush Color="#2D2D2D" x:Key="WbTabInactiveBg" />
+                    <SolidColorBrush Color="#007ACC" x:Key="WbStatusBg" />
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbStatusFg" />
+                    <SolidColorBrush Color="#F14C4C" x:Key="WbDanger" />
+                    <SolidColorBrush Color="#3C8527" x:Key="WbSuccess" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbEditorBg" />
+                    <SolidColorBrush Color="#252526" x:Key="WbSidebarBg" />
+                    <SolidColorBrush Color="#333333" x:Key="WbActivityBg" />
+                    <SolidColorBrush Color="#3C3C3C" x:Key="WbTitleBarBg" />
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbPanelBg" />
+                    <SolidColorBrush Color="#2B2B2B" x:Key="WbBorder" />
+                    <SolidColorBrush Color="#CCCCCC" x:Key="WbFg" />
+                    <SolidColorBrush Color="#8C8C8C" x:Key="WbFgMuted" />
+                    <SolidColorBrush Color="#6E7681" x:Key="WbFgFaint" />
+                    <SolidColorBrush Color="#007ACC" x:Key="WbAccent" />
+                    <SolidColorBrush Color="#094771" x:Key="WbSelectionBg" />
+                    <SolidColorBrush Color="#2A2D2E" x:Key="WbHoverBg" />
+                    <SolidColorBrush Color="#2D2D2D" x:Key="WbTabInactiveBg" />
+                    <SolidColorBrush Color="#007ACC" x:Key="WbStatusBg" />
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbStatusFg" />
+                    <SolidColorBrush Color="#F14C4C" x:Key="WbDanger" />
+                    <SolidColorBrush Color="#3C8527" x:Key="WbSuccess" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbEditorBg" />
+                    <SolidColorBrush Color="#F3F3F3" x:Key="WbSidebarBg" />
+                    <SolidColorBrush Color="#2C2C2C" x:Key="WbActivityBg" />
+                    <SolidColorBrush Color="#DDDDDD" x:Key="WbTitleBarBg" />
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbPanelBg" />
+                    <SolidColorBrush Color="#E5E5E5" x:Key="WbBorder" />
+                    <SolidColorBrush Color="#333333" x:Key="WbFg" />
+                    <SolidColorBrush Color="#6E6E6E" x:Key="WbFgMuted" />
+                    <SolidColorBrush Color="#8A8A8A" x:Key="WbFgFaint" />
+                    <SolidColorBrush Color="#005FB8" x:Key="WbAccent" />
+                    <SolidColorBrush Color="#E4E6F1" x:Key="WbSelectionBg" />
+                    <SolidColorBrush Color="#E8E8E8" x:Key="WbHoverBg" />
+                    <SolidColorBrush Color="#ECECEC" x:Key="WbTabInactiveBg" />
+                    <SolidColorBrush Color="#005FB8" x:Key="WbStatusBg" />
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbStatusFg" />
+                    <SolidColorBrush Color="#C42B1C" x:Key="WbDanger" />
+                    <SolidColorBrush Color="#2E7D32" x:Key="WbSuccess" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <FontFamily x:Key="WbIconFont">avares://MChub/Assets/Fonts/iconfont.ttf#iconfont</FontFamily>
+            <FontFamily x:Key="WbCodeFont">Menlo,Consolas,Monaco,monospace</FontFamily>
         </ResourceDictionary>
     </Application.Resources>
     <Application.Styles>

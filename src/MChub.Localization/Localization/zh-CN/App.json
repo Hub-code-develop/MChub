@@ -91,6 +91,7 @@
     "menuTools": "工具",
     "menuHelp": "帮助",
     "activityExplorer": "资源管理器",
+    "activityAccounts": "账户",
     "activitySearch": "搜索",
     "activityInstances": "实例",
     "activityDownloads": "下载",
@@ -107,6 +108,8 @@
     "ready": "就绪",
     "sidebarPlaceholder": "该视图将在后续阶段迁移到新工作台",
     "statusNoInstance": "未选择实例",
-    "statusNoAccount": "未登录"
+    "statusNoAccount": "未登录",
+    "statusLaunching": "正在启动…",
+    "statusInstanceCount": "{0} 个实例"
   }
 }
