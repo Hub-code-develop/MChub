@@ -59,9 +59,9 @@ public sealed class ExplorerView : UserControl
         };
         Grid.SetColumn(_filter, 0);
         toolbar.Children.Add(_filter);
-        toolbar.Children.Add(ToolButton("\ue627", "刷新实例列表", 1, () =>
+        toolbar.Children.Add(ToolButton("\ue63c", "刷新实例列表", 1, () =>
             WorkbenchServices.Commands.Execute("mchub.instances.refresh")));
-        toolbar.Children.Add(ToolButton("\ue609", "新建实例", 2, () => CreateRequested?.Invoke()));
+        toolbar.Children.Add(ToolButton("\ue645", "新建实例", 2, () => CreateRequested?.Invoke()));
 
         Content = new Grid
         {

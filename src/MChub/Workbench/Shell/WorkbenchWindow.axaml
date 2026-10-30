@@ -3,12 +3,23 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="MChub"
-    Width="1360"
-    Height="860"
-    MinWidth="920"
-    MinHeight="560"
+    Width="1440"
+    Height="900"
+    MinWidth="980"
+    MinHeight="620"
+    ExtendClientAreaToDecorationsHint="True"
+    ExtendClientAreaTitleBarHeightHint="30"
+    RequestedThemeVariant="Dark"
     Background="{DynamicResource WbEditorBg}">
-    <!--  配色与字体定义在 App.axaml（应用级），子视图用 C# 构建控件时也能解析到同一套。  -->
+    <!--
+        布局参考 IntelliJ IDEA 新 UI：
+        1) 标题栏右侧不再挂自定义按钮，交给系统（macOS 红绿灯 / Windows 右上三键）；
+        2) 主工具栏独立一行，放「实例」和「运行」两个 widget；
+        3) 左右各有一条工具窗口条，每条分上下两段：上段开左右侧垂直窗口，下段开底部水平窗口；
+        4) 每个工具窗口有自己的标题栏，而不是一整块侧栏；
+        5) 导航栏（面包屑）放状态栏左侧，右侧是部件区。
+        配色与字体定义在 App.axaml（应用级），C# 构建的子视图也能解析到同一套。
+    -->
 
     <Window.Styles>
         <Style Selector="Button.wb-flat">
@@ -22,47 +33,85 @@
         <Style Selector="Button.wb-flat:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource WbHoverBg}" />
         </Style>
-        <Style Selector="Button.wb-activity">
-            <Setter Property="Width" Value="48" />
-            <Setter Property="Height" Value="46" />
+        <Style Selector="Button.wb-stripe">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="40" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
-        <Style Selector="Button.wb-activity:pointerover /template/ ContentPresenter">
+        <Style Selector="Button.wb-stripe:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="#1AFFFFFF" />
         </Style>
-        <Style Selector="Button.wb-status">
+        <Style Selector="Button.wb-tool-action">
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="0" />
-            <Setter Property="Padding" Value="8,0" />
-            <Setter Property="Height" Value="22" />
-            <Setter Property="Foreground" Value="{DynamicResource WbStatusFg}" />
-            <Setter Property="FontSize" Value="11" />
+            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
-        <Style Selector="Button.wb-status:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="#22000000" />
+        <Style Selector="Button.wb-tool-action:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#1AFFFFFF" />
+        </Style>
+        <Style Selector="Button.wb-widget">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{DynamicResource WbStatusFg}" />
+        </Style>
+        <Style Selector="Button.wb-widget:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource WbWidgetHover}" />
+        </Style>
+        <Style Selector="Button.wb-toolbar">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource WbFg}" />
+        </Style>
+        <Style Selector="Button.wb-toolbar:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#1AFFFFFF" />
+        </Style>
+        <Style Selector="Border.wb-tab:pointerover">
+            <Setter Property="Background" Value="{DynamicResource WbHoverBg}" />
         </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="32,*,22">
-        <!--  标题栏 + 菜单栏  -->
+    <Grid RowDefinitions="30,42,*,24">
+        <!--  标题栏 + 主菜单（macOS 红绿灯留白 78px）  -->
         <Grid
+            x:Name="TitleBar"
             Grid.Row="0"
             Background="{DynamicResource WbTitleBarBg}"
-            ColumnDefinitions="76,Auto,*">
-            <TextBlock
+            ColumnDefinitions="78,Auto,*">
+            <StackPanel
                 Grid.Column="1"
-                Margin="4,0,14,0"
+                Margin="0,0,12,0"
                 VerticalAlignment="Center"
-                FontSize="12"
-                FontWeight="SemiBold"
-                Foreground="{DynamicResource WbFg}"
-                Text="MChub" />
+                Orientation="Horizontal"
+                Spacing="6">
+                <TextBlock
+                    FontSize="12"
+                    FontWeight="Bold"
+                    Foreground="{DynamicResource WbAccent}"
+                    Text="M" />
+                <TextBlock
+                    FontSize="12"
+                    FontWeight="SemiBold"
+                    Foreground="{DynamicResource WbFg}"
+                    Text="MChub" />
+            </StackPanel>
             <StackPanel
                 x:Name="MenuStrip"
                 Grid.Column="2"
@@ -70,93 +119,169 @@
                 Orientation="Horizontal" />
         </Grid>
 
-        <!--  主体：活动栏 / 侧边栏 / 编辑区  -->
-        <Grid x:Name="MainArea" Grid.Row="1" ColumnDefinitions="48,260,4,*">
-            <Border Grid.Column="0" Background="{DynamicResource WbActivityBg}">
+        <!--  主工具栏：实例 widget / 运行 widget / 右侧动作  -->
+        <Border
+            Grid.Row="1"
+            Background="{DynamicResource WbToolbarBg}"
+            BorderBrush="{DynamicResource WbBorder}"
+            BorderThickness="0,0,0,1">
+            <Grid
+                Margin="10,0"
+                ColumnDefinitions="Auto,Auto,*,Auto"
+                VerticalAlignment="Center">
                 <StackPanel
-                    x:Name="ActivityBar"
+                    x:Name="ToolbarProject"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center" />
+                <Border
+                    Grid.Column="1"
+                    Width="1"
+                    Height="20"
+                    Margin="10,0"
+                    Background="{DynamicResource WbBorderStrong}" />
+                <StackPanel
+                    x:Name="ToolbarRun"
+                    Grid.Column="2"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center" />
+                <StackPanel
+                    x:Name="ToolbarRight"
+                    Grid.Column="3"
+                    Orientation="Horizontal"
+                    Spacing="2"
+                    VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <!--  主体：左条 / 左工具窗口 / 分隔 / 编辑区 / 分隔 / 右工具窗口 / 右条  -->
+        <Grid x:Name="MainArea" Grid.Row="2" ColumnDefinitions="44,264,4,*,4,300,44">
+            <!--  左侧工具窗口条：上段开左侧，下段开底部  -->
+            <Grid
+                Grid.Column="0"
+                Background="{DynamicResource WbStripeBg}"
+                RowDefinitions="*,Auto">
+                <StackPanel
+                    x:Name="LeftStripeTop"
                     Margin="0,4,0,0"
                     VerticalAlignment="Top" />
-            </Border>
+                <StackPanel
+                    x:Name="LeftStripeBottom"
+                    Grid.Row="1"
+                    Margin="0,0,0,6"
+                    VerticalAlignment="Bottom" />
+            </Grid>
 
+            <!--  左侧工具窗口  -->
             <Border
-                x:Name="SideBarRoot"
+                x:Name="LeftToolWindow"
                 Grid.Column="1"
                 Background="{DynamicResource WbSidebarBg}"
                 BorderBrush="{DynamicResource WbBorder}"
                 BorderThickness="0,0,1,0">
-                <Grid RowDefinitions="36,*,Auto">
-                    <TextBlock
-                        x:Name="SideBarTitle"
-                        Margin="16,0"
-                        VerticalAlignment="Center"
-                        FontSize="11"
-                        FontWeight="SemiBold"
-                        Foreground="{DynamicResource WbFgMuted}" />
-                    <ContentControl x:Name="SideBarHost" Grid.Row="1" />
-                    <ContentControl x:Name="SideBarFooter" Grid.Row="2" />
+                <Grid RowDefinitions="30,*">
+                    <Border
+                        Background="{DynamicResource WbToolHeaderBg}"
+                        BorderBrush="{DynamicResource WbBorder}"
+                        BorderThickness="0,0,0,1">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock
+                                x:Name="LeftToolTitle"
+                                Margin="12,0"
+                                VerticalAlignment="Center"
+                                FontSize="11"
+                                FontWeight="SemiBold"
+                                Foreground="{DynamicResource WbFgMuted}" />
+                            <StackPanel
+                                x:Name="LeftToolActions"
+                                Grid.Column="1"
+                                Margin="0,0,4,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal" />
+                        </Grid>
+                    </Border>
+                    <ContentControl x:Name="LeftToolHost" Grid.Row="1" />
                 </Grid>
             </Border>
 
             <GridSplitter
-                x:Name="SideBarSplitter"
+                x:Name="LeftSplitter"
                 Grid.Column="2"
                 Background="Transparent"
                 ResizeDirection="Columns" />
 
-            <Grid x:Name="EditorArea" Grid.Column="3" RowDefinitions="*,4,190">
-                <!--  编辑区  -->
-                <Grid Grid.Row="0" RowDefinitions="35,*">
-                    <Border
-                        Background="{DynamicResource WbTabInactiveBg}"
-                        BorderBrush="{DynamicResource WbBorder}"
-                        BorderThickness="0,0,0,1">
+            <!--  编辑区 + 底部工具窗口  -->
+            <Grid x:Name="EditorArea" Grid.Column="3" RowDefinitions="38,*,4,190">
+                <!--  编辑器标签条 + 检查部件  -->
+                <Border
+                    Grid.Row="0"
+                    Background="{DynamicResource WbTabStripBg}"
+                    BorderBrush="{DynamicResource WbBorder}"
+                    BorderThickness="0,0,0,1">
+                    <Grid ColumnDefinitions="*,Auto">
                         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                             <StackPanel
                                 x:Name="TabStrip"
-                                Height="34"
+                                Height="36"
+                                VerticalAlignment="Bottom"
                                 Orientation="Horizontal" />
                         </ScrollViewer>
-                    </Border>
-
-                    <Panel Grid.Row="1">
-                        <ContentControl x:Name="EditorHost" />
-                        <StackPanel
-                            x:Name="EmptyState"
-                            HorizontalAlignment="Center"
+                        <Button
+                            x:Name="InspectionWidget"
+                            Grid.Column="1"
+                            Margin="0,0,6,0"
                             VerticalAlignment="Center"
-                            Spacing="8">
-                            <TextBlock
-                                x:Name="EmptyTitle"
-                                HorizontalAlignment="Center"
-                                FontSize="18"
-                                Foreground="{DynamicResource WbFgFaint}" />
-                            <TextBlock
-                                x:Name="EmptyHint"
-                                HorizontalAlignment="Center"
-                                FontSize="12"
-                                Foreground="{DynamicResource WbFgFaint}" />
-                        </StackPanel>
-                    </Panel>
-                </Grid>
+                            Classes="wb-widget"
+                            ToolTip.Tip="问题" />
+                    </Grid>
+                </Border>
+
+                <Panel Grid.Row="1" Background="{DynamicResource WbEditorBg}">
+                    <ContentControl x:Name="EditorHost" />
+                    <StackPanel
+                        x:Name="EmptyState"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="6">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Margin="0,0,0,10"
+                            FontFamily="{DynamicResource WbIconFont}"
+                            FontSize="38"
+                            Foreground="{DynamicResource WbFgFaint}"
+                            Text="&#xe651;" />
+                        <TextBlock
+                            x:Name="EmptyTitle"
+                            HorizontalAlignment="Center"
+                            FontSize="15"
+                            Foreground="{DynamicResource WbFgMuted}" />
+                        <TextBlock
+                            x:Name="EmptyHint"
+                            HorizontalAlignment="Center"
+                            FontSize="12"
+                            Foreground="{DynamicResource WbFgFaint}" />
+                    </StackPanel>
+                </Panel>
 
                 <GridSplitter
                     x:Name="PanelSplitter"
-                    Grid.Row="1"
+                    Grid.Row="2"
                     Background="{DynamicResource WbBorder}"
                     ResizeDirection="Rows" />
 
-                <!--  底部面板  -->
+                <!--  底部工具窗口：标题栏是同一 stripe 内各窗口的切换标签  -->
                 <Grid
-                    x:Name="PanelRoot"
-                    Grid.Row="2"
-                    RowDefinitions="32,*"
+                    x:Name="BottomToolWindow"
+                    Grid.Row="3"
+                    RowDefinitions="30,*"
                     Background="{DynamicResource WbPanelBg}">
-                    <Border BorderBrush="{DynamicResource WbBorder}" BorderThickness="0,0,0,1">
+                    <Border
+                        Background="{DynamicResource WbToolHeaderBg}"
+                        BorderBrush="{DynamicResource WbBorder}"
+                        BorderThickness="0,0,0,1">
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel
                                 x:Name="PanelTabs"
-                                Margin="8,0,0,0"
+                                Margin="6,0,0,0"
                                 Orientation="Horizontal" />
                             <StackPanel
                                 x:Name="PanelTools"
@@ -171,52 +296,122 @@
                         Grid.Row="1" />
                 </Grid>
             </Grid>
+
+            <GridSplitter
+                x:Name="RightSplitter"
+                Grid.Column="4"
+                Background="Transparent"
+                ResizeDirection="Columns" />
+
+            <!--  右侧工具窗口  -->
+            <Border
+                x:Name="RightToolWindow"
+                Grid.Column="5"
+                Background="{DynamicResource WbSidebarBg}"
+                BorderBrush="{DynamicResource WbBorder}"
+                BorderThickness="1,0,0,0"
+                IsVisible="False">
+                <Grid RowDefinitions="30,*">
+                    <Border
+                        Background="{DynamicResource WbToolHeaderBg}"
+                        BorderBrush="{DynamicResource WbBorder}"
+                        BorderThickness="0,0,0,1">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock
+                                x:Name="RightToolTitle"
+                                Margin="12,0"
+                                VerticalAlignment="Center"
+                                FontSize="11"
+                                FontWeight="SemiBold"
+                                Foreground="{DynamicResource WbFgMuted}" />
+                            <StackPanel
+                                x:Name="RightToolActions"
+                                Grid.Column="1"
+                                Margin="0,0,4,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal" />
+                        </Grid>
+                    </Border>
+                    <ContentControl x:Name="RightToolHost" Grid.Row="1" />
+                </Grid>
+            </Border>
+
+            <!--  右侧工具窗口条：上段开右侧  -->
+            <Grid
+                Grid.Column="6"
+                Background="{DynamicResource WbStripeBg}"
+                RowDefinitions="*,Auto">
+                <StackPanel
+                    x:Name="RightStripeTop"
+                    Margin="0,4,0,0"
+                    VerticalAlignment="Top" />
+                <StackPanel
+                    x:Name="RightStripeBottom"
+                    Grid.Row="1"
+                    Margin="0,0,0,6"
+                    VerticalAlignment="Bottom" />
+            </Grid>
         </Grid>
 
-        <!--  状态栏  -->
-        <Border Grid.Row="2" Background="{DynamicResource WbStatusBg}">
+        <!--  状态栏：左侧导航栏（面包屑），右侧部件区  -->
+        <Border
+            Grid.Row="3"
+            Background="{DynamicResource WbStatusBg}"
+            BorderBrush="{DynamicResource WbBorder}"
+            BorderThickness="0,1,0,0">
             <Grid ColumnDefinitions="*,Auto">
                 <StackPanel
                     x:Name="StatusLeft"
-                    Margin="10,0,0,0"
+                    Margin="6,0,0,0"
                     VerticalAlignment="Center"
                     Orientation="Horizontal" />
                 <StackPanel
                     x:Name="StatusRight"
                     Grid.Column="1"
-                    Margin="0,0,10,0"
+                    Margin="0,0,8,0"
                     VerticalAlignment="Center"
                     Orientation="Horizontal" />
             </Grid>
         </Border>
 
-        <!--  命令面板  -->
+        <!--  搜索 / 命令面板  -->
         <Border
             x:Name="PaletteOverlay"
-            Grid.RowSpan="3"
+            Grid.RowSpan="4"
             Background="#66000000"
             IsVisible="False">
             <Border
-                Width="640"
-                Margin="0,88,0,0"
+                Width="680"
+                Margin="0,104,0,0"
                 VerticalAlignment="Top"
                 Background="{DynamicResource WbSidebarBg}"
-                BorderBrush="{DynamicResource WbBorder}"
+                BorderBrush="{DynamicResource WbBorderStrong}"
                 BorderThickness="1"
-                CornerRadius="6">
+                CornerRadius="8">
                 <StackPanel>
                     <TextBox
                         x:Name="PaletteInput"
-                        Margin="10"
+                        Margin="12,10"
                         Background="Transparent"
                         BorderThickness="0"
-                        FontSize="13" />
+                        FontSize="14" />
                     <Border Height="1" Background="{DynamicResource WbBorder}" />
-                    <ScrollViewer MaxHeight="360">
+                    <ScrollViewer MaxHeight="380">
                         <StackPanel
                             x:Name="PaletteList"
                             Margin="4" />
                     </ScrollViewer>
+                    <Border
+                        Padding="10,6"
+                        Background="{DynamicResource WbToolHeaderBg}"
+                        BorderBrush="{DynamicResource WbBorder}"
+                        BorderThickness="0,1,0,0"
+                        CornerRadius="0,0,8,8">
+                        <TextBlock
+                            x:Name="PaletteFooter"
+                            FontSize="10"
+                            Foreground="{DynamicResource WbFgFaint}" />
+                    </Border>
                 </StackPanel>
             </Border>
         </Border>

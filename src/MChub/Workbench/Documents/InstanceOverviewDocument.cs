@@ -16,12 +16,18 @@ namespace MChub.Workbench.Documents;
 /// <summary>
 /// 实例概览页。相当于 IDE 里打开的项目主页：
 /// 只读地摊开这个实例的配置，并提供最常用的动作（启动 / 打开目录）。
+/// 排版上保持「标题 + 标签 + 分区表格」的编辑器内容页风格，内容宽度受限，
+/// 不把键值对拉满整屏。
 /// </summary>
 public sealed class InstanceOverviewDocument : IWorkbenchDocument
 {
+    private const double ContentWidth = 780;
+
     private readonly MinecraftInstance _instance;
     private readonly StackPanel _root;
     private readonly TextBlock _status;
+
+    private Button? _launchButton;
 
     public InstanceOverviewDocument(MinecraftInstance instance)
     {
@@ -30,14 +36,16 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
         {
             FontSize = 11,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(12, 0, 0, 0),
+            Margin = new Thickness(10, 0, 0, 0),
             Foreground = WorkbenchTheme.ForegroundFaint
         };
 
         _root = new StackPanel
         {
-            Margin = new Thickness(28, 24, 28, 32),
-            Spacing = 22
+            Margin = new Thickness(32, 26, 32, 40),
+            Spacing = 26,
+            MaxWidth = ContentWidth,
+            HorizontalAlignment = HorizontalAlignment.Left
         };
 
         var scroll = new ScrollViewer
@@ -75,105 +83,109 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
 
     private void OnLaunchStateChanged(object? sender, EventArgs e) => UpdateLaunchButton();
 
-    private Button? _launchButton;
-
     private void Rebuild()
     {
         _root.Children.Clear();
         _root.Children.Add(BuildHeader());
         _root.Children.Add(BuildSection("基本信息", BuildBasicRows()));
         _root.Children.Add(BuildSection("启动配置", BuildLaunchRows()));
-        _root.Children.Add(BuildFooter());
         UpdateLaunchButton();
     }
+
+    // ───────────────────────── 头部 ─────────────────────────
 
     private Control BuildHeader()
     {
         var icon = new Border
         {
-            Width = 64,
-            Height = 64,
-            CornerRadius = new CornerRadius(4),
+            Width = 56,
+            Height = 56,
+            CornerRadius = new CornerRadius(6),
             Background = WorkbenchTheme.Brush("WbPanelBg", "#1E1E1E"),
+            BorderBrush = WorkbenchTheme.Border,
+            BorderThickness = new Thickness(1),
             ClipToBounds = true,
+            VerticalAlignment = VerticalAlignment.Top,
             Child = BuildIcon()
         };
 
         var name = new TextBlock
         {
             Text = _instance.InstanceName,
-            FontSize = 22,
+            FontSize = 20,
             FontWeight = FontWeight.SemiBold,
             Foreground = WorkbenchTheme.Foreground,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
 
-        var subtitle = new TextBlock
+        var chips = new StackPanel
         {
-            Text = _instance.FullInfo,
-            FontSize = 11,
-            Foreground = WorkbenchTheme.ForegroundFaint,
-            TextWrapping = TextWrapping.Wrap,
-            MaxWidth = 620
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            Margin = new Thickness(0, 8, 0, 0),
+            Children =
+            {
+                Chip(string.IsNullOrEmpty(_instance.LoaderDescription) ? "原版" : _instance.LoaderDescription),
+                Chip(_instance.VersionId),
+                Chip(_instance.IsJava ? "Java 版" : "基岩版")
+            }
         };
-
-        _launchButton = new Button
-        {
-            Content = BuildLaunchButtonContent(),
-            Height = 30,
-            Padding = new Thickness(16, 0),
-            CornerRadius = new CornerRadius(2),
-            Background = WorkbenchTheme.Brush("WbAccent", "#007ACC"),
-            Foreground = Brushes.White,
-            BorderThickness = new Thickness(0),
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        _launchButton.Click += async (_, _) => await InstanceLauncher.LaunchAsync(_instance);
-
-        var reveal = new Button
-        {
-            Content = "打开实例目录",
-            Classes = { "wb-flat" },
-            Height = 30,
-            Padding = new Thickness(12, 0),
-            BorderBrush = WorkbenchTheme.Border,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(2),
-            Margin = new Thickness(8, 0, 0, 0),
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        reveal.Click += (_, _) => RevealFolder();
 
         var texts = new StackPanel
         {
-            Spacing = 6,
-            VerticalAlignment = VerticalAlignment.Center,
-            Children = { name, subtitle }
+            Spacing = 0,
+            Margin = new Thickness(14, 2, 0, 0),
+            Children = { name, chips }
         };
 
         var actions = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 6,
-            Children = { _launchButton, reveal, _status }
+            Spacing = 8,
+            VerticalAlignment = VerticalAlignment.Top,
+            Children = { _status, BuildRevealButton(), BuildLaunchButton() }
         };
 
-        var top = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
+        var top = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto") };
         Grid.SetColumn(icon, 0);
         Grid.SetColumn(texts, 1);
-        texts.Margin = new Thickness(16, 0, 0, 0);
+        Grid.SetColumn(actions, 2);
         top.Children.Add(icon);
         top.Children.Add(texts);
+        top.Children.Add(actions);
 
-        var layout = new StackPanel { Spacing = 16, Children = { top, actions } };
-        return layout;
+        return new StackPanel
+        {
+            Spacing = 18,
+            Children = { top, Divider() }
+        };
     }
+
+    private static Border Chip(string text) => new()
+    {
+        Background = WorkbenchTheme.Brush("WbHoverBg", "#393B40"),
+        CornerRadius = new CornerRadius(9),
+        Padding = new Thickness(9, 2, 9, 3),
+        Child = new TextBlock
+        {
+            Text = text,
+            FontSize = 11,
+            Foreground = WorkbenchTheme.ForegroundMuted,
+            VerticalAlignment = VerticalAlignment.Center
+        }
+    };
+
+    private static Border Divider() => new()
+    {
+        Height = 1,
+        Background = WorkbenchTheme.Border
+    };
 
     private Control BuildIcon()
     {
         try
         {
-            Bitmap bitmap = _instance[64];
+            Bitmap bitmap = _instance[56];
             return new Image { Source = bitmap, Stretch = Stretch.UniformToFill };
         }
         catch (Exception)
@@ -182,12 +194,46 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
             {
                 Text = "\ue638",
                 FontFamily = WorkbenchTheme.IconFont,
-                FontSize = 28,
+                FontSize = 24,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
                 Foreground = WorkbenchTheme.ForegroundFaint
             };
         }
+    }
+
+    private Button BuildLaunchButton()
+    {
+        _launchButton = new Button
+        {
+            Content = BuildLaunchButtonContent(),
+            Height = 30,
+            Padding = new Thickness(16, 0),
+            CornerRadius = new CornerRadius(4),
+            Background = WorkbenchTheme.Brush("WbAccent", "#3574F0"),
+            Foreground = Brushes.White,
+            BorderThickness = new Thickness(0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        _launchButton.Click += async (_, _) => await InstanceLauncher.LaunchAsync(_instance);
+        return _launchButton;
+    }
+
+    private Button BuildRevealButton()
+    {
+        var button = new Button
+        {
+            Content = "打开目录",
+            Classes = { "wb-flat" },
+            Height = 30,
+            Padding = new Thickness(12, 0),
+            BorderBrush = WorkbenchTheme.Border,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        button.Click += (_, _) => RevealFolder();
+        return button;
     }
 
     private Control BuildLaunchButtonContent()
@@ -202,14 +248,14 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
         return new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 8,
+            Spacing = 7,
             Children =
             {
                 new TextBlock
                 {
-                    Text = "\ue62c",
+                    Text = "\ue607",
                     FontFamily = WorkbenchTheme.IconFont,
-                    FontSize = 11,
+                    FontSize = 10,
                     VerticalAlignment = VerticalAlignment.Center
                 },
                 label
@@ -223,13 +269,15 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
         _launchButton.Content = BuildLaunchButtonContent();
         _launchButton.IsEnabled = !InstanceLauncher.IsLaunching;
         _launchButton.Opacity = InstanceLauncher.IsLaunching ? 0.6 : 1;
+        _status.Text = InstanceLauncher.IsLaunching ? "游戏运行中" : string.Empty;
     }
+
+    // ───────────────────────── 分区表格 ─────────────────────────
 
     private Control BuildBasicRows()
     {
         var rows = new StackPanel { Spacing = 0 };
 
-        AddRow(rows, "实例标题", _instance.InstanceName);
         AddRow(rows, "版本", _instance.VersionId);
         AddRow(rows, "装载器", string.IsNullOrEmpty(_instance.LoaderDescription) ? "原版" : _instance.LoaderDescription);
         AddRow(rows, "类型", _instance.IsJava ? "Java 版" : "基岩版");
@@ -268,18 +316,6 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
         return rows;
     }
 
-    private Control BuildFooter()
-    {
-        var note = new TextBlock
-        {
-            Text = "模组、存档、资源包等详细面板会在后续阶段接入这里。",
-            FontSize = 11,
-            Foreground = WorkbenchTheme.ForegroundFaint
-        };
-
-        return note;
-    }
-
     private static Control BuildSection(string title, Control content)
     {
         var header = new TextBlock
@@ -287,7 +323,7 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
             Text = title,
             FontSize = 11,
             FontWeight = FontWeight.SemiBold,
-            Margin = new Thickness(0, 0, 0, 8),
+            Margin = new Thickness(0, 0, 0, 10),
             Foreground = WorkbenchTheme.ForegroundMuted
         };
 
@@ -300,8 +336,8 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
         {
             Text = label,
             FontSize = 12,
-            Width = 96,
-            VerticalAlignment = VerticalAlignment.Center,
+            Width = 84,
+            VerticalAlignment = VerticalAlignment.Top,
             Foreground = WorkbenchTheme.ForegroundMuted
         };
 
@@ -310,14 +346,14 @@ public sealed class InstanceOverviewDocument : IWorkbenchDocument
             Text = string.IsNullOrWhiteSpace(value) ? "—" : value,
             FontSize = 12,
             TextWrapping = TextWrapping.Wrap,
-            VerticalAlignment = VerticalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top,
             Foreground = WorkbenchTheme.Foreground
         };
 
         var row = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("Auto,*"),
-            Margin = new Thickness(0, 0, 0, 6)
+            Margin = new Thickness(0, 0, 0, 7)
         };
         Grid.SetColumn(labelText, 0);
         Grid.SetColumn(valueText, 1);

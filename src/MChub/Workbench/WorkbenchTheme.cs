@@ -26,6 +26,22 @@ public static class WorkbenchTheme
 
     public static IBrush Border => Brush("WbBorder", "#2B2B2B");
 
+    public static IBrush BorderStrong => Brush("WbBorderStrong", "#454545");
+
+    public static IBrush ToolbarBg => Brush("WbToolbarBg", "#2D2D30");
+
+    public static IBrush StripeBg => Brush("WbStripeBg", "#2D2D30");
+
+    public static IBrush ToolHeaderBg => Brush("WbToolHeaderBg", "#2D2D30");
+
+    public static IBrush TabStripBg => Brush("WbTabStripBg", "#252526");
+
+    public static IBrush WidgetHover => Brush("WbWidgetHover", "#3E3E42");
+
+    public static IBrush StatusBg => Brush("WbStatusBg", "#252526");
+
+    public static IBrush StatusFg => Brush("WbStatusFg", "#CCCCCC");
+
     public static IBrush Foreground => Brush("WbFg", "#CCCCCC");
 
     public static IBrush ForegroundMuted => Brush("WbFgMuted", "#8C8C8C");

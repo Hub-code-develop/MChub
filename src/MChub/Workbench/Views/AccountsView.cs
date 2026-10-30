@@ -27,16 +27,38 @@ public sealed class AccountsView : UserControl
     {
         var addButton = new Button
         {
-            Content = "添加账户",
-            FontSize = 12,
+            Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "\ue645",
+                        FontFamily = WorkbenchTheme.IconFont,
+                        FontSize = 10,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Foreground = WorkbenchTheme.ForegroundMuted
+                    },
+                    new TextBlock
+                    {
+                        Text = "添加账户",
+                        FontSize = 12,
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                }
+            },
             Height = 28,
             Margin = new Thickness(8, 8, 8, 0),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Center,
-            Background = WorkbenchTheme.Brush("WbAccent", "#007ACC"),
-            Foreground = Brushes.White,
-            BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(2)
+            Background = Brushes.Transparent,
+            BorderBrush = WorkbenchTheme.Border,
+            BorderThickness = new Thickness(1),
+            Foreground = WorkbenchTheme.Foreground,
+            CornerRadius = new CornerRadius(4)
         };
         addButton.Click += (_, _) => WorkbenchServices.Commands.Execute("mchub.accounts.add");
 

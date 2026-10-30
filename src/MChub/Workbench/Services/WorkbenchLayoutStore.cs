@@ -31,6 +31,14 @@ public sealed class WorkbenchLayoutState
 
     public string? ActivePanel { get; set; } = "output";
 
+    /// <summary>右侧工具窗口宽度（IDEA 式布局新增）。</summary>
+    public double RightBarWidth { get; set; } = 300;
+
+    /// <summary>右侧工具窗口是否展开。默认收起——右侧放的是新闻/皮肤这类辅助信息。</summary>
+    public bool RightBarVisible { get; set; }
+
+    public string? ActiveRightTool { get; set; } = "news";
+
     /// <summary>最近打开过的实例（实例文件夹绝对路径），用于欢迎页。</summary>
     public List<string> RecentInstances { get; set; } = new();
 
