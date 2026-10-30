@@ -1,5 +1,4 @@
 using MChub.Bedrock.Standard.Interface;
-using MChub.Classes.Config;
 using MChub.Core.Classes;
 using MChub.Core.Const;
 using MChub.Core.Minecraft;
@@ -16,7 +15,6 @@ public static partial class Initializer
     {
         Logger.Info(LogLanguageManager.Instance.app_bedrockImportInitStart.CurrentValue());
         Config.Initialize();
-        ShortcutManager.Initialize();
         Logger.Info(LogLanguageManager.Instance.app_bedrockImportInitComplete.CurrentValue());
     }
 
@@ -24,7 +22,6 @@ public static partial class Initializer
     {
         Logger.Info(LogLanguageManager.Instance.app_servicesInitStart.CurrentValue());
         Config.Initialize();
-        ShortcutManager.Initialize();
         BedrockNetworkConfiguration.Configure(Data.ConfigEntry.DisableSystemProxy,
             Data.ConfigEntry.EnableProxyServer ? Data.ConfigEntry.ProxyServer : null, Data.Instance.UserAgent,
             Data.ConfigEntry.EnableGithubMirror, Data.ConfigEntry.GithubMirrorUrl,

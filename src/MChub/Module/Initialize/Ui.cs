@@ -26,7 +26,6 @@ using Tio.Avalonia.Standard.Tab.Common;
 using Tio.Avalonia.Standard.Tab.Gateway;
 using TioUi.Common.Helpers;
 using TioUi.Common.Language;
-using OverlayWindow = MChub.Views.OverlayWindow;
 
 namespace MChub.Module.Initialize;
 
@@ -78,19 +77,10 @@ public static partial class Initializer
         LoopGc.BeginLoop();
         MemoryOptimizationService.StartAutomaticWorkingSetTrim();
 
-        Functions.CreateNewTabWindowFunc = _ => new TabWindow(false);
         NotificationGateway.IsToastFunc = () => Data.ConfigEntry.NoticeWay == NoticeWay.Toast;
-        UiEvents.BackgroundAppearanceChanged += TabWindow.ApplyBackgroundToAllWindows;
-        UiEvents.ImageMaskChanged += TabWindow.ApplyImageMaskToAllWindows;
         UiEvents.AppScaleChanged += AppScaling.ApplyScale;
-        UiEvents.ShowGameOverlay = (process, instance) =>
-        {
-            var overlay = new OverlayWindow(process, instance);
-            TextOptions.SetTextRenderingMode(overlay, TextRenderingMode.Antialias);
-            TextOptions.SetTextHintingMode(overlay, TextHintingMode.Light);
-            TextOptions.SetBaselinePixelAlignment(overlay, BaselinePixelAlignment.Aligned);
-            overlay.Show();
-        };
+        // 游戏内浮层（OverlayWindow）随旧 UI 一起移除；联机大厅/实例详情会在 P3 以新形态回来
+        UiEvents.ShowGameOverlay = (_, _) => { };
 
         Events.CoreSaveSettings += ConfigSaver.SaveConfig;
 

@@ -1,5 +1,4 @@
 using MChub.Core.Minecraft.Classes;
-using MChub.Views.Pages;
 using Tio.Avalonia.Standard.Tab.Interface;
 
 namespace MChub.Services;
@@ -34,21 +33,8 @@ public static class InstanceDeletionCoordinator
 
     public static void CloseRelatedPages(MinecraftInstance instance)
     {
-        foreach (var tab in TioTabWindowBase.AllWindows
-                     .SelectMany(window => window.Tabs)
-                     .Where(tab => IsRelatedPage(tab.Content, instance))
-                     .ToArray())
-            tab.CloseImmediately();
-    }
-
-    private static bool IsRelatedPage(object page, MinecraftInstance instance)
-    {
-        return page switch
-        {
-            InstanceDetailPage detail => Matches(detail.ViewModel.Instance, instance),
-            MinecraftLogPage { Instance: { } logInstance } => Matches(logInstance, instance),
-            _ => false
-        };
+        // 旧实现会关掉指向该实例的标签页。新工作台的文档系统会按资源路径回收，
+        // 这里等 P2 文档系统接入后再补，目前只保留实例本身的删除逻辑。
     }
 
     private static bool Matches(MinecraftInstance left, MinecraftInstance right)

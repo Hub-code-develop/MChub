@@ -15,9 +15,8 @@ using MChub.Core.Services;
 using MChub.Localization;
 using MChub.Module;
 using MChub.Module.Initialize;
+using MChub.Workbench.Shell;
 using MChub.Views;
-using MChub.Views.Pages;
-using MChub.Views.Pages.DownloadPages;
 using Tio.Avalonia.Standard.Modules.DiskIO;
 using TioUi.Shared;
 
@@ -25,27 +24,24 @@ namespace MChub;
 
 public partial class App : Application
 {
-    public delegate void UiLoadedEventHandler(TabWindow ui);
+    public delegate void UiLoadedEventHandler(WorkbenchWindow ui);
 
-    private TabWindow _win;
+    private WorkbenchWindow _win;
     public static long StartupTimestamp;
     public static string? BedrockPackagePath { get; set; }
     public static string? JavaPackagePath { get; set; }
 
-    public static TabWindow? MainWindow => (Current!.ApplicationLifetime
-        as IClassicDesktopStyleApplicationLifetime).MainWindow as TabWindow;
+    public static WorkbenchWindow? MainWindow => (Current!.ApplicationLifetime
+        as IClassicDesktopStyleApplicationLifetime).MainWindow as WorkbenchWindow;
 
     public static TopLevel TopLevel => TopLevel.GetTopLevel(MainWindow);
     public static event UiLoadedEventHandler? UiLoaded;
 
     private static void OpenJavaDownloadPage()
     {
-        if (MainWindow is not { } window)
-            return;
-
-        var downloadPage = new DownloadPage();
-        downloadPage.DownloadPageViewModel.NavigateType(typeof(JavaDownloadPage));
-        window.OpenPage(downloadPage);
+        // 旧实现是往 TabWindow 里塞 DownloadPage。新工作台里下载会成为侧栏视图，
+        // 这里先留空，P3 迁回来时改为执行对应命令。
+        Logger.Info("请求打开 Java 下载页（新工作台尚未接入）");
     }
 
     public override void Initialize()
@@ -203,7 +199,7 @@ public partial class App : Application
 
     private void ShowMainWindow(IClassicDesktopStyleApplicationLifetime desktop)
     {
-        _win = new TabWindow(true)
+        _win = new WorkbenchWindow
         {
             WindowStartupLocation = WindowStartupLocation.CenterScreen
         };

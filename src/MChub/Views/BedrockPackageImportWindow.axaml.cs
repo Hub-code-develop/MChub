@@ -8,7 +8,6 @@ using FluentAvalonia.UI.Windowing;
 using MChub.Core.Minecraft.Services;
 using MChub.Localization;
 using MChub.Module.Initialize;
-using MChub.Views.Pages.InstancePages;
 using Tio.Avalonia.Standard.Modules.DiskIO;
 
 namespace MChub.Views;

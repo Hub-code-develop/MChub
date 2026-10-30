@@ -11,8 +11,6 @@ using MChub.Core.Module.Initialize;
 using MChub.Localization;
 using MChub.Views.Components.Operations.Account;
 using MChub.Views.Components.Operations.OpenFile;
-using MChub.Views.Pages.DownloadPages;
-using MChub.Views.Pages.InstancePages;
 using Tio.Avalonia.Standard.Modules.DiskIO;
 using Tio.Avalonia.Standard.Tab.Gateway;
 using Tio.Avalonia.Standard.Tab.Interface;
@@ -63,7 +61,9 @@ public class DragDropHandler
             if (TryGetModpack(data, out var archivePath, out var source, out var suggestedInstanceId))
             {
                 e.Handled = true;
-                await ModpackInstallation.InstallLocalAsync(window, archivePath, source, suggestedInstanceId);
+                // 整合包拖拽安装依赖的对话框属于旧 UI，P0 阶段先给提示，P3 接回新工作台
+                Logger.Info($"拖入整合包（{source}）：安装流程待新工作台接入");
+                window.GetTopLevel().Notice("拖拽安装将在新工作台后续阶段接入", NotificationType.Warning);
                 return;
             }
 
@@ -71,7 +71,8 @@ public class DragDropHandler
                 TryGetBedrockPackage(data, out archivePath, out var inspection))
             {
                 e.Handled = true;
-                await BedrockPackageImportDialog.ImportAsync(window, archivePath, inspection);
+                Logger.Info("拖入基岩版整合包：导入流程待新工作台接入");
+                window.GetTopLevel().Notice("基岩版整合包导入将在新工作台后续阶段接入", NotificationType.Warning);
             }
         }
         catch (Exception ex)

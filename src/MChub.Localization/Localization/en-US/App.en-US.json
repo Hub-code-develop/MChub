@@ -82,5 +82,31 @@
     "closeTab": "Close Current Tab",
     "closeOtherTabs": "Close Other Tabs",
     "openInNewWindow": "Open in New Window"
+  },
+  "workbench": {
+    "menuFile": "File",
+    "menuEdit": "Edit",
+    "menuView": "View",
+    "menuRun": "Run",
+    "menuTools": "Tools",
+    "menuHelp": "Help",
+    "activityExplorer": "Explorer",
+    "activitySearch": "Search",
+    "activityInstances": "Instances",
+    "activityDownloads": "Downloads",
+    "activityCreator": "Creator",
+    "activityTools": "Tools",
+    "activitySettings": "Settings",
+    "panelOutput": "Output",
+    "panelTasks": "Tasks",
+    "panelProblems": "Problems",
+    "noEditor": "No editor open",
+    "noEditorHint": "Open a file from the Explorer, or press Ctrl+Shift+P for the command palette",
+    "paletteHint": "Type a command name",
+    "paletteEmpty": "No matching commands",
+    "ready": "Ready",
+    "sidebarPlaceholder": "This view will be migrated to the new workbench in a later phase",
+    "statusNoInstance": "No instance",
+    "statusNoAccount": "Not signed in"
   }
 }

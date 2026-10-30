@@ -82,5 +82,31 @@
     "closeTab": "关闭当前标签页",
     "closeOtherTabs": "关闭其他标签页",
     "openInNewWindow": "在新窗口打开"
+  },
+  "workbench": {
+    "menuFile": "文件",
+    "menuEdit": "编辑",
+    "menuView": "视图",
+    "menuRun": "运行",
+    "menuTools": "工具",
+    "menuHelp": "帮助",
+    "activityExplorer": "资源管理器",
+    "activitySearch": "搜索",
+    "activityInstances": "实例",
+    "activityDownloads": "下载",
+    "activityCreator": "创作",
+    "activityTools": "工具",
+    "activitySettings": "设置",
+    "panelOutput": "输出",
+    "panelTasks": "任务",
+    "panelProblems": "问题",
+    "noEditor": "没有打开的编辑器",
+    "noEditorHint": "从左侧资源管理器打开文件，或按 Ctrl+Shift+P 打开命令面板",
+    "paletteHint": "输入命令名称",
+    "paletteEmpty": "没有匹配的命令",
+    "ready": "就绪",
+    "sidebarPlaceholder": "该视图将在后续阶段迁移到新工作台",
+    "statusNoInstance": "未选择实例",
+    "statusNoAccount": "未登录"
   }
 }

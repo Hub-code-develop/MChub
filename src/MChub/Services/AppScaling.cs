@@ -4,7 +4,6 @@ using Avalonia.Media;
 using MChub.Core.Const;
 using Tio.Avalonia.Standard.Tab.Interface;
 using TioUi.Controls;
-using OverlayWindow = MChub.Views.OverlayWindow;
 
 namespace MChub.Services;
 
@@ -42,7 +41,7 @@ public class AppScaling
 
     private static void Wrap(Window window)
     {
-        if (window is OverlayWindow) return;
+        // 游戏内浮层窗口已随旧 UI 移除，P3 重做后在此恢复豁免
 
         var scale = ReadConfigScale();
         if (Wrapped.TryGetValue(window, out var existing))

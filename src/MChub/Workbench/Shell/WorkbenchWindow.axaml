@@ -1,0 +1,262 @@
+<Window
+    x:Class="MChub.Workbench.Shell.WorkbenchWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="MChub"
+    Width="1360"
+    Height="860"
+    MinWidth="920"
+    MinHeight="560"
+    Background="{DynamicResource WbEditorBg}">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbEditorBg" />
+                    <SolidColorBrush Color="#252526" x:Key="WbSidebarBg" />
+                    <SolidColorBrush Color="#333333" x:Key="WbActivityBg" />
+                    <SolidColorBrush Color="#3C3C3C" x:Key="WbTitleBarBg" />
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbPanelBg" />
+                    <SolidColorBrush Color="#2B2B2B" x:Key="WbBorder" />
+                    <SolidColorBrush Color="#CCCCCC" x:Key="WbFg" />
+                    <SolidColorBrush Color="#8C8C8C" x:Key="WbFgMuted" />
+                    <SolidColorBrush Color="#6E7681" x:Key="WbFgFaint" />
+                    <SolidColorBrush Color="#007ACC" x:Key="WbAccent" />
+                    <SolidColorBrush Color="#094771" x:Key="WbSelectionBg" />
+                    <SolidColorBrush Color="#2A2D2E" x:Key="WbHoverBg" />
+                    <SolidColorBrush Color="#2D2D2D" x:Key="WbTabInactiveBg" />
+                    <SolidColorBrush Color="#007ACC" x:Key="WbStatusBg" />
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbStatusFg" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbEditorBg" />
+                    <SolidColorBrush Color="#252526" x:Key="WbSidebarBg" />
+                    <SolidColorBrush Color="#333333" x:Key="WbActivityBg" />
+                    <SolidColorBrush Color="#3C3C3C" x:Key="WbTitleBarBg" />
+                    <SolidColorBrush Color="#1E1E1E" x:Key="WbPanelBg" />
+                    <SolidColorBrush Color="#2B2B2B" x:Key="WbBorder" />
+                    <SolidColorBrush Color="#CCCCCC" x:Key="WbFg" />
+                    <SolidColorBrush Color="#8C8C8C" x:Key="WbFgMuted" />
+                    <SolidColorBrush Color="#6E7681" x:Key="WbFgFaint" />
+                    <SolidColorBrush Color="#007ACC" x:Key="WbAccent" />
+                    <SolidColorBrush Color="#094771" x:Key="WbSelectionBg" />
+                    <SolidColorBrush Color="#2A2D2E" x:Key="WbHoverBg" />
+                    <SolidColorBrush Color="#2D2D2D" x:Key="WbTabInactiveBg" />
+                    <SolidColorBrush Color="#007ACC" x:Key="WbStatusBg" />
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbStatusFg" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbEditorBg" />
+                    <SolidColorBrush Color="#F3F3F3" x:Key="WbSidebarBg" />
+                    <SolidColorBrush Color="#2C2C2C" x:Key="WbActivityBg" />
+                    <SolidColorBrush Color="#DDDDDD" x:Key="WbTitleBarBg" />
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbPanelBg" />
+                    <SolidColorBrush Color="#E5E5E5" x:Key="WbBorder" />
+                    <SolidColorBrush Color="#333333" x:Key="WbFg" />
+                    <SolidColorBrush Color="#6E6E6E" x:Key="WbFgMuted" />
+                    <SolidColorBrush Color="#8A8A8A" x:Key="WbFgFaint" />
+                    <SolidColorBrush Color="#005FB8" x:Key="WbAccent" />
+                    <SolidColorBrush Color="#E4E6F1" x:Key="WbSelectionBg" />
+                    <SolidColorBrush Color="#E8E8E8" x:Key="WbHoverBg" />
+                    <SolidColorBrush Color="#ECECEC" x:Key="WbTabInactiveBg" />
+                    <SolidColorBrush Color="#005FB8" x:Key="WbStatusBg" />
+                    <SolidColorBrush Color="#FFFFFF" x:Key="WbStatusFg" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            <FontFamily x:Key="WbIconFont">avares://MChub/Assets/Fonts/iconfont.ttf#iconfont</FontFamily>
+            <FontFamily x:Key="WbCodeFont">Menlo,Consolas,Monaco,monospace</FontFamily>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="Button.wb-flat">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Foreground" Value="{DynamicResource WbFg}" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style Selector="Button.wb-flat:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource WbHoverBg}" />
+        </Style>
+        <Style Selector="Button.wb-activity">
+            <Setter Property="Width" Value="48" />
+            <Setter Property="Height" Value="46" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.wb-activity:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#1AFFFFFF" />
+        </Style>
+        <Style Selector="TextBlock.wb-icon">
+            <Setter Property="FontFamily" Value="{StaticResource WbIconFont}" />
+            <Setter Property="FontSize" Value="21" />
+            <Setter Property="Foreground" Value="{DynamicResource WbFgMuted}" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="32,*,22">
+        <!--  标题栏 + 菜单栏  -->
+        <Grid Grid.Row="0" Background="{DynamicResource WbTitleBarBg}" ColumnDefinitions="76,Auto,*">
+            <TextBlock
+                Grid.Column="1"
+                Margin="4,0,14,0"
+                VerticalAlignment="Center"
+                FontSize="12"
+                FontWeight="SemiBold"
+                Foreground="{DynamicResource WbFg}"
+                Text="MChub" />
+            <StackPanel
+                x:Name="MenuStrip"
+                Grid.Column="2"
+                VerticalAlignment="Stretch"
+                Orientation="Horizontal" />
+        </Grid>
+
+        <!--  主体：活动栏 / 侧边栏 / 编辑区  -->
+        <Grid Grid.Row="1" ColumnDefinitions="48,260,4,*">
+            <Border Grid.Column="0" Background="{DynamicResource WbActivityBg}">
+                <StackPanel
+                    x:Name="ActivityBar"
+                    Margin="0,4,0,0"
+                    VerticalAlignment="Top" />
+            </Border>
+
+            <Border
+                x:Name="SideBarRoot"
+                Grid.Column="1"
+                Background="{DynamicResource WbSidebarBg}"
+                BorderBrush="{DynamicResource WbBorder}"
+                BorderThickness="0,0,1,0">
+                <Grid RowDefinitions="36,*">
+                    <TextBlock
+                        x:Name="SideBarTitle"
+                        Margin="16,0"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource WbFgMuted}"/>
+                    <ContentControl
+                        x:Name="SideBarHost"
+                        Grid.Row="1" />
+                </Grid>
+            </Border>
+
+            <GridSplitter
+                x:Name="SideBarSplitter"
+                Grid.Column="2"
+                Background="Transparent"
+                ResizeDirection="Columns" />
+
+            <Grid Grid.Column="3" RowDefinitions="*,4,190">
+                <!--  编辑区  -->
+                <Grid Grid.Row="0" RowDefinitions="35,*">
+                    <Border
+                        Background="{DynamicResource WbTabInactiveBg}"
+                        BorderBrush="{DynamicResource WbBorder}"
+                        BorderThickness="0,0,0,1">
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                            <StackPanel
+                                x:Name="TabStrip"
+                                Height="34"
+                                Orientation="Horizontal" />
+                        </ScrollViewer>
+                    </Border>
+
+                    <Panel Grid.Row="1">
+                        <ContentControl x:Name="EditorHost" />
+                        <StackPanel
+                            x:Name="EmptyState"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="8">
+                            <TextBlock
+                                x:Name="EmptyTitle"
+                                HorizontalAlignment="Center"
+                                FontSize="18"
+                                Foreground="{DynamicResource WbFgFaint}" />
+                            <TextBlock
+                                x:Name="EmptyHint"
+                                HorizontalAlignment="Center"
+                                FontSize="12"
+                                Foreground="{DynamicResource WbFgFaint}" />
+                        </StackPanel>
+                    </Panel>
+                </Grid>
+
+                <GridSplitter
+                    Grid.Row="1"
+                    Background="{DynamicResource WbBorder}"
+                    ResizeDirection="Rows" />
+
+                <!--  底部面板  -->
+                <Grid Grid.Row="2" RowDefinitions="32,*" Background="{DynamicResource WbPanelBg}">
+                    <Border BorderBrush="{DynamicResource WbBorder}" BorderThickness="0,0,0,1">
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel
+                                x:Name="PanelTabs"
+                                Margin="8,0,0,0"
+                                Orientation="Horizontal" />
+                        </StackPanel>
+                    </Border>
+                    <ContentControl
+                        x:Name="PanelHost"
+                        Grid.Row="1" />
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <!--  状态栏  -->
+        <Border Grid.Row="2" Background="{DynamicResource WbStatusBg}">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel
+                    x:Name="StatusLeft"
+                    Margin="10,0,0,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal" />
+                <StackPanel
+                    x:Name="StatusRight"
+                    Grid.Column="1"
+                    Margin="0,0,10,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal" />
+            </Grid>
+        </Border>
+
+        <!--  命令面板  -->
+        <Border
+            x:Name="PaletteOverlay"
+            Grid.RowSpan="3"
+            Background="#66000000"
+            IsVisible="False">
+            <Border
+                Width="620"
+                Margin="0,88,0,0"
+                VerticalAlignment="Top"
+                Background="{DynamicResource WbSidebarBg}"
+                BorderBrush="{DynamicResource WbBorder}"
+                BorderThickness="1"
+                CornerRadius="6">
+                <StackPanel>
+                    <TextBox
+                        x:Name="PaletteInput"
+                        Margin="10"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        FontSize="13" />
+                    <Border Height="1" Background="{DynamicResource WbBorder}" />
+                    <ScrollViewer MaxHeight="330">
+                        <StackPanel
+                            x:Name="PaletteList"
+                            Margin="4" />
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</Window>

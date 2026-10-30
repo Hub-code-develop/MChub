@@ -17,8 +17,6 @@ using MChub.Core.Minecraft.Models;
 using MChub.Core.Module.Ipc;
 using MChub.Core.Minecraft.Services;
 using MChub.Localization;
-using MChub.Views.Pages;
-using MChub.Views.Pages.DownloadPages;
 using Tio.Avalonia.Standard.Modules.DiskIO;
 using Tio.Avalonia.Standard.Modules.Tasks;
 using Tio.Avalonia.Standard.Tab.Gateway;
@@ -71,33 +69,13 @@ public static class MChubCommandExecutor
         window.Activate();
     }
 
-    private static async Task StartMinecraftInstallAsync(TopLevel window, MChubCommand command)
+    private static Task StartMinecraftInstallAsync(TopLevel window, MChubCommand command)
     {
-        var folder = ResolveInstallFolder(command.Folder);
-        var version = command.Version!;
-        window.Notice(string.Format(CommonLanguageManager.Instance.minecraft_fetchingVersionInfo.CurrentValue(), version));
-        var vanilla = (await VanillaInstaller.EnumerableMinecraftAsync())
-                      .FirstOrDefault(entry => string.Equals(entry.Id, version, StringComparison.OrdinalIgnoreCase))
-                      ?? throw new InvalidOperationException(string.Format(
-                          CommonLanguageManager.Instance.minecraft_versionNotFound.CurrentValue(), version));
-
-        var loaders = await ResolveLoadersAsync(command.Loaders, vanilla.Id);
-        var javaPath = MinecraftInstallationViewModel.GetJavaPath(vanilla.Id);
-        if (MinecraftInstallationViewModel.RequiresJavaRuntime(loaders.Keys) && string.IsNullOrWhiteSpace(javaPath))
-            throw new InvalidOperationException(CommonLanguageManager.Instance.minecraft_loaderNeedsJava.CurrentValue());
-
-        var versionId = string.IsNullOrWhiteSpace(command.InstanceId)
-            ? CreateRecommendedVersionId(vanilla.Id, loaders)
-            : command.InstanceId.Trim();
-        if (versionId.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
-            throw new InvalidOperationException(string.Format(
-                CommonLanguageManager.Instance.minecraft_invalidInstanceId.CurrentValue(), versionId));
-
-        var task = MinecraftInstallationViewModel.CreateInstallationTask(vanilla, folder, versionId, loaders, javaPath);
-        task.Start();
-        _ = ModpackInstallation.ObserveInstallationAsync(task, window, $"Minecraft {versionId}");
-        window.Notice(string.Format(CommonLanguageManager.Instance.minecraft_installStartedToFolder.CurrentValue(),
-            versionId, folder.FolderName), NotificationType.Success);
+        // 原实现依赖下载页里的 MinecraftInstallationViewModel（含 Java 探测与安装任务构造）。
+        // 那部分随旧 UI 一起移除了；安装流程会在 P3 以「命令 + 输出面板」的形态重建。
+        Logger.Info($"命令行安装请求：{command.Version}（安装流程待新工作台接入）");
+        window.Notice("命令行安装将在新工作台后续阶段接入", NotificationType.Warning);
+        return Task.CompletedTask;
     }
 
     private static async Task<Dictionary<LoaderKind, IInstallEntry>> ResolveLoadersAsync(
@@ -129,7 +107,7 @@ public static class MChubCommandExecutor
             var entry = spec.Version is null
                 ? candidates.FirstOrDefault()
                 : candidates.FirstOrDefault(candidate => string.Equals(
-                    MinecraftInstallationViewModel.GetLoaderVersion(kind, candidate), spec.Version,
+                    candidate.DisplayVersion, spec.Version,
                     StringComparison.OrdinalIgnoreCase));
             if (entry is null)
                 throw new InvalidOperationException(spec.Version is null
@@ -178,52 +156,16 @@ public static class MChubCommandExecutor
     {
         if (loaders.Count == 0) return minecraftVersion;
         var names = loaders.Select(pair =>
-            $"{pair.Key}-{MinecraftInstallationViewModel.GetLoaderVersion(pair.Key, pair.Value)}");
+            $"{pair.Key}-{pair.Value.DisplayVersion}");
         return $"{minecraftVersion} {string.Join(" + ", names)}";
     }
 
     private static void StartModpackInstall(TopLevel window, MChubCommand command)
     {
-        var source = command.Source!.Trim();
-        var kind = ClassifyModpackSource(source);
-
-        if (kind == ModpackSourceKind.LocalFile)
-        {
-            _ = ModpackInstallation.TryInstallFromPath(window, source);
-            return;
-        }
-
-        var folder = ResolveInstallFolder(command.Folder);
-        var displayName = kind switch
-        {
-            ModpackSourceKind.RemoteUrl => GetRemoteFileName(source),
-            _ => source
-        };
-        var task = TaskManager.Instance.CreateTask(new TaskOptions
-        {
-            Name = string.Format(CommonLanguageManager.Instance.modpack_installTaskName.CurrentValue(), displayName),
-            Description = CommonLanguageManager.Instance.modpack_preparingInstall.CurrentValue(), Progress = 0,
-            Actions =
-            [
-                new TaskActionDefinition
-                {
-                    Name = CommonLanguageManager.Instance.modpack_cancelInstall.CurrentValue(),
-                    Description = CommonLanguageManager.Instance.modpack_cancelInstallDescription.CurrentValue(),
-                    IconKey = "Cancel",
-                    ExecuteAsync = (managedTask, _) =>
-                    {
-                        managedTask.RequestCancellation();
-                        return Task.CompletedTask;
-                    },
-                    CanExecute = managedTask => managedTask.CanBeCancelled,
-                    IsVisible = managedTask => !managedTask.IsTerminal
-                }
-            ]
-        }, context => InstallModpackAsync(context, command, kind, folder));
-        task.Start();
-        _ = ModpackInstallation.ObserveInstallationAsync(task, window, displayName);
-        window.Notice(string.Format(CommonLanguageManager.Instance.modpack_installStartedToFolder.CurrentValue(),
-            folder.FolderName), NotificationType.Success);
+        // 原实现依赖下载页的 ModpackInstallation（含对话框与进度上报）。
+        // 该子系统随旧 UI 移除，P3 会以「命令 + 输出面板」重建。
+        Logger.Info($"命令行整合包安装请求：{command.Source}（待新工作台接入）");
+        window.Notice("命令行整合包安装将在新工作台后续阶段接入", NotificationType.Warning);
     }
 
     private static ModpackSourceKind ClassifyModpackSource(string source)
@@ -240,82 +182,11 @@ public static class MChubCommandExecutor
         return ModpackSourceKind.Project;
     }
 
-    private static async Task InstallModpackAsync(TaskExecutionContext context, MChubCommand command,
-        ModpackSourceKind kind, MinecraftFolderEntry folder)
+    private static Task InstallModpackAsync(TaskExecutionContext context, MChubCommand command,
+        ModpackSourceKind kind)
     {
-        var source = command.Source!.Trim();
-        var instanceId = command.InstanceId;
-        string? temporaryFolder = null;
-        try
-        {
-            var archivePath = source;
-            string? iconUrl = null;
-            if (kind == ModpackSourceKind.RemoteUrl)
-            {
-                temporaryFolder = Path.Combine(Path.GetTempPath(), "MChub", "modpacks", Guid.NewGuid().ToString("N"));
-                archivePath = Path.Combine(temporaryFolder, GetRemoteFileName(source));
-                await RunStepAsync(context,
-                    CommonLanguageManager.Instance.modpack_downloadStep.CurrentValue(),
-                    string.Format(CommonLanguageManager.Instance.modpack_downloading.CurrentValue(), source),
-                    step => DownloadModpackAsync(step, source, archivePath));
-                iconUrl = await TryGetIconUrlFromModrinthCdnAsync(source, context.CancellationToken);
-            }
-            else if (kind == ModpackSourceKind.Project)
-            {
-                var resolved = await RunStepAsync(context,
-                    CommonLanguageManager.Instance.modpack_resolveProjectStep.CurrentValue(),
-                    string.Format(CommonLanguageManager.Instance.modpack_findingModpack.CurrentValue(), source),
-                    step => ResolveProjectFileAsync(step, source, command.Provider, command.PackVersion));
-                temporaryFolder = Path.Combine(Path.GetTempPath(), "MChub", "modpacks", Guid.NewGuid().ToString("N"));
-                archivePath = Path.Combine(temporaryFolder, SanitizeFileName(resolved.FileName));
-                iconUrl = resolved.IconUrl;
-                await RunStepAsync(context,
-                    CommonLanguageManager.Instance.modpack_downloadStep.CurrentValue(),
-                    string.Format(CommonLanguageManager.Instance.modpack_downloading.CurrentValue(),
-                        resolved.DisplayName),
-                    step => DownloadModpackAsync(step, resolved.Url, archivePath, resolved.Size));
-            }
-
-            var (modpackSource, suggestedInstanceId) = await RunStepAsync(context,
-                CommonLanguageManager.Instance.modpack_parseModpackStep.CurrentValue(),
-                CommonLanguageManager.Instance.modpack_identifyingModpackType.CurrentValue(),
-                step => Task.Run(() => SniffModpack(archivePath), step.CancellationToken));
-            var id = string.IsNullOrWhiteSpace(instanceId)
-                ? string.IsNullOrWhiteSpace(suggestedInstanceId)
-                    ? Path.GetFileNameWithoutExtension(archivePath)
-                    : suggestedInstanceId
-                : instanceId.Trim();
-            if (id.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
-                throw new InvalidOperationException(string.Format(
-                    CommonLanguageManager.Instance.minecraft_invalidInstanceId.CurrentValue(), id));
-
-            var instancePath = await ModpackInstallation.InstallLocalArchiveAsync(context, modpackSource, archivePath,
-                folder.FolderPath, id);
-            await ModpackInstallation.TrySaveProjectIconAsync(iconUrl, instancePath, context.CancellationToken);
-        }
-        finally
-        {
-            if (temporaryFolder is not null)
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        if (Directory.Exists(temporaryFolder))
-                        {
-                            Logger.Info(string.Format(
-                                LogLanguageManager.Instance.modpack_cleanupExternalCommandTempDir.CurrentValue(),
-                                temporaryFolder));
-                            Directory.Delete(temporaryFolder, true);
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        Logger.Error(string.Format(
-                            LogLanguageManager.Instance.modpack_cleanupExternalCommandTempDirFailed.CurrentValue(),
-                            temporaryFolder), exception);
-                    }
-                }).Forget(CommonLanguageManager.Instance.modpack_cleanupTempDirForget.CurrentValue());
-        }
+        Logger.Info("整合包安装任务（待新工作台接入）");
+        return Task.CompletedTask;
     }
 
     private static (ModDetailsSource Source, string? SuggestedInstanceId) SniffModpack(string archivePath)
@@ -589,8 +460,7 @@ public static class MChubCommandExecutor
         var target = BuildLaunchTarget(instance, command);
 
         _ = MinecraftLaunchService.LaunchAsync(instance, window, MinecraftLaunchOptionsFactory.Create(instance,
-            logSession =>
-                MinecraftLogPage.Open(logSession, window)), target);
+            _ => { }), target);
     }
 
     private static RecentPlayTarget? BuildLaunchTarget(MinecraftInstance instance, MChubCommand command)

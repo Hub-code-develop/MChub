@@ -1,6 +1,5 @@
 using MChub.Core.Const;
-using MChub.Views.Pages;
-using Tio.Avalonia.Standard.Tab.Entries;
+using MChub.Workbench;
 using TioUi.Shared;
 
 namespace MChub;
@@ -27,12 +26,10 @@ public partial class App
         Data.ConfigEntry.Theme = Theme.System;
     }
 
+    /// <summary>原生菜单里的「设置」：走命令系统，不再直接 new 页面。</summary>
     private void OpenSetting_OnClick(object? sender, EventArgs e)
     {
-        if (UiProperty.TabWindow is not { } window) return;
-        var tabEntry = new TabEntry(window, new SettingPage());
-        window.CreateTab(tabEntry);
-        window.SelectTab(tabEntry);
-        window.Activate();
+        WorkbenchServices.Commands.Execute("workbench.openSettings");
+        MainWindow?.Activate();
     }
 }
