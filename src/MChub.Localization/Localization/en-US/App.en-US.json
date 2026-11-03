@@ -124,5 +124,18 @@
     "statusNoAccount": "Not signed in",
     "statusLaunching": "Launching…",
     "statusInstanceCount": "{0} instances"
+  },
+  "splash": {
+    "starting": "Starting",
+    "stepEnv": "Environment",
+    "stepAccount": "Account & settings",
+    "stepInstances": "Instances",
+    "stepWorkspace": "Workspace",
+    "detailEnv": "Loading local settings and runtime…",
+    "detailAccount": "Checking account and launch settings…",
+    "detailInstances": "Scanning instance folders…",
+    "detailWorkspace": "Building the workspace…",
+    "detailReady": "Ready",
+    "detailFailed": "Something went wrong during startup — details were logged"
   }
 }

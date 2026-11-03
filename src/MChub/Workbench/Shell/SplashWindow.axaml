@@ -1,0 +1,181 @@
+<Window
+    x:Class="MChub.Workbench.Shell.SplashWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="MChub"
+    Width="800"
+    Height="418"
+    CanResize="False"
+    SystemDecorations="None"
+    ShowInTaskbar="False"
+    Background="Transparent"
+    TransparencyLevelHint="Transparent"
+    WindowStartupLocation="CenterScreen"
+    RequestedThemeVariant="Dark"
+    FontFamily="PingFang SC, Microsoft YaHei UI, Segoe UI, Helvetica Neue, Arial">
+    <!--
+        启动画面（Splash）。
+        版式按设计稿：左侧一块竖向品牌卡，右侧上方是字标、下方是状态卡，
+        右上角一枚版本胶囊。整体沿用工作台的 VS 深色色板，保证和主界面是同一套语言。
+        窗口本身透明，圆角 + 投影靠内层 Border 实现，所以四周留了 10px 给阴影。
+    -->
+
+    <Border
+        Margin="10"
+        Background="#1A1A1C"
+        BorderBrush="#3A3A3E"
+        BorderThickness="1"
+        BoxShadow="0 20 48 0 #8C000000"
+        CornerRadius="14">
+        <Grid Margin="19,8,19,20" ColumnDefinitions="257,55,*">
+
+            <!--  ── 左侧：品牌卡 ──  -->
+            <Border
+                Grid.Column="0"
+                Margin="0,14,0,0"
+                BorderBrush="#34343A"
+                BorderThickness="1"
+                ClipToBounds="True"
+                CornerRadius="18">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Offset="0" Color="#29292E" />
+                        <GradientStop Offset="1" Color="#1A1A1D" />
+                    </LinearGradientBrush>
+                </Border.Background>
+
+                <Grid>
+                    <!--  立方体背后的柔光，让深色卡面不至于死板  -->
+                    <Ellipse
+                        Width="250"
+                        Height="250"
+                        Margin="0,-34,0,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Offset="0" Color="#3D007ACC" />
+                                <GradientStop Offset="0.62" Color="#14007ACC" />
+                                <GradientStop Offset="1" Color="#00007ACC" />
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+
+                    <!--  等轴测立方体：三个面手动拼，不依赖位图资源  -->
+                    <Canvas
+                        Width="150"
+                        Height="150"
+                        Margin="0,-40,0,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                        <Polygon Fill="#F0F0F2" Points="75,0 150,37.5 75,75 0,37.5" />
+                        <Polygon Fill="#B8B8C0" Points="0,37.5 75,75 75,150 0,112.5" />
+                        <Polygon Fill="#8A8A94" Points="75,75 150,37.5 150,112.5 75,150" />
+                    </Canvas>
+
+                    <TextBlock
+                        Margin="0,0,0,26"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Bottom"
+                        FontSize="10"
+                        FontWeight="Medium"
+                        Foreground="#6D6D75"
+                        Text="CREATOR HUB" />
+                </Grid>
+            </Border>
+
+            <!--  ── 右侧：字标 + 状态 ──  -->
+            <Grid Grid.Column="2" RowDefinitions="34,96,12,*">
+
+                <!--  版本胶囊  -->
+                <Border
+                    Grid.Row="0"
+                    Padding="11,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Background="#212125"
+                    BorderBrush="#34343A"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Height="28">
+                    <TextBlock
+                        x:Name="VersionText"
+                        VerticalAlignment="Center"
+                        FontSize="10.5"
+                        Foreground="#8A8A92"
+                        Text="MChub" />
+                </Border>
+
+                <!--  字标：设计稿里是细体几何无衬线，这里用系统细体近似  -->
+                <TextBlock
+                    Grid.Row="1"
+                    Margin="-3,0,0,-8"
+                    VerticalAlignment="Bottom"
+                    FontFamily="Helvetica Neue, Segoe UI, Arial"
+                    FontSize="88"
+                    FontWeight="Light"
+                    Foreground="#F2F2F4"
+                    Text="MChub" />
+
+                <!--  状态卡  -->
+                <Border
+                    Grid.Row="3"
+                    Margin="0,0,0,18"
+                    Padding="22,16,22,15"
+                    Background="#232327"
+                    BorderBrush="#333338"
+                    BorderThickness="1"
+                    CornerRadius="12">
+                    <Grid RowDefinitions="18,18,*,2">
+
+                        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+                            <TextBlock
+                                x:Name="StageTitle"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                Foreground="#EDEDEF"
+                                Text="MChub" />
+                            <TextBlock
+                                x:Name="StagePercent"
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                FontSize="11"
+                                Foreground="#7E7E86" />
+                        </Grid>
+
+                        <TextBlock
+                            x:Name="StageDetail"
+                            Grid.Row="1"
+                            VerticalAlignment="Center"
+                            FontSize="11.5"
+                            Foreground="#8E8E96"
+                            TextTrimming="CharacterEllipsis" />
+
+                        <!--  四个阶段，由代码着色；垂直居中，免得卡片下半截空成一片  -->
+                        <StackPanel
+                            x:Name="StepsHost"
+                            Grid.Row="2"
+                            VerticalAlignment="Center" />
+
+                        <Grid
+                            x:Name="ProgressTrack"
+                            Grid.Row="3"
+                            Height="2"
+                            VerticalAlignment="Bottom">
+                            <Border
+                                Background="#303034"
+                                CornerRadius="1" />
+                            <Border
+                                x:Name="ProgressFill"
+                                Width="0"
+                                HorizontalAlignment="Left"
+                                Background="#007ACC"
+                                CornerRadius="1" />
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

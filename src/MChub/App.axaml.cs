@@ -104,6 +104,38 @@ public partial class App : Application
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Dispatcher.UIThread.UnhandledException += UIThread_UnhandledException;
 #endif
+            // 启动画面先出来，真正的初始化推迟一帧再跑。
+            // 否则同步的 Initializer 会把 UI 线程占满，窗口要等初始化结束才画得出来，
+            // 启动画面就完全失去意义了。
+            desktop.ShutdownMode = ShutdownMode.OnLastWindowClose;
+            SplashService.Show();
+            Dispatcher.UIThread.Post(() => BeginStartup(desktop), DispatcherPriority.Background);
+
+            Logger.Info(LogLanguageManager.Instance.app_uiConfigComplete.CurrentValue());
+        }
+
+        if (BedrockPackagePath == null)
+        {
+            MChubCommandQueue.ExecutionHandler = MChubCommandExecutor.ExecuteAsync;
+            MChubCommandQueue.Initialize();
+        }
+
+        if (BedrockPackagePath == null && this.TryGetFeature<IActivatableLifetime>() is { } activatableLifetime)
+            activatableLifetime.Activated += OnActivated;
+
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// 启动画面的第一帧画完之后才跑这里。原来直接在 OnFrameworkInitializationCompleted
+    /// 里同步做的分支判断，现在整体搬进来，逻辑一行没改，只是晚了一帧。
+    /// </summary>
+    private void BeginStartup(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        try
+        {
+            SplashService.Stage(1, 0.28, L(AppLanguageManager.Instance.splash_detailAccount.CurrentValue()));
+
             if (BedrockPackagePath is { } packagePath)
             {
                 Initializer.Oobe();
@@ -120,6 +152,7 @@ public partial class App : Application
                         LogWindowShowElapsed(importWindow);
                         desktop.MainWindow = importWindow;
                         importWindow.Show();
+                        SplashService.CloseWhenReady();
                     });
                 }
                 else
@@ -127,6 +160,8 @@ public partial class App : Application
                     var importWindow = new BedrockPackageImportWindow(packagePath);
                     LogWindowShowElapsed(importWindow);
                     desktop.MainWindow = importWindow;
+                    importWindow.Show();
+                    SplashService.CloseWhenReady();
                 }
             }
             else if (Data.ConfigEntry.IsInitialized)
@@ -155,26 +190,22 @@ public partial class App : Application
                     ShowMigrationWindow(desktop);
                     oobe.Close();
                 };
+                oobe.Show();
+                SplashService.CloseWhenReady();
             }
 
-            Logger.Info(LogLanguageManager.Instance.app_uiConfigComplete.CurrentValue());
 #if DEBUG
             if (desktop.MainWindow is { } debugWindow)
                 debugWindow.Opened += AttachDeveloperToolsAfterWindowOpened;
 #endif
         }
-
-        if (BedrockPackagePath == null)
+        catch (Exception exception)
         {
-            MChubCommandQueue.ExecutionHandler = MChubCommandExecutor.ExecuteAsync;
-            MChubCommandQueue.Initialize();
+            SplashService.Fail(exception);
         }
-
-        if (BedrockPackagePath == null && this.TryGetFeature<IActivatableLifetime>() is { } activatableLifetime)
-            activatableLifetime.Activated += OnActivated;
-
-        base.OnFrameworkInitializationCompleted();
     }
+
+    private static string L(string value) => string.IsNullOrEmpty(value) ? string.Empty : value;
 
 #if DEBUG
     private async void AttachDeveloperToolsAfterWindowOpened(object? sender, EventArgs e)
@@ -199,6 +230,8 @@ public partial class App : Application
 
     private void ShowMainWindow(IClassicDesktopStyleApplicationLifetime desktop)
     {
+        SplashService.Stage(2, 0.5, L(AppLanguageManager.Instance.splash_detailInstances.CurrentValue()));
+
         _win = new WorkbenchWindow
         {
             WindowStartupLocation = WindowStartupLocation.CenterScreen
@@ -310,6 +343,7 @@ public partial class App : Application
             login.Close();
         };
         login.Show();
+        SplashService.CloseWhenReady();
     }
 
     private static void LogWindowShowElapsed(Window window)
@@ -327,6 +361,7 @@ public partial class App : Application
         _win.Loaded -= Function;
         await Task.Yield();
         var stopwatch = Stopwatch.StartNew();
+        SplashService.Stage(3, 0.62, L(AppLanguageManager.Instance.splash_detailWorkspace.CurrentValue()));
         try
         {
             await Initializer.UiAsync();
@@ -341,6 +376,7 @@ public partial class App : Application
             _win.IsUiLoading = false;
             MChubCommandQueue.MarkUiLoaded();
             UiLoaded?.Invoke(_win);
+            SplashService.Ready();
         }
     }
 
