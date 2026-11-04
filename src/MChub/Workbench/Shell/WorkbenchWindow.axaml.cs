@@ -1355,6 +1355,9 @@ public partial class WorkbenchWindow : Window
         EmptyHint.Text = L(AppLanguageManager.Instance.workbench_noEditorHint.CurrentValue());
     }
 
+    /// <summary>外部入口：从首页点进来时，直接把某个实例打开在工作台里。</summary>
+    public void OpenInstance(MinecraftInstance instance) => OpenInstanceOverview(instance);
+
     private void OpenInstanceOverview(MinecraftInstance instance)
     {
         var existing = _documents.Documents.FirstOrDefault(d => d.Id == $"mchub://instance/{instance.InstanceFolderPath}");

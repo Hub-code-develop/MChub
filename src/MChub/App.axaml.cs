@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -9,9 +10,12 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using MChub.Core.Const;
 using MChub.Core.Minecraft;
+using MChub.Core.Minecraft.Classes;
+using MChub.Core.Minecraft.Instance;
 using MChub.Core.Module.Initialize;
 using MChub.Core.Module.Ipc;
 using MChub.Core.Services;
+using MChub.Launcher;
 using MChub.Localization;
 using MChub.Module;
 using MChub.Module.Initialize;
@@ -26,7 +30,9 @@ public partial class App : Application
 {
     public delegate void UiLoadedEventHandler(WorkbenchWindow ui);
 
-    private WorkbenchWindow _win;
+    private WorkbenchWindow? _win;
+    private HomeWindow? _home;
+    private MinecraftInstance? _pendingInstance;
     public static long StartupTimestamp;
     public static string? BedrockPackagePath { get; set; }
     public static string? JavaPackagePath { get; set; }
@@ -104,11 +110,9 @@ public partial class App : Application
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Dispatcher.UIThread.UnhandledException += UIThread_UnhandledException;
 #endif
-            // 启动画面先出来，真正的初始化推迟一帧再跑。
-            // 否则同步的 Initializer 会把 UI 线程占满，窗口要等初始化结束才画得出来，
-            // 启动画面就完全失去意义了。
+            // 窗口创建推迟一帧：同步初始化会把 UI 线程占满，
+            // 首页要等初始化结束才画得出来，扫描进度也就没法显示了。
             desktop.ShutdownMode = ShutdownMode.OnLastWindowClose;
-            SplashService.Show();
             Dispatcher.UIThread.Post(() => BeginStartup(desktop), DispatcherPriority.Background);
 
             Logger.Info(LogLanguageManager.Instance.app_uiConfigComplete.CurrentValue());
@@ -127,15 +131,13 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// 启动画面的第一帧画完之后才跑这里。原来直接在 OnFrameworkInitializationCompleted
-    /// 里同步做的分支判断，现在整体搬进来，逻辑一行没改，只是晚了一帧。
+    /// 首页的第一帧画完之后才跑这里。同步做的分支判断整体搬进这个方法，
+    /// 逻辑不变，只是晚了一帧。
     /// </summary>
     private void BeginStartup(IClassicDesktopStyleApplicationLifetime desktop)
     {
         try
         {
-            SplashService.Stage(1, 0.28, L(AppLanguageManager.Instance.splash_detailAccount.CurrentValue()));
-
             if (BedrockPackagePath is { } packagePath)
             {
                 Initializer.Oobe();
@@ -152,7 +154,6 @@ public partial class App : Application
                         LogWindowShowElapsed(importWindow);
                         desktop.MainWindow = importWindow;
                         importWindow.Show();
-                        SplashService.CloseWhenReady();
                     });
                 }
                 else
@@ -161,7 +162,6 @@ public partial class App : Application
                     LogWindowShowElapsed(importWindow);
                     desktop.MainWindow = importWindow;
                     importWindow.Show();
-                    SplashService.CloseWhenReady();
                 }
             }
             else if (Data.ConfigEntry.IsInitialized)
@@ -191,7 +191,6 @@ public partial class App : Application
                     oobe.Close();
                 };
                 oobe.Show();
-                SplashService.CloseWhenReady();
             }
 
 #if DEBUG
@@ -201,11 +200,10 @@ public partial class App : Application
         }
         catch (Exception exception)
         {
-            SplashService.Fail(exception);
+            Logger.Error("启动流程异常", exception);
         }
     }
 
-    private static string L(string value) => string.IsNullOrEmpty(value) ? string.Empty : value;
 
 #if DEBUG
     private async void AttachDeveloperToolsAfterWindowOpened(object? sender, EventArgs e)
@@ -228,21 +226,50 @@ public partial class App : Application
             Logger.Error(string.Format(LogLanguageManager.Instance.app_protocolLinkInvalid.CurrentValue(), error));
     }
 
-    private void ShowMainWindow(IClassicDesktopStyleApplicationLifetime desktop)
+    /// <summary>
+    /// 首页：启动器打开后的第一屏（版本列表）。选完版本由
+    /// <see cref="OpenWorkbench"/> 打开工作台，工作台关掉再回到这里。
+    /// </summary>
+    private void ShowHomeWindow(IClassicDesktopStyleApplicationLifetime desktop)
     {
-        SplashService.Stage(2, 0.5, L(AppLanguageManager.Instance.splash_detailInstances.CurrentValue()));
-
-        _win = new WorkbenchWindow
+        _home = new HomeWindow
         {
             WindowStartupLocation = WindowStartupLocation.CenterScreen
         };
-        TextOptions.SetTextRenderingMode(_win, TextRenderingMode.Antialias);
-        TextOptions.SetTextHintingMode(_win, TextHintingMode.Light);
-        TextOptions.SetBaselinePixelAlignment(_win, BaselinePixelAlignment.Aligned);
+        LogWindowShowElapsed(_home);
+        desktop.MainWindow = _home;
+        _home.InstanceActivated += OpenWorkbench;
+        _home.Show();
+    }
 
-        LogWindowShowElapsed(_win);
-        desktop.MainWindow = _win;
-        _win.Loaded += Function;
+    /// <summary>从首页点开某个版本：开工作台，首页先藏起来。</summary>
+    private void OpenWorkbench(MinecraftInstance instance)
+    {
+        var workbench = new WorkbenchWindow
+        {
+            WindowStartupLocation = WindowStartupLocation.CenterScreen
+        };
+        TextOptions.SetTextRenderingMode(workbench, TextRenderingMode.Antialias);
+        TextOptions.SetTextHintingMode(workbench, TextHintingMode.Light);
+        TextOptions.SetBaselinePixelAlignment(workbench, BaselinePixelAlignment.Aligned);
+
+        LogWindowShowElapsed(workbench);
+        _pendingInstance = instance;
+        workbench.Loaded += Function;
+        workbench.Closed += (_, _) =>
+        {
+            // 工作台关掉不等于退出启动器，回到版本列表
+            _win = null;
+            if (_home is not null)
+            {
+                _home.Show();
+                _home.Activate();
+            }
+        };
+
+        _win = workbench;
+        workbench.Show();
+        _home?.Hide();
     }
 
     /// <summary>
@@ -280,24 +307,21 @@ public partial class App : Application
     {
         if (Data.ConfigEntry.AccountGateCompleted)
         {
-            ShowMainWindow(desktop);
-            _win?.Show();
+            ShowHomeWindow(desktop);
             return;
         }
 
         if (AccountGate.IsSatisfied)
         {
             CompleteAccountGate();
-            ShowMainWindow(desktop);
-            _win?.Show();
+            ShowHomeWindow(desktop);
             return;
         }
 
         ShowLoginWindow(desktop, afterLogin: () =>
         {
             CompleteAccountGate();
-            ShowMainWindow(desktop);
-            _win!.Show();
+            ShowHomeWindow(desktop);
         });
     }
 
@@ -338,12 +362,10 @@ public partial class App : Application
                 return;
             }
 
-            ShowMainWindow(desktop);
-            _win!.Show();
+            ShowHomeWindow(desktop);
             login.Close();
         };
         login.Show();
-        SplashService.CloseWhenReady();
     }
 
     private static void LogWindowShowElapsed(Window window)
@@ -358,10 +380,11 @@ public partial class App : Application
     private async void Function(object? sender, RoutedEventArgs e)
     {
         Logger.Info(LogLanguageManager.Instance.app_uiLoadComplete.CurrentValue());
+        if (_win is null)
+            return;
         _win.Loaded -= Function;
         await Task.Yield();
         var stopwatch = Stopwatch.StartNew();
-        SplashService.Stage(3, 0.62, L(AppLanguageManager.Instance.splash_detailWorkspace.CurrentValue()));
         try
         {
             await Initializer.UiAsync();
@@ -373,10 +396,23 @@ public partial class App : Application
         }
         finally
         {
-            _win.IsUiLoading = false;
-            MChubCommandQueue.MarkUiLoaded();
-            UiLoaded?.Invoke(_win);
-            SplashService.Ready();
+            if (_win is { } window)
+            {
+                window.IsUiLoading = false;
+                MChubCommandQueue.MarkUiLoaded();
+                UiLoaded?.Invoke(window);
+
+                // 首页点进来的实例，等初始化把实例集合刷完再打开，
+                // 否则文档会挂在重扫前的旧对象上。
+                if (_pendingInstance is { } pending)
+                {
+                    _pendingInstance = null;
+                    var resolved = InstanceManager.Instance.Instances
+                                       .FirstOrDefault(item => item.InstanceFolderPath == pending.InstanceFolderPath)
+                                   ?? pending;
+                    window.OpenInstance(resolved);
+                }
+            }
         }
     }
 

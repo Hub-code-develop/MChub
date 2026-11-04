@@ -1,0 +1,243 @@
+<Window
+    x:Class="MChub.Launcher.HomeWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="MChub"
+    Width="1000"
+    Height="620"
+    CanResize="False"
+    ShowInTaskbar="True"
+    SystemDecorations="None"
+    Background="Transparent"
+    TransparencyLevelHint="Transparent"
+    WindowStartupLocation="CenterScreen"
+    FontFamily="PingFang SC, Microsoft YaHei UI, Segoe UI, Helvetica Neue, Arial">
+
+    <Window.Styles>
+        <Style Selector="Button.win-btn">
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.win-btn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#2A2A30" />
+        </Style>
+        <Style Selector="Button.win-btn.close:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#C93635" />
+        </Style>
+        <Style Selector="Button.list-row">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Height" Value="50" />
+        </Style>
+        <Style Selector="Button.list-row:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#232328" />
+        </Style>
+    </Window.Styles>
+
+    <Border
+        x:Name="RootCard"
+        Margin="12"
+        Background="#17171A"
+        BorderBrush="#2C2C31"
+        BorderThickness="1"
+        BoxShadow="0 24 64 0 #99000000"
+        CornerRadius="16">
+        <Grid>
+
+            <!--  ── 窗口按钮：按设计稿放在右上角，只有最小化和关闭  ──  -->
+            <StackPanel
+                Margin="0,14,16,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Orientation="Horizontal"
+                Spacing="4">
+                <Button x:Name="MinimizeButton" Classes="win-btn">
+                    <TextBlock
+                        FontFamily="avares://MChub/Assets/Fonts/iconfont.ttf#iconfont"
+                        FontSize="11"
+                        Foreground="#B8B8C0"
+                        Text="&#xe608;" />
+                </Button>
+                <Button x:Name="CloseButton" Classes="win-btn close">
+                    <TextBlock
+                        FontFamily="avares://MChub/Assets/Fonts/iconfont.ttf#iconfont"
+                        FontSize="11"
+                        Foreground="#B8B8C0"
+                        Text="&#xe609;" />
+                </Button>
+            </StackPanel>
+
+            <Grid
+                x:Name="ContentGrid"
+                Margin="26,24,26,26"
+                ColumnDefinitions="330,44,*">
+
+                <!--  ── 左：图片位。没有图源时整列收起，右侧列表吃掉这块空间  ──  -->
+                <Border
+                    x:Name="BannerCard"
+                    Grid.Column="0"
+                    Background="#1C1C20"
+                    BorderBrush="#2C2C31"
+                    BorderThickness="1"
+                    ClipToBounds="True"
+                    CornerRadius="18">
+                    <Grid>
+                        <Image x:Name="BannerImage" Stretch="UniformToFill" />
+
+                        <!--  无图时的占位，图片加载成功后隐藏  -->
+                        <StackPanel
+                            x:Name="BannerPlaceholder"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="12">
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                FontFamily="avares://MChub/Assets/Fonts/iconfont.ttf#iconfont"
+                                FontSize="36"
+                                Foreground="#33333B"
+                                Text="&#xe638;" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                FontSize="11"
+                                Foreground="#52525C"
+                                Text="暂无图片" />
+                        </StackPanel>
+
+                        <Border
+                            x:Name="BannerShade"
+                            Height="130"
+                            VerticalAlignment="Bottom"
+                            IsVisible="False">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0%,100%" EndPoint="0%,0%">
+                                    <GradientStop Offset="0" Color="#E6000000" />
+                                    <GradientStop Offset="1" Color="#00000000" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+
+                        <StackPanel
+                            x:Name="BannerCaption"
+                            Margin="20,0,20,20"
+                            VerticalAlignment="Bottom"
+                            IsVisible="False"
+                            Spacing="5">
+                            <TextBlock
+                                x:Name="BannerTitle"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Foreground="#FFFFFF"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                x:Name="BannerSubtitle"
+                                FontSize="11"
+                                Foreground="#C4C4CC"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!--  ── 右：字标 + 版本列表  ──  -->
+                <Grid Grid.Column="2" RowDefinitions="Auto,16,*">
+
+                    <TextBlock
+                        Grid.Row="0"
+                        Margin="-2,0,0,0"
+                        FontFamily="Helvetica Neue, Segoe UI, Arial"
+                        FontSize="92"
+                        FontWeight="Light"
+                        Foreground="#F4F4F6"
+                        Text="MChub" />
+
+                    <Border
+                        x:Name="ListCard"
+                        Grid.Row="2"
+                        Background="#1C1C20"
+                        BorderBrush="#2C2C31"
+                        BorderThickness="1"
+                        CornerRadius="14">
+                        <Grid RowDefinitions="Auto,Auto,*">
+
+                            <!--  列表头  -->
+                            <Grid
+                                Grid.Row="0"
+                                Margin="20,14,14,10"
+                                ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    Foreground="#E9E9EE"
+                                    Text="版本" />
+                                <TextBlock
+                                    x:Name="ListCount"
+                                    Grid.Column="1"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="11"
+                                    Foreground="#6E6E78" />
+                                <Button
+                                    x:Name="RescanButton"
+                                    Grid.Column="2"
+                                    Width="26"
+                                    Height="26"
+                                    Padding="0"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    CornerRadius="6">
+                                    <TextBlock
+                                        FontFamily="avares://MChub/Assets/Fonts/iconfont.ttf#iconfont"
+                                        FontSize="11"
+                                        Foreground="#8A8A94"
+                                        Text="&#xe63c;" />
+                                </Button>
+                            </Grid>
+
+                            <!--  扫描进度：扫描时可见  -->
+                            <StackPanel
+                                x:Name="ScanArea"
+                                Grid.Row="1"
+                                Margin="20,0,20,10"
+                                Spacing="7">
+                                <Grid x:Name="ScanTrack" Height="2">
+                                    <Border Background="#2A2A30" CornerRadius="1" />
+                                    <Border
+                                        x:Name="ScanFill"
+                                        Width="0"
+                                        HorizontalAlignment="Left"
+                                        Background="#3C8527"
+                                        CornerRadius="1" />
+                                </Grid>
+                                <TextBlock
+                                    x:Name="ScanText"
+                                    FontSize="11"
+                                    Foreground="#7E7E88"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+
+                            <ScrollViewer
+                                x:Name="ListScroll"
+                                Grid.Row="2"
+                                Margin="8,0,8,10"
+                                HorizontalScrollBarVisibility="Disabled"
+                                VerticalScrollBarVisibility="Auto">
+                                <StackPanel x:Name="ListHost" Spacing="2" />
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

@@ -124,18 +124,5 @@
     "statusNoAccount": "未登录",
     "statusLaunching": "正在启动…",
     "statusInstanceCount": "{0} 个实例"
-  },
-  "splash": {
-    "starting": "正在启动",
-    "stepEnv": "运行环境",
-    "stepAccount": "账号与配置",
-    "stepInstances": "游戏实例",
-    "stepWorkspace": "工作区",
-    "detailEnv": "正在读取本地配置与运行环境…",
-    "detailAccount": "正在校验账号与启动配置…",
-    "detailInstances": "正在扫描实例目录…",
-    "detailWorkspace": "正在构建工作台界面…",
-    "detailReady": "准备就绪",
-    "detailFailed": "启动过程中出现问题，已记录日志"
   }
 }
