@@ -505,7 +505,8 @@
     "cleanupOldDirectoriesFailed": "Failed to clean up stale update directories.",
     "writePermissionCheckFailed": "Failed to check the directory write permission: {0}{1}",
     "autoUpdateCheckEnabled": "Automatic updates enabled; checking for and downloading updates in the background.",
-    "checkComplete": "Update check complete, result: {0}, took {1} ms."
+    "checkComplete": "Update check complete, result: {0}, took {1} ms.",
+    "localBuildSkipAuto": "Local build (local-build) skipped the automatic update to avoid overwriting local changes."
   },
   "versionModify": {
     "failedRestoring": "[VersionModify] Failed to modify instance \"{0}\"; restoring the original version files. {1}{2}"

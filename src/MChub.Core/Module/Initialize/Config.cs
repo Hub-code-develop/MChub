@@ -124,10 +124,12 @@ public class Config
 
         const string RESOURCE_NAME1 = "MChub.Core.Assets.package-type.txt";
         var assembly1 = Assembly.GetExecutingAssembly();
-        var stream1 = assembly1.GetManifestResourceStream(RESOURCE_NAME1);
+        using var stream1 = assembly1.GetManifestResourceStream(RESOURCE_NAME1);
         using var reader1 = new StreamReader(stream1!);
         var result1 = reader1.ReadToEnd();
-        Data.Instance.PackageType = string.IsNullOrWhiteSpace(result1) ? "portable" : result1.Trim().ToLowerInvariant();
+        Data.Instance.PackageType = string.IsNullOrWhiteSpace(result1)
+            ? DetectPackageType()
+            : result1.Trim().ToLowerInvariant();
         Logger.Info(string.Format(LogLanguageManager.Instance.config_packageTypeDetected.CurrentValue(), Data.Instance.PackageType));
 
         TelemetryService.EnsureIdentity(Data.ConfigEntry);
@@ -142,5 +144,23 @@ public class Config
         Logger.Info(string.Format(LogLanguageManager.Instance.config_loadComplete.CurrentValue(), Data.ConfigEntry.MinecraftFolders.Count));
 
         InitializationEvents.RaiseBeforeUiLoaded();
+    }
+
+    /// <summary>
+    /// CI 打包时会把安装包类型写进 <c>assets/conf/package-type.txt</c>（app / installer / portable）。
+    /// 本地构建没人写这个文件，读到空串时不能一律当 portable —— macOS 更新器只认 app/dmg，
+    /// 当成 portable 会直接抛「macOS 自动更新仅支持应用程序包」。
+    /// 这里按进程实际所在位置兜底：跑在 .app/Contents/MacOS 里就是应用包。
+    /// </summary>
+    private static string DetectPackageType()
+    {
+        if (OperatingSystem.IsMacOS())
+        {
+            var executable = Environment.ProcessPath ?? string.Empty;
+            if (executable.Contains(".app/Contents/MacOS/", StringComparison.OrdinalIgnoreCase))
+                return "app";
+        }
+
+        return "portable";
     }
 }
