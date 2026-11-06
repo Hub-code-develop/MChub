@@ -14,6 +14,7 @@ using MinecraftLaunch.Utilities;
 using MChub.Core.Classes;
 using MChub.Core.Const;
 using MChub.Core.Module.Initialize;
+using MChub.Core.Services;
 using MChub.Localization;
 using Tio.Avalonia.Standard.Modules.DiskIO;
 using Tio.Avalonia.Standard.Modules.Events;
@@ -123,6 +124,16 @@ public static class UpdateApp
         var stopwatch = Stopwatch.StartNew();
         string? updateDirectory = null;
         Logger.Info(LogLanguageManager.Instance.update_prepareStart.CurrentValue());
+
+        // 本地构建没有 CI 注入的版本信息，VersionTitle 恒为 local-build，IsNewer() 无从比较，
+        // 于是每次启动都会判定「有新版本」，后台拉完整安装包把本地改动覆盖掉。
+        // 自动更新（silent）直接跳过；用户手动检查更新仍然放行，由用户自己决定。
+        if (silent && AppVersionService.Instance.Version.VersionTitle == "local-build")
+        {
+            Logger.Info(LogLanguageManager.Instance.update_localBuildSkipAuto.CurrentValue());
+            return null;
+        }
+
         try
         {
             while (true)
