@@ -50,36 +50,10 @@
     <ItemGroup>
         <ProjectReference Include="..\..\module\Tio.Avalonia.Standard\src\Tio.Avalonia.Standard.Tab\Tio.Avalonia.Standard.Tab.csproj"/>
         <ProjectReference Include="..\..\module\Tio.Avalonia.Standard\src\Tio.Avalonia.Standard\Tio.Avalonia.Standard.csproj"/>
-        <ProjectReference Include="..\MChub.Core\MChub.Core.csproj"/>
-        <ProjectReference Include="..\MChub.LitematicaViewer\LitematicaViewer.csproj"/>
         <ProjectReference Include="..\MChub.Localization\MChub.Localization.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Views\Pages\ToolsPages\MultiplayerPages\TerracottaMultiplayerPage.axaml.cs">
-        <DependentUpon>TerracottaMultiplayerPage.axaml</DependentUpon>
-        <SubType>Code</SubType>
-      </Compile>
-      <Compile Update="Views\Pages\ToolsPages\MultiplayerPages\MultiplayerPage.axaml.cs">
-        <DependentUpon>MultiplayerPage.axaml</DependentUpon>
-        <SubType>Code</SubType>
-      </Compile>
-      <Compile Update="Views\Pages\ToolsPages\MultiplayerPages\MultiplayerPortDialog.axaml.cs">
-        <DependentUpon>MultiplayerPortDialog.axaml</DependentUpon>
-        <SubType>Code</SubType>
-      </Compile>
-      <Compile Update="Views\Pages\ToolsPages\MultiplayerPages\MultiplayerContentPage.axaml.cs">
-        <DependentUpon>MultiplayerContentPage.axaml</DependentUpon>
-        <SubType>Code</SubType>
-      </Compile>
-      <Compile Update="Views\Pages\SkinLibraryPage.axaml.cs">
-        <DependentUpon>SkinLibraryPage.axaml</DependentUpon>
-        <SubType>Code</SubType>
-      </Compile>
-      <Compile Update="Views\Components\Operations\Account\LittleSkinSync.axaml.cs">
-        <DependentUpon>LittleSkinSync.axaml</DependentUpon>
-        <SubType>Code</SubType>
-      </Compile>
     </ItemGroup>
     
 </Project>

@@ -2,50 +2,11 @@
   <Folder Name="/Module/">
     <Project Path="module/Tio.Avalonia.Standard/src/Tio.Avalonia.Standard.Tab/Tio.Avalonia.Standard.Tab.csproj" />
     <Project Path="module/Tio.Avalonia.Standard/src/Tio.Avalonia.Standard/Tio.Avalonia.Standard.csproj" />
-    <Project Path="src/MChub.LitematicaViewer/LitematicaViewer.csproj" />
-  </Folder>
-  <Folder Name="/Module/Bedrock/">
-    <Project Path="src/MChub.Bedrock.Bootstrap/MChub.Bedrock.Bootstrap.vcxproj" />
-    <Project Path="src/MChub.Bedrock.Core/MChub.Bedrock.Core.csproj" />
-    <Project Path="src/MChub.Bedrock.Core.Windows/MChub.Bedrock.Core.Windows.csproj" />
-    <Project Path="src/MChub.Bedrock.Hook/MChub.Bedrock.Hook.csproj" />
-    <Project Path="src/MChub.Bedrock.Injector/MChub.Bedrock.Injector.vcxproj" />
-    <Project Path="src/MChub.Bedrock.Linux/MChub.Bedrock.Linux.csproj" />
-    <Project Path="src/MChub.Bedrock.MacOS/MChub.Bedrock.MacOS.csproj" />
-    <Project Path="src/MChub.Bedrock.PeNet/src/PeNet/MChub.Bedrock.PeNet.csproj" />
-    <Project Path="src/MChub.Bedrock.Preload/MChub.Bedrock.Preload.csproj" />
-    <Project Path="src/MChub.Bedrock.Standard/MChub.Bedrock.Standard.csproj" />
-    <Project Path="src/MChub.Bedrock.Windows/MChub.Bedrock.Windows.csproj" />
-    <Project Path="src/MChub.Bedrock.Xbox/MChub.Bedrock.Xbox.csproj" />
-  </Folder>
-  <Folder Name="/Module/Iridium/">
-    <Project Path="module/Iridium/src/Iridium.Extension/Iridium.Extension.csproj" />
-    <Project Path="module/Iridium/src/Iridium.Sample/Iridium.Sample.csproj" />
-    <Project Path="module/Iridium/src/Iridium.SourceGenerators/Iridium.SourceGenerators.csproj" />
-    <Project Path="module/Iridium/src/Iridium/Iridium.csproj" />
-  </Folder>
-  <Folder Name="/Module/LiteSkinViewer/">
-    <Project Path="module/LiteSkinViewer/LiteSkinViewer.2D/LiteSkinViewer.2D.csproj" />
-    <Project Path="module/LiteSkinViewer/LiteSkinViewer.3D/LiteSkinViewer.3D.csproj" />
-    <Project Path="module/LiteSkinViewer/LiteSkinViewer.Shared/LiteSkinViewer.Shared.csproj" />
-  </Folder>
-  <Folder Name="/Module/MinecraftLaunch/">
-    <Project Path="module/MinecraftLaunch/src/MinecraftLaunch.Base/MinecraftLaunch.Base.csproj" />
-    <Project Path="module/MinecraftLaunch/src/MinecraftLaunch/MinecraftLaunch.csproj" />
-  </Folder>
-  <Folder Name="/Module/TioUi/">
-    <Project Path="module/Tio.Avalonia.Standard/module/TioUi.Avalonia/src/Demo/TioUi.Demo.Desktop/TioUi.Demo.Desktop.csproj" />
-    <Project Path="module/Tio.Avalonia.Standard/module/TioUi.Avalonia/src/Demo/TioUi.Demo/TioUi.Demo.csproj" />
-    <Project Path="module/Tio.Avalonia.Standard/module/TioUi.Avalonia/src/TioUi.SmoothScroll/TioUi.SmoothScroll.csproj" />
-    <Project Path="module/Tio.Avalonia.Standard/module/TioUi.Avalonia/src/TioUi/TioUi.csproj" />
   </Folder>
   <Folder Name="/Solution Item/">
     <File Path="src/Directory.Build.props" />
     <File Path="src/Directory.Packages.props" />
   </Folder>
-  <Project Path="src/MChub.Android/MChub.Android.csproj" />
-  <Project Path="src/MChub.Console/MChub.Console.csproj" />
-  <Project Path="src/MChub.Core/MChub.Core.csproj" />
   <Project Path="src/MChub.Desktop/MChub.Desktop.csproj" />
   <Project Path="src/MChub.Localization/MChub.Localization.csproj" />
   <Project Path="src/MChub/MChub.csproj" />

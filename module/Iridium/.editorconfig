@@ -1,7 +1,0 @@
-[*.cs]
-dotnet_diagnostic.CA2208.severity = silent
-
-# CS0067: 事件从未使用过
-dotnet_diagnostic.CS0067.severity = none
-
-dotnet_diagnostic.CA1826.severity = none
