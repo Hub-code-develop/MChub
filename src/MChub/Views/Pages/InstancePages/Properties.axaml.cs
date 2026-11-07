@@ -177,6 +177,14 @@ public partial class Properties : Dsc, INotifyPropertyChanged
 
     public bool IsOpenGlRendererVisible => true;
 
+    /// <summary>
+    /// Mesa 那套渲染器（llvmpipe / zink / d3d12…）只通过 Windows 的 mesa-loader 和
+    /// Linux 的驱动覆盖生效；macOS 上选了没有任何作用，干脆不给选项。
+    /// </summary>
+    public bool IsMesaRendererAvailable => !OperatingSystem.IsMacOS();
+
+    public bool IsMacOS => OperatingSystem.IsMacOS();
+
     public new event PropertyChangedEventHandler? PropertyChanged;
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

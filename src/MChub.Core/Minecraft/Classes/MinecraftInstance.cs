@@ -43,6 +43,7 @@ public class MinecraftInstance : ObservableObject
         Layout = layout;
         InstanceFolderPath = layout?.InstanceRoot ?? context.Entry.InstancePath;
         Config = GetInstanceConfig();
+        MigrateStandardIsolation();
         EnsureRequiredIndependentInstance();
         ObserveConfigChanges();
     }
@@ -339,6 +340,13 @@ public class MinecraftInstance : ObservableObject
             {
                 StorageUsage.Refresh();
                 OnPropertyChanged(nameof(StorageUsage));
+
+                // 用户亲手动过这个开关，之后就尊重他的选择，不再自动重置。
+                if (JavaConfig is { IsolationConfigured: false } javaConfig)
+                {
+                    javaConfig.IsolationConfigured = true;
+                    SaveConfig();
+                }
             }
 
             if (e.PropertyName == nameof(MinecraftInstanceConfig.IsFavorite))
@@ -407,6 +415,23 @@ public class MinecraftInstance : ObservableObject
     {
         if (RequiresIndependentInstance && JavaConfig?.EnableIndependentInstance == false)
             JavaConfig.EnableIndependentInstance = true;
+    }
+
+    /// <summary>
+    /// 标准布局（官方启动器 / 自己装的 .minecraft/versions）的实例以前默认开「独立实例」，
+    /// 但启动时根本不生效 —— 开关等于摆设。现在开关真的会用 versions/{id} 当游戏目录了，
+    /// 默认值必须改成「不隔离」，否则升级后所有官方实例会突然读不到根目录里的存档和模组。
+    /// 用户只要手动动过这个开关（IsolationConfigured），就不再干预。
+    /// </summary>
+    private void MigrateStandardIsolation()
+    {
+        if (Layout is not null || JavaConfig is not { } config)
+            return;
+        if (config.IsolationConfigured || !config.EnableIndependentInstance)
+            return;
+
+        config.EnableIndependentInstance = false;
+        SaveConfig();
     }
 
     public string GetConfigPath()
@@ -867,6 +892,9 @@ public partial class MinecraftInstanceConfig : ObservableObject
 public partial class JavaInstanceConfig : MinecraftInstanceConfig
 {
     [ObservableProperty] public partial bool EnableIndependentInstance { get; set; } = true;
+
+    /// <summary>用户是否手动调整过「独立实例」开关（用于升级时不再重置默认值）。</summary>
+    [ObservableProperty] public partial bool IsolationConfigured { get; set; }
     [ObservableProperty] public partial bool EnableSpecificJava { get; set; }
     [ObservableProperty] public partial bool EnableOverrideMaxMemory { get; set; }
     [ObservableProperty] public partial int MinecraftMaxMemory { get; set; }

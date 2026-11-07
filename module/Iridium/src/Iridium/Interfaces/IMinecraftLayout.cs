@@ -17,6 +17,14 @@ public interface IMinecraftLayout {
 
     string GetInstanceRoot(MinecraftEntry entry);
     string GetGameDirectory(MinecraftEntry entry);
+
+    /// <summary>
+    /// Game directory to use when the instance is explicitly version-isolated.
+    /// Most launchers already give every instance its own directory, so the default
+    /// is the same as <see cref="GetGameDirectory"/>; traditional layouts override it
+    /// to point at <c>versions/{id}</c>.
+    /// </summary>
+    string GetIsolatedGameDirectory(MinecraftEntry entry) => GetGameDirectory(entry);
     string GetLibrariesRoot(MinecraftEntry entry);
     string GetAssetsRoot(MinecraftEntry entry);
     string GetNativesDirectory(MinecraftEntry entry);
