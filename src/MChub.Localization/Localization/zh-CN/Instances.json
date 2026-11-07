@@ -225,6 +225,7 @@
     "overrideMaxMemory": "覆盖全局最大内存",
     "maxMemory": "最大内存",
     "graphicsApi": "图形 API",
+    "macGraphicsHint": "macOS 下强制使用 OpenGL，避开有问题的 Metal（MoltenVK）链路；只有显式选择 Vulkan 时才会走 Metal。",
     "openglRenderer": "OpenGL 渲染器",
     "vulkanRenderer": "Vulkan 渲染器",
     "advancedOptions": "高级选项",

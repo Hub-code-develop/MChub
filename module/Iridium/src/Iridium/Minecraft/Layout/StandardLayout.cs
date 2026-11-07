@@ -23,6 +23,13 @@ public sealed class StandardLayout : IMinecraftLayout {
         return GetRoot(entry);
     }
 
+    /// <summary>
+    /// 用户显式开启“独立实例”时，游戏目录就是 <c>versions/{id}</c>。
+    /// 官方启动器装出来的版本没有隔离标记，光靠 GetGameDirectory 的自动探测
+    /// 永远返回 .minecraft 根目录，开关看起来就没生效。
+    /// </summary>
+    public string GetIsolatedGameDirectory(MinecraftEntry entry) => GetVersionDirectory(entry);
+
     public string GetLibrariesRoot(MinecraftEntry entry) => Path.Combine(GetRoot(entry), "libraries");
 
     public string GetAssetsRoot(MinecraftEntry entry) => Path.Combine(GetRoot(entry), "assets");

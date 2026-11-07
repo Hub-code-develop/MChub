@@ -157,8 +157,15 @@
                                     HorizontalAlignment="Stretch"
                                     ItemsSource="{Binding GraphicsApiOptions}"
                                     SelectedItem="{Binding SelectedGraphicsApi}" />
+                                <TextBlock
+                                    FontSize="11"
+                                    Foreground="{DynamicResource InnerForegroundColor}"
+                                    IsVisible="{Binding IsMacOS}"
+                                    Margin="0,-3,0,0"
+                                    Text="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_macGraphicsHint}}"
+                                    TextWrapping="Wrap" />
                             </StackPanel>
-                            <StackPanel IsVisible="{Binding IsOpenGlRendererVisible}" Spacing="5">
+                            <StackPanel IsVisible="{Binding IsMesaRendererAvailable}" Spacing="5">
                                 <Label
                                     Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_openglRenderer}}"
                                     FontSize="13"
@@ -174,7 +181,7 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
                             </StackPanel>
-                            <StackPanel IsVisible="{Binding IsVulkanRendererVisible}" Spacing="5">
+                            <StackPanel IsVisible="{Binding IsMesaRendererAvailable}" Spacing="5">
                                 <Label
                                     Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_vulkanRenderer}}"
                                     FontSize="13"

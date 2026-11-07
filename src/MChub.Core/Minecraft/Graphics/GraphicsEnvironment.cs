@@ -63,15 +63,26 @@ public static class GraphicsEnvironmentResolver
 
     public static GraphicsApi ResolveApi(GraphicsApi configured, GameVersion version)
     {
+        return ResolveApi(configured, version, Renderers.CurrentPlatform);
+    }
+
+    public static GraphicsApi ResolveApi(GraphicsApi configured, GameVersion version, PlatformInfo platform)
+    {
         return configured == GraphicsApi.Default
-            ? GraphicsApiExtensions.GetDefault(version)
+            ? GraphicsApiExtensions.GetDefault(version, platform)
             : configured;
     }
 
     public static EffectiveRenderer Resolve(GraphicsApi configuredApi, string? openGlRenderer, string? vulkanRenderer,
         GameVersion version)
     {
-        var api = ResolveApi(configuredApi, version);
+        return Resolve(configuredApi, openGlRenderer, vulkanRenderer, version, Renderers.CurrentPlatform);
+    }
+
+    public static EffectiveRenderer Resolve(GraphicsApi configuredApi, string? openGlRenderer, string? vulkanRenderer,
+        GameVersion version, PlatformInfo platform)
+    {
+        var api = ResolveApi(configuredApi, version, platform);
 
         var renderer = api switch
         {
