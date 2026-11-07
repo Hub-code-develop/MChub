@@ -94,10 +94,13 @@ public static class GraphicsLaunchArgumentsBuilder
             }
         }
 
-        if (GraphicsEnvironmentResolver.ShouldPassGraphicsBackendArg(userApi, version))
+        // 传的是「最终生效」的后端，而不是用户下拉框里那个值：
+        // 用户在 macOS 上留空 / 选默认时，Resolve 已经把它收敛成 OpenGL，
+        // 这里必须把 opengl 显式写进命令行，否则游戏会按自己的 default 去走 Vulkan(Metal)。
+        if (GraphicsEnvironmentResolver.ShouldPassGraphicsBackendArg(effective.Api, version))
         {
             game.Add("--graphicsBackend");
-            game.Add(userApi.GetMinecraftArg());
+            game.Add(effective.Api.GetMinecraftArg());
         }
 
         return new GraphicsLaunchConfiguration

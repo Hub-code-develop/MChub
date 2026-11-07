@@ -52,9 +52,11 @@ internal sealed class LaunchDirectories {
             NativesDirectory = string.IsNullOrEmpty(config.NativesFolder)
                 ? layout.GetNativesDirectory(entry)
                 : config.NativesFolder,
+            // 独立实例：显式用 versions/{id}（标准布局）。
+            // 非独立：仍走自动探测，这样 HMCL 之类已经隔离过的目录不会被强行拉回根目录。
             GameDirectory = config.IsEnableIndependency
-                ? layout.GetGameDirectory(entry)
-                : layout.GetInstanceRoot(entry),
+                ? layout.GetIsolatedGameDirectory(entry)
+                : layout.GetGameDirectory(entry),
         };
     }
 }

@@ -225,6 +225,7 @@
     "overrideMaxMemory": "Override Global Max Memory",
     "maxMemory": "Max Memory",
     "graphicsApi": "Graphics API",
+    "macGraphicsHint": "OpenGL is forced on macOS to avoid the broken Metal (MoltenVK) path; Metal is only used when Vulkan is selected explicitly.",
     "openglRenderer": "OpenGL Renderer",
     "vulkanRenderer": "Vulkan Renderer",
     "advancedOptions": "Advanced Options",
