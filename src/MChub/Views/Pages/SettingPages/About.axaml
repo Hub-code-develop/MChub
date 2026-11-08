@@ -121,7 +121,7 @@
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
                 Click="OpenLink_OnClick"
-                CommandParameter="https://codehub-develop.github.io/MChub/"
+                CommandParameter="https://mchub.code.hub-develop.top/"
                 CornerRadius="12"
                 Height="65"
                 HorizontalAlignment="Stretch"

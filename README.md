@@ -1,8 +1,8 @@
 <p align="center">
-  <a href="https://hub-code-develop.github.io/MChub/">
+  <a href="https://mchub.code.hub-develop.top/">
     <img src="assets/top.png" alt="赞助 MChub">
   </a>
-  <a href="https://hub-code-develop.github.io/MChub/">
+  <a href="https://mchub.code.hub-develop.top/">
     <img src="assets/header.png" alt="MChub">
   </a>
 </p>
@@ -14,14 +14,14 @@
   <a href="https://github.com/hub-code-develop/MChub/stargazers"><img src="https://img.shields.io/github/stars/hub-code-develop/MChub?label=%E6%98%9F%E6%A0%87&logo=github&logoColor=white&color=eac54f&style=for-the-badge" alt="星标"></a>
   <a href="https://github.com/hub-code-develop/MChub/releases"><img src="https://img.shields.io/github/downloads/hub-code-develop/MChub/total?label=%E4%B8%8B%E8%BD%BD%E9%87%8F&logo=github&logoColor=white&color=388bfd&style=for-the-badge" alt="下载量"></a>
   <img src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-GPL--3.0--or--later-9d4edd?logoColor=white&style=for-the-badge" alt="许可证">
-  <a href="https://Hub-code-develop.github.io/MChub/"><img src="https://img.shields.io/static/v1?label=%E5%AE%98%E7%BD%91&message=https://Hub-code-develop.github.io/MChub/&color=38ce8f&logo=globe&logoColor=white&style=for-the-badge" alt="官网"></a>
+  <a href="https://mchub.code.hub-develop.top/"><img src="https://img.shields.io/static/v1?label=%E5%AE%98%E7%BD%91&message=https%3A%2F%2Fmchub.code.hub-develop.top%2F&color=38ce8f&logo=globe&logoColor=white&style=for-the-badge" alt="官网"></a>
 </p>
 
 ---
 
 ## 少一点配置，多一点游戏
 
-<a href="https://codehub-develop.github.io/MChub/">MChub</a> 是一款开源、跨平台的 Minecraft 启动器与实例管理器，同时支持 Java 版和基岩版，提供从游戏安装、账户登录到资源查找与文件整理的一体化体验，并对不同版本、整合包和世界进行独立管理
+<a href="https://mchub.code.hub-develop.top/">MChub</a> 是一款开源、跨平台的 Minecraft 启动器与实例管理器，同时支持 Java 版和基岩版，提供从游戏安装、账户登录到资源查找与文件整理的一体化体验，并对不同版本、整合包和世界进行独立管理
 
 ## 下载 MChub
 
