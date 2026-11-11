@@ -212,7 +212,7 @@
                                 Background="{DynamicResource TranslucentBackgroundColor}"
                                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="10"
+                                CornerRadius="0"
                                 Cursor="Hand"
                                 Name="ResourceCard"
                                 Padding="10"
@@ -284,7 +284,7 @@
                                         Background="{DynamicResource TranslucentBackgroundColor}"
                                         BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                         BorderThickness="1"
-                                        CornerRadius="6"
+                                        CornerRadius="0"
                                         HorizontalAlignment="Right"
                                         Margin="0,0,-4,-4"
                                         Name="ResourceActions"
@@ -339,13 +339,13 @@
                                         <DockPanel DockPanel.Dock="Top">
                                             <Border
                                                 Background="{DynamicResource TranslucentBorderBrush}"
-                                                CornerRadius="12"
+                                                CornerRadius="0"
                                                 DockPanel.Dock="Left"
                                                 Height="56"
                                                 Width="56">
                                                 <Grid>
                                                     <owned:OwnedAdvancedImage
-                                                        CornerRadius="12"
+                                                        CornerRadius="0"
                                                         Height="56"
                                                         Loader="{Binding ImageLoader}"
                                                         Source="{Binding IconUrl}"
@@ -383,7 +383,7 @@
                                                                 Background="{DynamicResource TranslucentBackgroundColor}"
                                                                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                                                 BorderThickness="1"
-                                                                CornerRadius="999"
+                                                                CornerRadius="0"
                                                                 Padding="5,2,5,1">
                                                                 <TextBlock FontSize="11" Text="{Binding}" />
                                                             </Border>

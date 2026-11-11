@@ -28,7 +28,7 @@
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
                             ClipToBounds="True"
-                            CornerRadius="16"
+                            CornerRadius="0"
                             Cursor="Hand"
                             PointerPressed="OpenImageViewer_OnPointerPressed">
                             <Border.ContextFlyout>
@@ -78,7 +78,7 @@
                                 </MenuFlyout>
                             </Border.ContextFlyout>
                             <owned:OwnedAdvancedImage
-                                CornerRadius="15"
+                                CornerRadius="0"
                                 Loader="{Binding $parent[UserControl].((local:ResourceDetailsViewModel)DataContext).ScreenshotLoader}"
                                 Source="{Binding Url}"
                                 Stretch="UniformToFill" />

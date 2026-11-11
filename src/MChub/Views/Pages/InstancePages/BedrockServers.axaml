@@ -103,7 +103,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="1"
-                            CornerRadius="11"
+                            CornerRadius="0"
                             Padding="0">
                             <Border.ContextFlyout>
                                 <MenuFlyout>
@@ -163,7 +163,7 @@
                                 Background="{DynamicResource TranslucentBackgroundColor}"
                                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="10"
+                                CornerRadius="0"
                                 Padding="10">
                                 <DockPanel>
                                     <DockPanel Dock="Top">

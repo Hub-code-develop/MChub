@@ -62,7 +62,7 @@
                             Background="{DynamicResource TranslucentBackgroundColor}"
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="8"
+                            CornerRadius="0"
                             Padding="4">
                             <Expander.Header>
                                 <StackPanel Orientation="Horizontal">

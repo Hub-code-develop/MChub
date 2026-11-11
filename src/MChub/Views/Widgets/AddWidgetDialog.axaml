@@ -99,7 +99,7 @@
                                 Background="{DynamicResource PopupBackgroundColor}"
                                 BorderBrush="{DynamicResource PopupBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="10"
+                                CornerRadius="0"
                                 Padding="14,12">
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                                     <StackPanel Spacing="4">

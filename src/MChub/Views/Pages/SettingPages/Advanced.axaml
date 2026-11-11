@@ -9,6 +9,7 @@
     xmlns:loc="using:MChub.Localization"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:settingPages="clr-namespace:MChub.Views.Pages.SettingPages"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel Spacing="15">
         <StackPanel Spacing="5">
@@ -16,7 +17,7 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.advanced_autoSetChineseLanguage}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding Data.ConfigEntry.AutoSetChineseLanguage}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding Data.ConfigEntry.AutoSetChineseLanguage}" />
             <TextBlock
                 FontSize="11"
                 Foreground="{DynamicResource InnerForegroundColor}"
@@ -28,7 +29,7 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.advanced_gameOverlay}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableGameOverlay}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableGameOverlay}" />
             <TextBlock
                 FontSize="11"
                 Foreground="{DynamicResource InnerForegroundColor}"
@@ -40,7 +41,7 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.advanced_gameFullscreen}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableFullscreen}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableFullscreen}" />
             <TextBlock
                 FontSize="11"
                 Foreground="{DynamicResource InnerForegroundColor}"

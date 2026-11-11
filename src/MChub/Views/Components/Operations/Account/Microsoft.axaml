@@ -42,7 +42,7 @@
             </Border>
             <Border IsVisible="{Binding !IsAuthing}">
                 <fa:FASkeleton
-                    CornerRadius="10"
+                    CornerRadius="0"
                     Height="80"
                     IsActive="True"
                     IsLoading="{Binding !IsReady}"

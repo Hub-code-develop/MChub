@@ -1,0 +1,116 @@
+<UserControl
+    d:DesignHeight="620"
+    d:DesignWidth="1100"
+    mc:Ignorable="d"
+    x:Class="MChub.Views.Pages.LauncherXHomePage"
+    x:DataType="pages:LauncherXHomeViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:pages="clr-namespace:MChub.Views.Pages"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <!--  左下：超大版本标题（LauncherX 首页的主视觉）  -->
+        <StackPanel
+            Background="Transparent"
+            Cursor="Hand"
+            HorizontalAlignment="Left"
+            IsVisible="{Binding HasInstance}"
+            Margin="46,0,0,18"
+            Name="TitlePanel"
+            PointerPressed="PickTarget_OnPointerPressed"
+            Spacing="4"
+            ToolTip.Tip="点击切换要启动的版本"
+            VerticalAlignment="Bottom">
+            <TextBlock
+                FontSize="54"
+                FontWeight="Bold"
+                Foreground="{DynamicResource InfinityOnSurface}"
+                LetterSpacing="-0.5"
+                MaxLines="1"
+                Text="{Binding Title}"
+                TextTrimming="CharacterEllipsis">
+            </TextBlock>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock
+                    FontSize="13.5"
+                    Foreground="{DynamicResource InfinityOnSurface}"
+                    Text="{Binding VersionText}">
+                </TextBlock>
+                <TextBlock
+                    FontSize="13.5"
+                    Foreground="{DynamicResource InfinityMuted}"
+                    IsVisible="{Binding HasLoader}"
+                    Text="{Binding LoaderText}">
+                </TextBlock>
+                <TextBlock
+                    FontSize="13.5"
+                    Foreground="{DynamicResource InfinityMuted}"
+                    IsVisible="{Binding HasLastPlayed}"
+                    Text="{Binding LastPlayedText}">
+                </TextBlock>
+            </StackPanel>
+        </StackPanel>
+
+        <!--  右下：账户卡片（浮在底部导航条上方）  -->
+        <Border
+            Background="{DynamicResource InfinitySurfaceAlt}"
+            BorderBrush="{DynamicResource InfinityBorder}"
+            BorderThickness="1"
+            CornerRadius="0"
+            Cursor="Hand"
+            HorizontalAlignment="Right"
+            Margin="0,0,30,100"
+            Padding="9,7"
+            PointerPressed="AccountCard_OnPointerPressed"
+            ToolTip.Tip="切换账户"
+            VerticalAlignment="Bottom">
+            <StackPanel Orientation="Horizontal" Spacing="9">
+                <Border
+                    Background="{DynamicResource InfinitySurfaceRaised}"
+                    ClipToBounds="True"
+                    CornerRadius="0"
+                    Height="34"
+                    Width="34">
+                    <Image Height="34" Source="{Binding AccountHead}" Width="34" />
+                </Border>
+                <StackPanel Spacing="1" VerticalAlignment="Center">
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource InfinityOnSurface}"
+                        MaxLines="1"
+                        Text="{Binding AccountName}"
+                        TextTrimming="CharacterEllipsis" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{DynamicResource InfinityMuted}"
+                        MaxLines="1"
+                        Text="{Binding AccountTypeText}"
+                        TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!--  没有任何实例时的引导  -->
+        <StackPanel
+            HorizontalAlignment="Center"
+            IsVisible="{Binding ShowEmptyState}"
+            Name="EmptyPanel"
+            Spacing="14"
+            VerticalAlignment="Center">
+            <TextBlock
+                FontSize="46"
+                FontWeight="Bold"
+                Foreground="{DynamicResource InfinityOnSurface}"
+                HorizontalAlignment="Center"
+                Text="还没有游戏">
+            </TextBlock>
+            <TextBlock
+                FontSize="14"
+                Foreground="{DynamicResource InfinityMuted}"
+                HorizontalAlignment="Center"
+                Text="去下载页安装一个 Minecraft 版本，装好就能立刻开玩" />
+        </StackPanel>
+    </Grid>
+</UserControl>

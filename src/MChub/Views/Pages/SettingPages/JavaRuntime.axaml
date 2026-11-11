@@ -11,6 +11,7 @@
     xmlns:loc="using:MChub.Localization"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:settingPages="clr-namespace:MChub.Views.Pages.SettingPages"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel Spacing="15">
         <StackPanel Spacing="5">
@@ -48,7 +49,7 @@
             <Border
                 Background="{DynamicResource TranslucentBorderBrush}"
                 ClipToBounds="True"
-                CornerRadius="10"
+                CornerRadius="0"
                 Height="10"
                 IsVisible="{Binding HasMemoryStatus}"
                 Margin="0,3,0,0">
@@ -58,7 +59,7 @@
                         <ColumnDefinition Width="{Binding MinecraftMemoryWidth}" />
                         <ColumnDefinition Width="{Binding RemainingMemoryWidth}" />
                     </Grid.ColumnDefinitions>
-                    <Border Background="{DynamicResource SystemAccentColor}" CornerRadius="3,0,0,3" />
+                    <Border Background="{DynamicResource SystemAccentColor}" CornerRadius="0" />
                     <Border Background="{DynamicResource SystemAccentColorLight2}" Grid.Column="1" />
                 </Grid>
             </Border>
@@ -94,7 +95,7 @@
                     Foreground="{DynamicResource InnerForegroundColor}"
                     Text="{Translate {x:Static loc:SettingsLanguageManager+Keys.java_autoCleanMemoryBeforeLaunchHint}}" />
             </StackPanel>
-            <ToggleSwitch
+            <ui:InfinityToggleSwitch
                 Grid.Column="1"
                 IsChecked="{Binding Data.ConfigEntry.AutoOptimizeMemoryBeforeGameLaunch}"
                 VerticalAlignment="Center" />
@@ -111,7 +112,7 @@
                     Foreground="{DynamicResource InnerForegroundColor}"
                     Text="{Translate {x:Static loc:SettingsLanguageManager+Keys.java_autoHighPerformanceGpuHint}}" />
             </StackPanel>
-            <ToggleSwitch
+            <ui:InfinityToggleSwitch
                 Grid.Column="1"
                 IsChecked="{Binding Data.ConfigEntry.AutoSetJavaHighPerformanceGpu}"
                 VerticalAlignment="Center" />

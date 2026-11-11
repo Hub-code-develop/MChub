@@ -11,7 +11,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border
         Background="Transparent"
-        CornerRadius="10"
+        CornerRadius="0"
         Cursor="Hand"
         Name="Card">
         <Border.Styles>
@@ -31,7 +31,7 @@
                 <DockPanel DockPanel.Dock="Top">
                     <Border
                         ClipToBounds="True"
-                        CornerRadius="10"
+                        CornerRadius="0"
                         Height="46"
                         HorizontalAlignment="Left"
                         Margin="0,0,8,0"

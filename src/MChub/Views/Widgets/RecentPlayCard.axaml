@@ -14,7 +14,7 @@
         Background="{DynamicResource TranslucentBackgroundColor}"
         BorderBrush="{DynamicResource TranslucentBorderBrush}"
         BorderThickness="1"
-        CornerRadius="10"
+        CornerRadius="0"
         Height="125"
         Name="RecentBorder"
         PointerPressed="RecentPlayItem_OnPointerPressed">
@@ -85,7 +85,7 @@
             <DockPanel DockPanel.Dock="Top">
                 <Border
                     ClipToBounds="True"
-                    CornerRadius="10"
+                    CornerRadius="0"
                     Height="40"
                     HorizontalAlignment="Left"
                     Margin="0,0,8,0"

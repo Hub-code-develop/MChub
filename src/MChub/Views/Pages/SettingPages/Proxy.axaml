@@ -9,6 +9,7 @@
     xmlns:loc="using:MChub.Localization"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:settingPages="clr-namespace:MChub.Views.Pages.SettingPages"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel Spacing="15">
         <StackPanel Spacing="5">
@@ -16,7 +17,7 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.agent_enableGithubMirror}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableGithubMirror}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableGithubMirror}" />
         </StackPanel>
         <StackPanel IsVisible="{Binding Data.ConfigEntry.EnableGithubMirror}" Spacing="5">
             <Label
@@ -50,14 +51,14 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.agent_enableProxyServer}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableProxyServer}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableProxyServer}" />
         </StackPanel>
         <StackPanel Spacing="5">
             <Label
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.agent_disableSystemProxy}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding Data.ConfigEntry.DisableSystemProxy}" IsEnabled="{Binding Data.ConfigEntry.CanDisableSystemProxy}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding Data.ConfigEntry.DisableSystemProxy}" IsEnabled="{Binding Data.ConfigEntry.CanDisableSystemProxy}" />
         </StackPanel>
         <StackPanel IsVisible="{Binding Data.ConfigEntry.EnableProxyServer}" Spacing="5">
             <Label
@@ -71,7 +72,7 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.agent_enableCustomUserAgent}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableCustomUserAgent}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableCustomUserAgent}" />
         </StackPanel>
         <StackPanel IsVisible="{Binding Data.ConfigEntry.EnableCustomUserAgent}" Spacing="5">
             <Label

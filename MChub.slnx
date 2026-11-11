@@ -43,6 +43,7 @@
     <File Path="src/Directory.Build.props" />
     <File Path="src/Directory.Packages.props" />
   </Folder>
+  <Project Path="src/InfinityUI/InfinityUI.csproj" />
   <Project Path="src/MChub.Android/MChub.Android.csproj" />
   <Project Path="src/MChub.Console/MChub.Console.csproj" />
   <Project Path="src/MChub.Core/MChub.Core.csproj" />

@@ -18,7 +18,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding ShowUnsupported}"
             Padding="15">
             <StackPanel
@@ -49,7 +49,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             Padding="15">
             <StackPanel Spacing="8">
                 <StackPanel Orientation="Horizontal" Spacing="12">
@@ -82,7 +82,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding ShowDownloadCard}"
             Padding="15">
             <StackPanel Spacing="12">
@@ -116,7 +116,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource ErrorBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding HasError}"
             Padding="15">
             <StackPanel Spacing="6">
@@ -138,7 +138,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding BinaryInstalled}"
             Padding="15">
             <StackPanel Spacing="12">
@@ -166,7 +166,7 @@
                     Background="{DynamicResource TranslucentBackgroundColor}"
                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="8"
+                    CornerRadius="0"
                     Padding="12">
                     <StackPanel Orientation="Horizontal" Spacing="12">
                         <TextBlock
@@ -215,7 +215,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding ShowTunnels}"
             Padding="15">
             <StackPanel Spacing="12">
@@ -238,7 +238,7 @@
                                 Background="{DynamicResource TranslucentBackgroundColor}"
                                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="8"
+                                CornerRadius="0"
                                 Margin="0,0,0,8"
                                 Padding="12">
                                 <DockPanel>

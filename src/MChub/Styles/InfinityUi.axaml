@@ -1,0 +1,124 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        infinityUI —— 直角 + 五色的极简设计系统。
+
+        颜色纪律：全局只允许出现 5 种颜色
+            1. 主题色（深色主题=黑底白字 / 浅色主题=白底黑字）
+            2. 红   仅用于错误 / 危险
+            3. 黄   仅用于警告
+            4. 绿   仅用于成功
+            5. （第 5 个位置留给主题色的另一极，即黑白互换）
+        黑白之间的灰阶属无彩色，不算"颜色"，可自由用于层级。
+
+        造型纪律：圆角一律 0，禁止阴影柔化，靠 1px 描边与色块区分层级。
+    -->
+
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush Color="#0A0A0A" x:Key="InfinitySurface" />
+            <SolidColorBrush Color="#141414" x:Key="InfinitySurfaceAlt" />
+            <SolidColorBrush Color="#1F1F1F" x:Key="InfinitySurfaceRaised" />
+            <SolidColorBrush Color="#2E2E2E" x:Key="InfinityBorder" />
+            <SolidColorBrush Color="#454545" x:Key="InfinityBorderStrong" />
+            <SolidColorBrush Color="#F5F5F5" x:Key="InfinityOnSurface" />
+            <SolidColorBrush Color="#9A9A9A" x:Key="InfinityMuted" />
+
+            <SolidColorBrush Color="#E81123" x:Key="InfinityDanger" />
+            <SolidColorBrush Color="#F2C811" x:Key="InfinityWarning" />
+            <SolidColorBrush Color="#107C10" x:Key="InfinitySuccess" />
+
+            <!--  主题色两极：深色主题下主按钮为白底黑字  -->
+            <SolidColorBrush Color="#F5F5F5" x:Key="InfinityAccent" />
+            <SolidColorBrush Color="#0A0A0A" x:Key="InfinityOnAccent" />
+
+            <SolidColorBrush Color="#E81123" x:Key="InfinityDangerSoft" Opacity="0.18" />
+            <SolidColorBrush Color="#F2C811" x:Key="InfinityWarningSoft" Opacity="0.18" />
+            <SolidColorBrush Color="#107C10" x:Key="InfinitySuccessSoft" Opacity="0.18" />
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush Color="#FFFFFF" x:Key="InfinitySurface" />
+            <SolidColorBrush Color="#F5F5F5" x:Key="InfinitySurfaceAlt" />
+            <SolidColorBrush Color="#EBEBEB" x:Key="InfinitySurfaceRaised" />
+            <SolidColorBrush Color="#D6D6D6" x:Key="InfinityBorder" />
+            <SolidColorBrush Color="#B3B3B3" x:Key="InfinityBorderStrong" />
+            <SolidColorBrush Color="#0A0A0A" x:Key="InfinityOnSurface" />
+            <SolidColorBrush Color="#616161" x:Key="InfinityMuted" />
+
+            <SolidColorBrush Color="#E81123" x:Key="InfinityDanger" />
+            <SolidColorBrush Color="#B8860B" x:Key="InfinityWarning" />
+            <SolidColorBrush Color="#107C10" x:Key="InfinitySuccess" />
+
+            <SolidColorBrush Color="#0A0A0A" x:Key="InfinityAccent" />
+            <SolidColorBrush Color="#FFFFFF" x:Key="InfinityOnAccent" />
+
+            <SolidColorBrush Color="#E81123" x:Key="InfinityDangerSoft" Opacity="0.14" />
+            <SolidColorBrush Color="#B8860B" x:Key="InfinityWarningSoft" Opacity="0.14" />
+            <SolidColorBrush Color="#107C10" x:Key="InfinitySuccessSoft" Opacity="0.14" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!--  ============ 直角：把所有圆角资源压到 0  ============  -->
+    <CornerRadius x:Key="TioCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ControlCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ButtonCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ButtonGroupCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ButtonSpinnerButtonGroupCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="TextBoxDefaultCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ComboBoxSelectorCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ComboBoxPopupBoxCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="AutoCompleteBoxPopupCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="FlyoutCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="DialogCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="DrawerCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="PopConfirmBorderCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="BadgeCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="BannerCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="CaptionButtonCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="AdornerLayerCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="AnchorPipeCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="AvatarCircleCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="AvatarSquareCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="AvatarLargeSquareCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="AvatarExtraLargeSquareCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="CalendarCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="CalendarDatePickerCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="CalenderDayCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="CalenderDayEndDateCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="CalenderDayInRangeCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="CalenderDayStartDateCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="CalenderYearCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ColorPickerCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ColorPreviewerCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ColorSliderCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ColorSliderThumbCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ColorSpectrumCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="DataGridColumnHeaderCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="DataGridDisabledCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="DataGridRowCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="DateTimePickerButtonCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="DateTimePickerPopupCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="DualBadgeDefaultCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="DualBadgeFlatSquareCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="DualBadgeForTheBadgeCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="RadioButtonBoxCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="RadioButtonButtonCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="RadioButtonGroupCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="RadioButtonTioCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="SliderThumbCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="SliderTrackCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ToggleSwitchDefaultCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="ToggleSwitchIndicatorCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="TreeViewItemDefaultCornerRadius">0</CornerRadius>
+
+    <!--  ============ 强调色收敛到无彩色  ============  -->
+    <Color x:Key="SystemAccentColor">#F5F5F5</Color>
+    <Color x:Key="SystemAccentColorLight1">#DADADA</Color>
+    <Color x:Key="SystemAccentColorLight2">#BDBDBD</Color>
+    <Color x:Key="SystemAccentColorLight3">#A0A0A0</Color>
+    <Color x:Key="SystemAccentColorDark1">#FFFFFF</Color>
+    <Color x:Key="SystemAccentColorDark2">#FFFFFF</Color>
+    <Color x:Key="SystemAccentColorDark3">#FFFFFF</Color>
+
+</ResourceDictionary>

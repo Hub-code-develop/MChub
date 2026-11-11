@@ -66,16 +66,32 @@ public partial class App : Application
         Logger.Info(LogLanguageManager.Instance.app_initComplete.CurrentValue());
     }
 
-    private static void ApplyThemeVariant(Theme theme)
+    internal static void ApplyThemeVariant(Theme theme)
     {
         if (Current is not { } app) return;
-        app.RequestedThemeVariant = theme switch
+        var variant = theme switch
         {
             Theme.Light => ThemeVariant.Light,
             Theme.Dark => ThemeVariant.Dark,
             Theme.Mirage => ThemeVariant.Dark,
             _ => ThemeVariant.Default
         };
+        app.RequestedThemeVariant = variant;
+        ApplyFluentAvaloniaVariant(variant);
+    }
+
+    /// <summary>
+    /// FluentAvalonia 默认跟随系统外观，光设 Application.RequestedThemeVariant 不会改变
+    /// 它内部模板（下拉框、搜索框等）的配色，会留下"深色底上的浅色控件"。这里显式同步。
+    /// </summary>
+    internal static void ApplyFluentAvaloniaVariant(ThemeVariant? variant)
+    {
+        if (Current?.Styles is not { } styles) return;
+
+        var fluentTheme = styles.OfType<FluentAvalonia.Styling.FluentAvaloniaTheme>().FirstOrDefault();
+        if (fluentTheme is null) return;
+
+        fluentTheme.PreferSystemTheme = variant is null;
     }
 
     private static async Task SendStartupTelemetryAsync()
@@ -112,32 +128,18 @@ public partial class App : Application
             {
                 Initializer.Oobe();
                 desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
-
-                // 合规闸门对「双击包文件启动」同样生效：没登录正版就先登录，
-                // 登录完成后再弹导入窗口。
-                if (!AccountGate.IsSatisfied)
-                {
-                    ShowLoginWindow(desktop, afterLogin: () =>
-                    {
-                        CompleteAccountGate();
-                        var importWindow = new BedrockPackageImportWindow(packagePath);
-                        LogWindowShowElapsed(importWindow);
-                        desktop.MainWindow = importWindow;
-                        importWindow.Show();
-                    });
-                }
-                else
-                {
-                    var importWindow = new BedrockPackageImportWindow(packagePath);
-                    LogWindowShowElapsed(importWindow);
-                    desktop.MainWindow = importWindow;
-                }
+                var importWindow = new BedrockPackageImportWindow(packagePath);
+                LogWindowShowElapsed(importWindow);
+                desktop.MainWindow = importWindow;
             }
             else if (Data.ConfigEntry.IsInitialized)
             {
                 Initializer.Oobe();
                 // 合规闸门：必须先登录微软正版账号，否则只给登录窗口。
-                EnterLauncher(desktop);
+                if (AccountGate.IsSatisfied)
+                    ShowMainWindow(desktop);
+                else
+                    ShowLoginWindow(desktop);
             }
             else
             {
@@ -230,8 +232,16 @@ public partial class App : Application
         desktop.MainWindow = migration;
         migration.Completed += () =>
         {
-            // 迁移里可能带进来一个正版账号；交给统一入口判断是否还需要登录
-            EnterLauncher(desktop);
+            if (AccountGate.IsSatisfied)
+            {
+                ShowMainWindow(desktop);
+                _win!.Show();
+            }
+            else
+            {
+                ShowLoginWindow(desktop);
+            }
+
             migration.Close();
         };
         migration.Show();
@@ -241,74 +251,17 @@ public partial class App : Application
     /// 强制登录：没有微软正版账号时用它顶替主窗口。登录成功后由回调打开主窗口。
     /// 关掉登录窗口等于退出启动器（此时主窗口还没创建）。
     /// </summary>
-    /// <summary>
-    /// 统一入口。闸门**只在软件首次启动时检查一次**：
-    /// - 已经通过过（AccountGateCompleted）→ 以后每次启动都直接进主界面
-    /// - 首次启动且已经存在正版账号（比如迁移进来的）→ 直接放行，不要求重新登录
-    /// - 首次启动没有正版账号 → 强制登录，成功后记下「已通过」
-    /// </summary>
-    private void EnterLauncher(IClassicDesktopStyleApplicationLifetime desktop)
+    private void ShowLoginWindow(IClassicDesktopStyleApplicationLifetime desktop)
     {
-        if (Data.ConfigEntry.AccountGateCompleted)
-        {
-            ShowMainWindow(desktop);
-            _win?.Show();
-            return;
-        }
-
-        if (AccountGate.IsSatisfied)
-        {
-            CompleteAccountGate();
-            ShowMainWindow(desktop);
-            _win?.Show();
-            return;
-        }
-
-        ShowLoginWindow(desktop, afterLogin: () =>
-        {
-            CompleteAccountGate();
-            ShowMainWindow(desktop);
-            _win!.Show();
-        });
-    }
-
-    /// <summary>标记「首次启动的账号闸门已通过」，之后不再检查。</summary>
-    private static void CompleteAccountGate()
-    {
-        if (Data.ConfigEntry.AccountGateCompleted)
-            return;
-
-        Data.ConfigEntry.AccountGateCompleted = true;
-        ConfigSaver.FlushConfig();
-        Logger.Info("首次启动账号闸门已通过，后续启动不再检查");
-    }
-
-    /// <param name="afterLogin">登录成功后要做什么；为空表示进主界面。</param>
-    /// <param name="verify">true = 先复核本地凭证，失败再走设备码登录。</param>
-    private void ShowLoginWindow(IClassicDesktopStyleApplicationLifetime desktop,
-        Action? afterLogin = null, bool verify = false)
-    {
-        Logger.Info("显示登录窗口（" + (verify ? "复核凭证" : "首次登录") + "）");
-
+        Logger.Info("未登录微软正版账号，显示强制登录窗口");
         var login = new LoginWindow
         {
             WindowStartupLocation = WindowStartupLocation.CenterScreen
         };
-
-        if (verify)
-            login.BeginVerify();
-
         LogWindowShowElapsed(login);
         desktop.MainWindow = login;
         login.Completed += () =>
         {
-            if (afterLogin is not null)
-            {
-                afterLogin();
-                login.Close();
-                return;
-            }
-
             ShowMainWindow(desktop);
             _win!.Show();
             login.Close();

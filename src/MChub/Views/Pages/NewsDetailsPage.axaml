@@ -32,7 +32,7 @@
                     Background="{DynamicResource TranslucentBackgroundColor}"
                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="10"
+                    CornerRadius="0"
                     Padding="6,2">
                     <TextBlock
                         FontSize="11"
@@ -43,7 +43,7 @@
                     Background="{DynamicResource TranslucentBackgroundColor}"
                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="10"
+                    CornerRadius="0"
                     IsVisible="{Binding HasVersion}"
                     Padding="6,2">
                     <TextBlock
@@ -55,7 +55,7 @@
                     Background="{DynamicResource TranslucentBackgroundColor}"
                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="10"
+                    CornerRadius="0"
                     IsVisible="{Binding HasType}"
                     Padding="6,2">
                     <TextBlock
@@ -112,7 +112,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="10"
+                CornerRadius="0"
                 HorizontalAlignment="Center"
                 IsVisible="{Binding IsLoading}"
                 Margin="0,24,0,0"

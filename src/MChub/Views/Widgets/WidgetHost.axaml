@@ -13,7 +13,7 @@
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
             ClipToBounds="False"
-            CornerRadius="12"
+            CornerRadius="0"
             x:Name="Card" />
         <TransitioningContentControl
             Background="Transparent"

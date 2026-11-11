@@ -20,7 +20,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="12"
+                CornerRadius="0"
                 Padding="16">
                 <StackPanel Spacing="8">
                     <TextBlock
@@ -57,7 +57,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="12"
+                CornerRadius="0"
                 IsVisible="{Binding HasData}"
                 Padding="16">
                 <StackPanel Spacing="6">
@@ -89,7 +89,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="12"
+                CornerRadius="0"
                 IsVisible="{Binding HasData}"
                 Padding="16">
                 <StackPanel Spacing="8">

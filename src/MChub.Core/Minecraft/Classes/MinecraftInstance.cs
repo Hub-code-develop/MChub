@@ -127,9 +127,26 @@ public class MinecraftInstance : ObservableObject
         }
     }
 
-    public string MinecraftPath
+    /// <summary>游戏时长短格式，用于 LauncherX 风格列表的"游戏时长"列。</summary>
+    [JsonIgnore]
+    public string DisplayPlayTime
     {
         get
+        {
+            var seconds = GetTotalPlayTimeSeconds();
+            if (seconds <= 0)
+                return "< 1 分钟";
+
+            var span = TimeSpan.FromSeconds(seconds);
+            if (span.TotalHours >= 1)
+                return $"{span.TotalHours:F1} 小时";
+
+            return $"{(int)span.TotalMinutes} 分钟";
+        }
+    }
+
+    public string MinecraftPath
+    {        get
         {
             if (Type == MinecraftInstanceType.Java && MinecraftEntry != null)
                 return Layout?.InstanceRoot ?? MinecraftEntry.InstancePath;

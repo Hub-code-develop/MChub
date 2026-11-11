@@ -36,14 +36,14 @@
                             <Border
                                 BorderBrush="{DynamicResource ControlStrokeColorDefault}"
                                 BorderThickness="1"
-                                CornerRadius="4,4,4,4"
+                                CornerRadius="0"
                                 Grid.Column="0"
                                 Height="28"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Center">
                                 <Border
                                     Background="{Binding ColorBrush, RelativeSource={RelativeSource TemplatedParent}}"
-                                    CornerRadius="3.5"
+                                    CornerRadius="0"
                                     Margin="1" />
                             </Border>
                             <TextBlock

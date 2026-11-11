@@ -123,7 +123,7 @@
                     Background="{DynamicResource TranslucentBackgroundColor}"
                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="12"
+                    CornerRadius="0"
                     Grid.Column="2"
                     HorizontalAlignment="Right"
                     IsVisible="False"

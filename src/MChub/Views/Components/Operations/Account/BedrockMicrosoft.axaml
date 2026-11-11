@@ -32,7 +32,7 @@
                 IsLoading="{Binding !IsReady}"
                 IsVisible="{Binding !IsError}"
                 Width="300">
-                <Border Background="{DynamicResource PanelBackgroundColor}" CornerRadius="10">
+                <Border Background="{DynamicResource PanelBackgroundColor}" CornerRadius="0">
                     <SelectableTextBlock
                         FontSize="30"
                         HorizontalAlignment="Center"

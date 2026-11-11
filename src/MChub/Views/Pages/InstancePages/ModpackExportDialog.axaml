@@ -59,7 +59,7 @@
                 Background="{DynamicResource PureCardBackground}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="8"
+                CornerRadius="0"
                 MaxHeight="300"
                 MinHeight="160"
                 Padding="10,6">

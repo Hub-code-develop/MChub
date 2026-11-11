@@ -49,7 +49,7 @@
                     </DataTemplate>
                 </tio:SelectionList.ItemTemplate>
                 <tio:SelectionList.Indicator>
-                    <Border Background="{DynamicResource IndicatorBackground}" CornerRadius="10" />
+                    <Border Background="{DynamicResource IndicatorBackground}" CornerRadius="0" />
                 </tio:SelectionList.Indicator>
                 <tio:SelectionList.ItemsPanel>
                     <ItemsPanelTemplate>

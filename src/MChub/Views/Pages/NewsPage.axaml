@@ -93,13 +93,13 @@
                             Background="{DynamicResource TranslucentBackgroundColor}"
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="16"
+                            CornerRadius="0"
                             Cursor="Hand"
                             PointerReleased="NewsCard_OnPointerReleased">
                             <DockPanel>
                                 <Border
                                     ClipToBounds="True"
-                                    CornerRadius="10"
+                                    CornerRadius="0"
                                     DockPanel.Dock="Top"
                                     Height="130"
                                     Margin="12,12,12,0">
@@ -136,7 +136,7 @@
                                                 Background="{DynamicResource TranslucentBackgroundColor}"
                                                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                                 BorderThickness="1"
-                                                CornerRadius="10"
+                                                CornerRadius="0"
                                                 Padding="4,1">
                                                 <TextBlock
                                                     FontSize="11"
@@ -147,7 +147,7 @@
                                                 Background="{DynamicResource TranslucentBackgroundColor}"
                                                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                                 BorderThickness="1"
-                                                CornerRadius="10"
+                                                CornerRadius="0"
                                                 IsVisible="{Binding Type, Converter={StaticResource StringNotEmptyConv}}"
                                                 Padding="4,1">
                                                 <TextBlock

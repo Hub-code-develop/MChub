@@ -13,6 +13,7 @@
     xmlns:loc="using:MChub.Localization"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:settingPages="clr-namespace:MChub.Views.Pages.SettingPages"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <UserControl.Resources>
         <converter:BackgroundModeCompareConverter x:Key="BackgroundModeCompareConverter" />
@@ -28,89 +29,6 @@
                 Cultures="{Binding Cultures}"
                 Managers="{Binding Managers}"
                 Theme="{StaticResource CulturePickerTheme}" />
-        </StackPanel>
-        <StackPanel Spacing="5">
-            <Label
-                Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_themeStyle}}"
-                FontSize="13"
-                Foreground="{DynamicResource InnerForegroundColor}" />
-            <ListBox Name="ListBox" Theme="{DynamicResource BorderListBox}">
-                <ListBoxItem Background="{DynamicResource PopupBackgroundColor}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            FontFamily="{StaticResource IconFont}"
-                            FontSize="16"
-                            FontWeight="Thin"
-                            HorizontalAlignment="Center"
-                            Margin="0,0,10,0"
-                            Text="&#xe650;"
-                            VerticalAlignment="Center" />
-                        <TextBlock Text="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_themeSystem}}" />
-                    </StackPanel>
-                </ListBoxItem>
-                <ListBoxItem Background="{DynamicResource PopupBackgroundColor}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            FontFamily="{StaticResource IconFont}"
-                            FontSize="16"
-                            FontWeight="Thin"
-                            HorizontalAlignment="Center"
-                            Margin="0,0,10,0"
-                            Text="&#xe642;"
-                            VerticalAlignment="Center" />
-                        <TextBlock Text="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_themeLight}}" />
-                    </StackPanel>
-                </ListBoxItem>
-                <ListBoxItem Background="{DynamicResource PopupBackgroundColor}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            FontFamily="{StaticResource IconFont}"
-                            FontSize="16"
-                            FontWeight="Thin"
-                            HorizontalAlignment="Center"
-                            Margin="0,0,10,0"
-                            Text="&#xe62e;"
-                            VerticalAlignment="Center" />
-                        <TextBlock Text="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_themeDark}}" />
-                    </StackPanel>
-                </ListBoxItem>
-                <ListBoxItem Background="{DynamicResource PopupBackgroundColor}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock
-                            FontFamily="{StaticResource IconFont}"
-                            FontSize="16"
-                            FontWeight="Thin"
-                            HorizontalAlignment="Center"
-                            Margin="0,0,10,0"
-                            Text="&#xe654;"
-                            VerticalAlignment="Center" />
-                        <TextBlock Text="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_themeMirage}}" />
-                    </StackPanel>
-                </ListBoxItem>
-            </ListBox>
-        </StackPanel>
-        <StackPanel Spacing="5">
-            <Panel>
-                <Label
-                    Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_themeColor}}"
-                    FontSize="13"
-                    Foreground="{DynamicResource InnerForegroundColor}"
-                    HorizontalAlignment="Left" />
-                <SelectableTextBlock
-                    FontSize="13"
-                    Foreground="{DynamicResource InnerForegroundColor}"
-                    HorizontalAlignment="Right"
-                    Text="{Binding Data.ConfigEntry.ThemeColor}" />
-            </Panel>
-            <controls:FluentColorPicker
-                Color="{Binding Data.ConfigEntry.ThemeColor}"
-                ColorSpectrumShape="Box"
-                HorizontalAlignment="Stretch"
-                SelectedIndex="1">
-                <controls:FluentColorPicker.Palette>
-                    <FluentColorPalette />
-                </controls:FluentColorPicker.Palette>
-            </controls:FluentColorPicker>
         </StackPanel>
         <StackPanel Spacing="5">
             <DockPanel>
@@ -198,13 +116,85 @@
                 <ComboBoxItem Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_backgroundTransparent}}" />
             </ComboBox>
         </StackPanel>
+        <!-- 沉浸底：渐变可调色，或退化为单色 -->
+        <StackPanel Spacing="5">
+            <Label
+                Content="沉浸底使用渐变"
+                FontSize="13"
+                Foreground="{DynamicResource InnerForegroundColor}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding LauncherXBackdropUseGradient, Source={x:Static const1:Data.ConfigEntry}}" />
+            <TextBlock
+                FontSize="12"
+                Foreground="{DynamicResource InnerForegroundColor}"
+                Text="仅在背景风格为「默认」时生效。想要自己的图片背景，把上面的背景风格改成「图片」并选一张图即可。"
+                TextWrapping="Wrap" />
+        </StackPanel>
+        <StackPanel Spacing="5" IsVisible="{Binding LauncherXBackdropUseGradient, Source={x:Static const1:Data.ConfigEntry}}">
+            <Label
+                Content="渐变起点色（左上）"
+                FontSize="13"
+                Foreground="{DynamicResource InnerForegroundColor}" />
+            <SelectableTextBlock
+                FontSize="12"
+                Foreground="{DynamicResource InnerForegroundColor}"
+                HorizontalAlignment="Right"
+                Text="{Binding LauncherXBackdropStartColor, Source={x:Static const1:Data.ConfigEntry}}" />
+            <controls:FluentColorPicker
+                Color="{Binding LauncherXBackdropStartColor, Source={x:Static const1:Data.ConfigEntry}}"
+                ColorSpectrumShape="Box"
+                HorizontalAlignment="Stretch"
+                SelectedIndex="1">
+                <controls:FluentColorPicker.Palette>
+                    <FluentColorPalette />
+                </controls:FluentColorPicker.Palette>
+            </controls:FluentColorPicker>
+            <Label
+                Content="渐变终点色（右下）"
+                FontSize="13"
+                Foreground="{DynamicResource InnerForegroundColor}"
+                Margin="0,8,0,0" />
+            <SelectableTextBlock
+                FontSize="12"
+                Foreground="{DynamicResource InnerForegroundColor}"
+                HorizontalAlignment="Right"
+                Text="{Binding LauncherXBackdropEndColor, Source={x:Static const1:Data.ConfigEntry}}" />
+            <controls:FluentColorPicker
+                Color="{Binding LauncherXBackdropEndColor, Source={x:Static const1:Data.ConfigEntry}}"
+                ColorSpectrumShape="Box"
+                HorizontalAlignment="Stretch"
+                SelectedIndex="1">
+                <controls:FluentColorPicker.Palette>
+                    <FluentColorPalette />
+                </controls:FluentColorPicker.Palette>
+            </controls:FluentColorPicker>
+        </StackPanel>
+        <StackPanel Spacing="5" IsVisible="{Binding !LauncherXBackdropUseGradient, Source={x:Static const1:Data.ConfigEntry}}">
+            <Label
+                Content="沉浸底单色"
+                FontSize="13"
+                Foreground="{DynamicResource InnerForegroundColor}" />
+            <SelectableTextBlock
+                FontSize="12"
+                Foreground="{DynamicResource InnerForegroundColor}"
+                HorizontalAlignment="Right"
+                Text="{Binding LauncherXBackdropSolidColor, Source={x:Static const1:Data.ConfigEntry}}" />
+            <controls:FluentColorPicker
+                Color="{Binding LauncherXBackdropSolidColor, Source={x:Static const1:Data.ConfigEntry}}"
+                ColorSpectrumShape="Box"
+                HorizontalAlignment="Stretch"
+                SelectedIndex="1">
+                <controls:FluentColorPicker.Palette>
+                    <FluentColorPalette />
+                </controls:FluentColorPicker.Palette>
+            </controls:FluentColorPicker>
+        </StackPanel>
         <!-- UI 磨砂玻璃：不随背景模式变化，任何模式都可生效；改动实时绑定配置 -->
         <StackPanel Spacing="5">
             <Label
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_surfaceAcrylic}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding EnableSurfaceAcrylic, Source={x:Static const1:Data.ConfigEntry}}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding EnableSurfaceAcrylic, Source={x:Static const1:Data.ConfigEntry}}" />
             <TextBlock
                 FontSize="12"
                 Foreground="{DynamicResource InnerForegroundColor}"
@@ -271,7 +261,7 @@
                                 BorderBrush="{Binding BorderBrush}"
                                 BorderThickness="2"
                                 ClipToBounds="True"
-                                CornerRadius="10"
+                                CornerRadius="0"
                                 Height="86"
                                 PointerPressed="BackgroundHistoryItem_OnPointerPressed"
                                 Tag="{Binding}"
@@ -292,7 +282,7 @@
                                         </MenuItem>
                                     </ContextMenu>
                                 </Border.ContextMenu>
-                                <Border ClipToBounds="True" CornerRadius="8">
+                                <Border ClipToBounds="True" CornerRadius="0">
                                     <Image Source="{Binding Preview}" Stretch="UniformToFill" />
                                 </Border>
                             </Border>
@@ -330,7 +320,7 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_enableImageMask}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding EnableImageMask, Source={x:Static const1:Data.ConfigEntry}}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding EnableImageMask, Source={x:Static const1:Data.ConfigEntry}}" />
         </StackPanel>
         <StackPanel Spacing="5">
             <StackPanel.IsVisible>
@@ -531,7 +521,7 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_enableCustomForegroundColor}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding EnableCustomForegroundColor, Source={x:Static const1:Data.ConfigEntry}}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding EnableCustomForegroundColor, Source={x:Static const1:Data.ConfigEntry}}" />
         </StackPanel>
         <StackPanel IsVisible="{Binding EnableCustomForegroundColor, Source={x:Static const1:Data.ConfigEntry}}" Spacing="5">
             <Label
@@ -553,14 +543,14 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_disableSystemWindowBorder}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding EnableManagedWindowDecorationsOnWindows, Source={x:Static const1:Data.ConfigEntry}}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding EnableManagedWindowDecorationsOnWindows, Source={x:Static const1:Data.ConfigEntry}}" />
         </StackPanel>
         <StackPanel IsVisible="{Binding IsWindowBorderCustomizationSupported}" Spacing="5">
             <Label
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_enableWindowBorder}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding EnableManagedWindowBorderOnWindows, Source={x:Static const1:Data.ConfigEntry}}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding EnableManagedWindowBorderOnWindows, Source={x:Static const1:Data.ConfigEntry}}" />
         </StackPanel>
         <Border Margin="0,-5,0,0">
             <Border.IsVisible>
@@ -628,7 +618,7 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.appearance_showWidgetBackground}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding ShowWidgetBackground, Source={x:Static const1:Data.ConfigEntry}}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding ShowWidgetBackground, Source={x:Static const1:Data.ConfigEntry}}" />
         </StackPanel>
     </StackPanel>
 </UserControl>

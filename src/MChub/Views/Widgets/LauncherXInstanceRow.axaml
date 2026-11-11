@@ -1,0 +1,148 @@
+<UserControl
+    d:DesignHeight="68"
+    d:DesignWidth="900"
+    mc:Ignorable="d"
+    x:Class="MChub.Views.Widgets.LauncherXInstanceRow"
+    x:DataType="classes:MinecraftInstance"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:classes="clr-namespace:MChub.Core.Minecraft.Classes;assembly=MChub.Core"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="using:InfinityUI.Controls"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Styles>
+        <Style Selector="Border.instance-row">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InfBorder}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="CornerRadius" Value="0" />
+        </Style>
+        <Style Selector="Border.instance-row:pointerover">
+            <Setter Property="Background" Value="{DynamicResource InfSurfaceAlt}" />
+        </Style>
+    </UserControl.Styles>
+    <Border
+        Classes="instance-row"
+        Margin="0,2"
+        Padding="12,0"
+        PointerReleased="Row_OnPointerReleased">
+        <Border.ContextMenu>
+            <ContextMenu>
+                <MenuItem Click="Launch_Click" Header="启动游戏" Tag="{Binding}">
+                    <MenuItem.Icon>
+                        <TextBlock
+                            FontFamily="{StaticResource IconFont}"
+                            FontSize="16"
+                            Text="&#xe613;" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Click="CreateShortcut_Click" Header="创建桌面快捷方式" Tag="{Binding}">
+                    <MenuItem.Icon>
+                        <TextBlock
+                            FontFamily="{StaticResource IconFont}"
+                            FontSize="16"
+                            Text="&#xe607;" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Click="Favorite_Click" Header="{Binding FavoriteHeaderText}" Tag="{Binding}">
+                    <MenuItem.Icon>
+                        <TextBlock
+                            FontFamily="{StaticResource IconFont}"
+                            FontSize="16"
+                            Text="&#xe644;" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Click="Block_Click" Header="{Binding BlockHeaderText}" Tag="{Binding}">
+                    <MenuItem.Icon>
+                        <TextBlock
+                            FontFamily="{StaticResource IconFont}"
+                            FontSize="16"
+                            Text="&#xe63a;" />
+                    </MenuItem.Icon>
+                </MenuItem>
+            </ContextMenu>
+        </Border.ContextMenu>
+        <Grid ColumnDefinitions="42,*,96,86,Auto" Height="64">
+            <!--  实例图标  -->
+            <Border
+                Background="{DynamicResource InfSurfaceRaised}"
+                ClipToBounds="True"
+                CornerRadius="0"
+                Height="42"
+                VerticalAlignment="Center"
+                Width="42">
+                <Image Height="42" Source="{Binding Icon}" Width="42" />
+            </Border>
+
+            <!--  名称 + 副信息  -->
+            <StackPanel
+                Grid.Column="1"
+                Margin="14,0,12,0"
+                Spacing="3"
+                VerticalAlignment="Center">
+                <TextBlock
+                    FontSize="14.5"
+                    FontWeight="SemiBold"
+                    Foreground="{DynamicResource InfOnSurface}"
+                    MaxLines="1"
+                    Text="{Binding InstanceName}"
+                    TextTrimming="CharacterEllipsis" />
+                <TextBlock
+                    FontSize="11.5"
+                    Foreground="{DynamicResource InfMuted}"
+                    MaxLines="1"
+                    Text="{Binding FolderName}"
+                    TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+
+            <!--  版本徽章（描边，无彩色）  -->
+            <Border
+                BorderBrush="{DynamicResource InfBorderStrong}"
+                BorderThickness="1"
+                CornerRadius="0"
+                Grid.Column="2"
+                HorizontalAlignment="Center"
+                Padding="9,4"
+                VerticalAlignment="Center">
+                <TextBlock
+                    FontSize="11.5"
+                    FontWeight="SemiBold"
+                    Foreground="{DynamicResource InfMuted}"
+                    Text="{Binding VersionId}" />
+            </Border>
+
+            <!--  游戏时长  -->
+            <TextBlock
+                FontSize="12.5"
+                Foreground="{DynamicResource InfMuted}"
+                Grid.Column="3"
+                Margin="0,0,16,0"
+                Text="{Binding DisplayPlayTime}"
+                VerticalAlignment="Center" />
+
+            <!--  操作：infinityUI 图标按钮 + 主按钮  -->
+            <StackPanel
+                Grid.Column="4"
+                Orientation="Horizontal"
+                Spacing="6"
+                VerticalAlignment="Center">
+                <ui:InfinityIconButton
+                    Click="Settings_Click"
+                    Glyph="&#xe627;"
+                    GlyphFontFamily="{StaticResource IconFont}"
+                    ToolTip.Tip="版本设置" />
+                <ui:InfinityButton
+                    Click="Launch_Click"
+                    IsCompact="True"
+                    MinWidth="78"
+                    Variant="Primary">
+                    <TextBlock
+                        FontSize="12.5"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource InfOnAccent}"
+                        Text="启动游戏" />
+                </ui:InfinityButton>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

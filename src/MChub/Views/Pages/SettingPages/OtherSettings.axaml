@@ -11,6 +11,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:settingPages="clr-namespace:MChub.Views.Pages.SettingPages"
     xmlns:tio="https://github.com/tiouoo/TioUi.Avalonia"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <UserControl.Resources>
         <conv:IntCompareConverter x:Key="IntCompareConverter" />
@@ -59,7 +60,7 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.about_autoCheckForUpdates}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch HorizontalAlignment="Stretch" IsChecked="{Binding Data.ConfigEntry.EnableCheckAutoUpdate}" />
+            <ui:InfinityToggleSwitch HorizontalAlignment="Stretch" IsChecked="{Binding Data.ConfigEntry.EnableCheckAutoUpdate}" />
         </StackPanel>
         <StackPanel Spacing="5">
             <Label
@@ -126,7 +127,7 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.applicationdebug_debugMode}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableDebugConsole}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableDebugConsole}" />
             <TextBlock
                 FontSize="11"
                 Foreground="{DynamicResource InnerForegroundColor}"
@@ -148,7 +149,7 @@
                 Orientation="Horizontal"
                 Spacing="16">
                 <Button Click="UpdateRelayNodes_OnClick" Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.applicationdebug_updateRelayNodes}}" />
-                <ToggleSwitch
+                <ui:InfinityToggleSwitch
                     IsChecked="{Binding Data.ConfigEntry.GravityConeRelayAutoUpdate}"
                     OffContent="{Translate {x:Static loc:SettingsLanguageManager+Keys.applicationdebug_relayAutoUpdate}}"
                     OnContent="{Translate {x:Static loc:SettingsLanguageManager+Keys.applicationdebug_relayAutoUpdate}}"

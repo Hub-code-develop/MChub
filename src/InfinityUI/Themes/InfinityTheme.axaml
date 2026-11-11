@@ -27,14 +27,23 @@
                         BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="0"
                         Name="PART_Root">
-                        <ContentPresenter
-                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                            Margin="{TemplateBinding Padding}"
-                            Name="PART_ContentPresenter"
-                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                            Content="{TemplateBinding Content}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            Foreground="{TemplateBinding Foreground}" />
+                        <Panel>
+                            <ContentPresenter
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                Margin="{TemplateBinding Padding}"
+                                Name="PART_ContentPresenter"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                Foreground="{TemplateBinding Foreground}" />
+                            <!--  键盘焦点框：只描边不改尺寸  -->
+                            <Border
+                                BorderBrush="{DynamicResource InfOnSurface}"
+                                BorderThickness="1"
+                                IsHitTestVisible="False"
+                                IsVisible="False"
+                                Name="PART_Focus" />
+                        </Panel>
                     </Border>
                 </ControlTemplate>
             </Setter>
@@ -92,6 +101,9 @@
                 <Setter Property="Opacity" Value="0.4" />
                 <Setter Property="Cursor" Value="Arrow" />
             </Style>
+            <Style Selector="^:focus-visible /template/ Border#PART_Focus">
+                <Setter Property="IsVisible" Value="True" />
+            </Style>
         </ControlTheme>
 
         <!--  ==================== 图标按钮  ====================  -->
@@ -111,14 +123,22 @@
                         Height="{TemplateBinding BoxSize}"
                         Name="PART_Root"
                         Width="{TemplateBinding BoxSize}">
-                        <TextBlock
-                            FontFamily="{TemplateBinding GlyphFontFamily}"
-                            FontSize="{TemplateBinding IconSize}"
-                            Foreground="{TemplateBinding Foreground}"
-                            HorizontalAlignment="Center"
-                            IsVisible="{TemplateBinding HasGlyph}"
-                            Text="{TemplateBinding Glyph}"
-                            VerticalAlignment="Center" />
+                        <Panel>
+                            <TextBlock
+                                FontFamily="{TemplateBinding GlyphFontFamily}"
+                                FontSize="{TemplateBinding IconSize}"
+                                Foreground="{TemplateBinding Foreground}"
+                                HorizontalAlignment="Center"
+                                IsVisible="{TemplateBinding HasGlyph}"
+                                Text="{TemplateBinding Glyph}"
+                                VerticalAlignment="Center" />
+                            <Border
+                                BorderBrush="{DynamicResource InfOnSurface}"
+                                BorderThickness="1"
+                                IsHitTestVisible="False"
+                                IsVisible="False"
+                                Name="PART_Focus" />
+                        </Panel>
                     </Border>
                 </ControlTemplate>
             </Setter>
@@ -133,6 +153,9 @@
             </Style>
             <Style Selector="^:disabled">
                 <Setter Property="Opacity" Value="0.4" />
+            </Style>
+            <Style Selector="^:focus-visible /template/ Border#PART_Focus">
+                <Setter Property="IsVisible" Value="True" />
             </Style>
         </ControlTheme>
 
@@ -198,6 +221,9 @@
             </Style>
             <Style Selector="^:disabled">
                 <Setter Property="Opacity" Value="0.4" />
+            </Style>
+            <Style Selector="^:focus-visible /template/ Border#PART_Track">
+                <Setter Property="BorderBrush" Value="{DynamicResource InfOnSurface}" />
             </Style>
         </ControlTheme>
 
@@ -274,6 +300,13 @@
                                     Text="{TemplateBinding Content}"
                                     VerticalAlignment="Center" />
                             </StackPanel>
+                            <Border
+                                BorderBrush="{DynamicResource InfOnSurface}"
+                                BorderThickness="1"
+                                Grid.ColumnSpan="2"
+                                IsHitTestVisible="False"
+                                IsVisible="False"
+                                Name="PART_Focus" />
                         </Grid>
                     </Border>
                 </ControlTemplate>
@@ -297,6 +330,9 @@
             <Style Selector="^[ShowIndicator=False] /template/ Border#PART_Indicator">
                 <Setter Property="IsVisible" Value="False" />
             </Style>
+            <Style Selector="^:focus-visible /template/ Border#PART_Focus">
+                <Setter Property="IsVisible" Value="True" />
+            </Style>
         </ControlTheme>
 
         <!--  ==================== Metro 通知卡片  ====================  -->
@@ -311,8 +347,8 @@
                         CornerRadius="0"
                         Name="PART_Root">
                         <Grid ColumnDefinitions="6,*,Auto">
-                            <!--  左侧语义色条：红 / 黄 / 绿 / 灰  -->
-                            <Border Background="{TemplateBinding LevelBrush}" Grid.Column="0" Name="PART_Accent" />
+                            <!--  左侧语义色条：红 / 黄 / 绿 / 灰，颜色由下面的 Level 选择器注入  -->
+                            <Border Background="{DynamicResource InfMuted}" Grid.Column="0" Name="PART_Accent" />
                             <StackPanel
                                 Grid.Column="1"
                                 Margin="12,10,8,10"
@@ -320,9 +356,11 @@
                                 VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <TextBlock
+                                        FontFamily="{TemplateBinding GlyphFontFamily}"
                                         FontSize="12"
                                         FontWeight="Bold"
-                                        Foreground="{TemplateBinding LevelBrush}"
+                                        Foreground="{DynamicResource InfMuted}"
+                                        Name="PART_Glyph"
                                         Text="{TemplateBinding Glyph}"
                                         VerticalAlignment="Center" />
                                     <TextBlock
@@ -360,6 +398,27 @@
                     </Border>
                 </ControlTemplate>
             </Setter>
+
+            <!--  语义色在模板里按 Level 直接取资源，因此换主题会自动跟着变  -->
+            <Style Selector="^[Level=Success] /template/ Border#PART_Accent">
+                <Setter Property="Background" Value="{DynamicResource InfSuccess}" />
+            </Style>
+            <Style Selector="^[Level=Warning] /template/ Border#PART_Accent">
+                <Setter Property="Background" Value="{DynamicResource InfWarning}" />
+            </Style>
+            <Style Selector="^[Level=Error] /template/ Border#PART_Accent">
+                <Setter Property="Background" Value="{DynamicResource InfDanger}" />
+            </Style>
+
+            <Style Selector="^[Level=Success] /template/ TextBlock#PART_Glyph">
+                <Setter Property="Foreground" Value="{DynamicResource InfSuccess}" />
+            </Style>
+            <Style Selector="^[Level=Warning] /template/ TextBlock#PART_Glyph">
+                <Setter Property="Foreground" Value="{DynamicResource InfWarning}" />
+            </Style>
+            <Style Selector="^[Level=Error] /template/ TextBlock#PART_Glyph">
+                <Setter Property="Foreground" Value="{DynamicResource InfDanger}" />
+            </Style>
         </ControlTheme>
     </Styles.Resources>
 </Styles>

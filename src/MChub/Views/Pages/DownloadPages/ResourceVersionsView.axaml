@@ -60,7 +60,7 @@
                                     Background="{DynamicResource TranslucentBackgroundColor}"
                                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
+                                    CornerRadius="0"
                                     IsExpanded="{Binding IsExpanded}"
                                     Margin="0,0,0,10"
                                     Padding="4">

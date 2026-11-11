@@ -8,6 +8,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:settingPages="clr-namespace:MChub.Views.Pages.SettingPages"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="using:MChub.Localization">
     <StackPanel Spacing="15">
         <StackPanel Spacing="5">
@@ -35,7 +36,7 @@
                         FontSize="14"
                         HorizontalAlignment="Left"
                         Text="{Translate {x:Static loc:SettingsLanguageManager+Keys.notification_showSelectedAccount}}" />
-                    <ToggleSwitch
+                    <ui:InfinityToggleSwitch
                         DockPanel.Dock="Right"
                         HorizontalAlignment="Right"
                         IsChecked="{Binding Data.ConfigEntry.ShowUsingAccountTip}" />
@@ -46,7 +47,7 @@
                         FontSize="14"
                         HorizontalAlignment="Left"
                         Text="{Translate {x:Static loc:SettingsLanguageManager+Keys.notification_showDragDropTip}}" />
-                    <ToggleSwitch
+                    <ui:InfinityToggleSwitch
                         DockPanel.Dock="Right"
                         HorizontalAlignment="Right"
                         IsChecked="{Binding Data.ConfigEntry.ShowDragDropTip}" />
@@ -57,7 +58,7 @@
                         FontSize="14"
                         HorizontalAlignment="Left"
                         Text="{Translate {x:Static loc:SettingsLanguageManager+Keys.notification_showUpdateTip}}" />
-                    <ToggleSwitch
+                    <ui:InfinityToggleSwitch
                         DockPanel.Dock="Right"
                         HorizontalAlignment="Right"
                         IsChecked="{Binding Data.ConfigEntry.ShowUpdateTip}" />
@@ -76,7 +77,7 @@
                         FontSize="14"
                         HorizontalAlignment="Left"
                         Text="{Translate {x:Static loc:SettingsLanguageManager+Keys.notification_showMinecraftNews}}" />
-                    <ToggleSwitch
+                    <ui:InfinityToggleSwitch
                         DockPanel.Dock="Right"
                         HorizontalAlignment="Right"
                         IsChecked="{Binding Data.ConfigEntry.ShowMinecraftNews}" />
@@ -87,7 +88,7 @@
                         FontSize="14"
                         HorizontalAlignment="Left"
                         Text="{Translate {x:Static loc:SettingsLanguageManager+Keys.notification_showRecentPlays}}" />
-                    <ToggleSwitch
+                    <ui:InfinityToggleSwitch
                         DockPanel.Dock="Right"
                         HorizontalAlignment="Right"
                         IsChecked="{Binding Data.ConfigEntry.ShowRecentPlays}" />

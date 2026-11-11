@@ -1,9 +1,7 @@
 using Avalonia;
 using Avalonia.Animation;
-using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Avalonia.Styling;
 using Avalonia.Threading;
 
 namespace InfinityUI.Controls;
@@ -32,14 +30,12 @@ public class InfinityToast : ContentControl
     public static readonly StyledProperty<InfinityToastLevel> LevelProperty =
         AvaloniaProperty.Register<InfinityToast, InfinityToastLevel>(nameof(Level));
 
-    public static readonly StyledProperty<IBrush?> LevelBrushProperty =
-        AvaloniaProperty.Register<InfinityToast, IBrush?>(nameof(LevelBrush));
-
     public static readonly StyledProperty<string?> GlyphProperty =
         AvaloniaProperty.Register<InfinityToast, string?>(nameof(Glyph));
 
-    public static readonly StyledProperty<string?> GlyphFontFamilyProperty =
-        AvaloniaProperty.Register<InfinityToast, string?>(nameof(GlyphFontFamily));
+    /// <summary>图标字形所用的字体；与按钮、导航项保持一致，必须是 <see cref="FontFamily" /> 类型。</summary>
+    public static readonly StyledProperty<FontFamily?> GlyphFontFamilyProperty =
+        AvaloniaProperty.Register<InfinityToast, FontFamily?>(nameof(GlyphFontFamily));
 
     public string? Title
     {
@@ -59,24 +55,20 @@ public class InfinityToast : ContentControl
         set => SetValue(LevelProperty, value);
     }
 
-    /// <summary>由宿主按级别注入的语义色，模板用它画左侧色条和图标。</summary>
-    public IBrush? LevelBrush
-    {
-        get => GetValue(LevelBrushProperty);
-        set => SetValue(LevelBrushProperty, value);
-    }
-
     public string? Glyph
     {
         get => GetValue(GlyphProperty);
         set => SetValue(GlyphProperty, value);
     }
 
-    public string? GlyphFontFamily
+    public FontFamily? GlyphFontFamily
     {
         get => GetValue(GlyphFontFamilyProperty);
         set => SetValue(GlyphFontFamilyProperty, value);
     }
+
+    /// <summary>自动关闭计时器，由宿主创建并在关闭时停掉，避免计时器悬挂。</summary>
+    internal DispatcherTimer? AutoDismissTimer { get; set; }
 
     /// <summary>用户点关闭时触发，宿主负责移除。</summary>
     public event EventHandler? Dismissed;
@@ -113,15 +105,15 @@ public class InfinityToastHost : StackPanel
         IsHitTestVisible = true;
     }
 
-    /// <summary>语义色与图标按级别固定，外部不可改，避免出现第五种颜色。</summary>
-    private static (string ResourceKey, string Glyph) ResolveLevel(InfinityToastLevel level)
+    /// <summary>图标按级别固定，外部不可改，避免出现第五种颜色。</summary>
+    private static string ResolveGlyph(InfinityToastLevel level)
     {
         return level switch
         {
-            InfinityToastLevel.Success => ("InfSuccess", "✓"),
-            InfinityToastLevel.Warning => ("InfWarning", "!"),
-            InfinityToastLevel.Error => ("InfDanger", "✕"),
-            _ => ("InfMuted", "i")
+            InfinityToastLevel.Success => "✓",
+            InfinityToastLevel.Warning => "!",
+            InfinityToastLevel.Error => "✕",
+            _ => "i"
         };
     }
 
@@ -131,16 +123,12 @@ public class InfinityToastHost : StackPanel
         string? title = null,
         TimeSpan? duration = null)
     {
-        var (resourceKey, glyph) = ResolveLevel(level);
-        var brush = this.TryFindResource(resourceKey, out var found) ? found as IBrush : null;
-
         var toast = new InfinityToast
         {
             Message = message,
-            Title = title ?? DefaultTitle(level),
+            Title = title,
             Level = level,
-            LevelBrush = brush,
-            Glyph = glyph,
+            Glyph = ResolveGlyph(level),
             Opacity = 0
         };
 
@@ -172,6 +160,7 @@ public class InfinityToastHost : StackPanel
                 timer.Stop();
                 Dismiss(toast);
             };
+            toast.AutoDismissTimer = timer;
             timer.Start();
         }
 
@@ -181,6 +170,10 @@ public class InfinityToastHost : StackPanel
     public void Dismiss(InfinityToast toast)
     {
         if (!Children.Contains(toast)) return;
+
+        // 手动关闭后自动超时的计时器必须停掉，否则它还会再触发一次。
+        toast.AutoDismissTimer?.Stop();
+        toast.AutoDismissTimer = null;
 
         toast.Transitions = new Transitions
         {
@@ -198,16 +191,5 @@ public class InfinityToastHost : StackPanel
     {
         foreach (var child in Children.OfType<InfinityToast>().ToList())
             Dismiss(child);
-    }
-
-    public static string DefaultTitle(InfinityToastLevel level)
-    {
-        return level switch
-        {
-            InfinityToastLevel.Success => "完成",
-            InfinityToastLevel.Warning => "警告",
-            InfinityToastLevel.Error => "错误",
-            _ => "提示"
-        };
     }
 }

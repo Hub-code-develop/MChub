@@ -8,7 +8,7 @@
         <DockPanel>
             <DockPanel DockPanel.Dock="Top">
                 <fa:FASkeleton
-                    CornerRadius="14"
+                    CornerRadius="0"
                     DockPanel.Dock="Left"
                     Height="72"
                     IsActive="True"
@@ -16,21 +16,21 @@
                     Width="72" />
                 <StackPanel Margin="12,5,12,0" Spacing="7">
                     <fa:FASkeleton
-                        CornerRadius="4"
+                        CornerRadius="0"
                         Height="22"
                         HorizontalAlignment="Left"
                         IsActive="True"
                         IsLoading="True"
                         Width="230" />
                     <fa:FASkeleton
-                        CornerRadius="3"
+                        CornerRadius="0"
                         Height="14"
                         HorizontalAlignment="Left"
                         IsActive="True"
                         IsLoading="True"
                         Width="150" />
                     <fa:FASkeleton
-                        CornerRadius="3"
+                        CornerRadius="0"
                         Height="14"
                         HorizontalAlignment="Left"
                         IsActive="True"
@@ -43,13 +43,13 @@
                 Margin="2,8,0,0"
                 Spacing="6">
                 <fa:FASkeleton
-                    CornerRadius="3"
+                    CornerRadius="0"
                     Height="14"
                     HorizontalAlignment="Stretch"
                     IsActive="True"
                     IsLoading="True" />
                 <fa:FASkeleton
-                    CornerRadius="3"
+                    CornerRadius="0"
                     Height="14"
                     HorizontalAlignment="Left"
                     IsActive="True"
@@ -62,19 +62,19 @@
                 Orientation="Horizontal"
                 Spacing="5">
                 <fa:FASkeleton
-                    CornerRadius="12"
+                    CornerRadius="0"
                     Height="24"
                     IsActive="True"
                     IsLoading="True"
                     Width="72" />
                 <fa:FASkeleton
-                    CornerRadius="12"
+                    CornerRadius="0"
                     Height="24"
                     IsActive="True"
                     IsLoading="True"
                     Width="58" />
                 <fa:FASkeleton
-                    CornerRadius="12"
+                    CornerRadius="0"
                     Height="24"
                     IsActive="True"
                     IsLoading="True"

@@ -17,13 +17,13 @@
             Background="Transparent"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="0"
-            CornerRadius="12"
+            CornerRadius="0"
             DockPanel.Dock="Top">
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <Border
                     Background="Transparent"
                     ClipToBounds="True"
-                    CornerRadius="18"
+                    CornerRadius="0"
                     Height="72"
                     Margin="10,5,16,0"
                     Width="72">
@@ -242,7 +242,7 @@
                         BorderBrush="{DynamicResource TranslucentBorderBrush}"
                         BorderThickness="1"
                         ClipToBounds="True"
-                        CornerRadius="16"
+                        CornerRadius="0"
                         Cursor="Hand"
                         PointerPressed="JumpPage"
                         Tag="mods">
@@ -290,7 +290,7 @@
                         BorderBrush="{DynamicResource TranslucentBorderBrush}"
                         BorderThickness="1"
                         ClipToBounds="True"
-                        CornerRadius="16"
+                        CornerRadius="0"
                         Cursor="Hand"
                         Grid.Column="1"
                         PointerPressed="JumpPage"
@@ -339,7 +339,7 @@
                         BorderBrush="{DynamicResource TranslucentBorderBrush}"
                         BorderThickness="1"
                         ClipToBounds="True"
-                        CornerRadius="16"
+                        CornerRadius="0"
                         Cursor="Hand"
                         Grid.Column="2"
                         PointerPressed="JumpPage"
@@ -388,7 +388,7 @@
                         BorderBrush="{DynamicResource TranslucentBorderBrush}"
                         BorderThickness="1"
                         ClipToBounds="True"
-                        CornerRadius="16"
+                        CornerRadius="0"
                         Cursor="Hand"
                         Grid.Column="3"
                         PointerPressed="JumpPage"
@@ -448,7 +448,7 @@
                             Background="{DynamicResource TranslucentBackgroundColor}"
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="16"
+                            CornerRadius="0"
                             Cursor="Hand"
                             PointerPressed="JumpPage"
                             Tag="bedrock-resource-packs">
@@ -468,7 +468,7 @@
                             Background="{DynamicResource TranslucentBackgroundColor}"
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="16"
+                            CornerRadius="0"
                             Cursor="Hand"
                             Grid.Column="1"
                             PointerPressed="JumpPage"
@@ -489,7 +489,7 @@
                             Background="{DynamicResource TranslucentBackgroundColor}"
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="16"
+                            CornerRadius="0"
                             Cursor="Hand"
                             Grid.Column="2"
                             PointerPressed="JumpPage"
@@ -524,7 +524,7 @@
                     Background="{DynamicResource TranslucentBackgroundColor}"
                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="16"
+                    CornerRadius="0"
                     Margin="5,12,0,12"
                     Padding="16,12,16,8">
                     <Grid RowDefinitions="Auto,*">

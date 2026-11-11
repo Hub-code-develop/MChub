@@ -11,6 +11,7 @@
     xmlns:instancePages="clr-namespace:MChub.Views.Pages.InstancePages"
     xmlns:java="clr-namespace:MChub.Core.Minecraft.Instance.Java;assembly=MChub.Core"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="using:MChub.Localization">
     <DockPanel Margin="10,10,0,10">
         <TextBlock
@@ -23,7 +24,7 @@
                 Background="Transparent"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="0"
-                CornerRadius="12"
+                CornerRadius="0"
                 Margin="0,0,10,0"
                 Padding="12">
                 <StackPanel Spacing="15">
@@ -39,7 +40,7 @@
                             Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_mouseLock}}"
                             FontSize="13"
                             Foreground="{DynamicResource InnerForegroundColor}" />
-                        <ToggleSwitch IsChecked="{Binding EnableMouseLock}" />
+                        <ui:InfinityToggleSwitch IsChecked="{Binding EnableMouseLock}" />
                         <TextBlock
                             FontSize="11"
                             Foreground="{DynamicResource InnerForegroundColor}"
@@ -50,7 +51,7 @@
                             Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_launchInfo}}"
                             FontSize="13"
                             Foreground="{DynamicResource InnerForegroundColor}" />
-                        <ToggleSwitch IsChecked="{Binding EnableLaunchInfo}" />
+                        <ui:InfinityToggleSwitch IsChecked="{Binding EnableLaunchInfo}" />
                         <TextBlock
                             FontSize="11"
                             Foreground="{DynamicResource InnerForegroundColor}"
@@ -62,14 +63,14 @@
                                 Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_independentData}}"
                                 FontSize="13"
                                 Foreground="{DynamicResource InnerForegroundColor}" />
-                            <ToggleSwitch IsChecked="{Binding Instance.EnableIndependentBedrockVersion}" />
+                            <ui:InfinityToggleSwitch IsChecked="{Binding Instance.EnableIndependentBedrockVersion}" />
                         </StackPanel>
                         <StackPanel Spacing="5">
                             <Label
                                 Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_sharedData}}"
                                 FontSize="13"
                                 Foreground="{DynamicResource InnerForegroundColor}" />
-                            <ToggleSwitch IsChecked="{Binding Instance.EnableLauncherSharedBedrockData}" />
+                            <ui:InfinityToggleSwitch IsChecked="{Binding Instance.EnableLauncherSharedBedrockData}" />
                         </StackPanel>
                     </StackPanel>
                     <StackPanel IsVisible="{Binding Instance.IsJava}" Spacing="12">
@@ -78,7 +79,7 @@
                                 Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_independentInstance}}"
                                 FontSize="13"
                                 Foreground="{DynamicResource InnerForegroundColor}" />
-                            <ToggleSwitch IsChecked="{Binding Instance.JavaConfig.EnableIndependentInstance}" IsEnabled="{Binding Instance.CanDisableIndependentInstance}" />
+                            <ui:InfinityToggleSwitch IsChecked="{Binding Instance.JavaConfig.EnableIndependentInstance}" IsEnabled="{Binding Instance.CanDisableIndependentInstance}" />
                             <TextBlock
                                 FontSize="11"
                                 Foreground="{DynamicResource InnerForegroundColor}"
@@ -90,7 +91,7 @@
                                 Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_useSpecificJava}}"
                                 FontSize="13"
                                 Foreground="{DynamicResource InnerForegroundColor}" />
-                            <ToggleSwitch IsChecked="{Binding Instance.JavaConfig.EnableSpecificJava}" />
+                            <ui:InfinityToggleSwitch IsChecked="{Binding Instance.JavaConfig.EnableSpecificJava}" />
                         </StackPanel>
                         <StackPanel IsVisible="{Binding Instance.JavaConfig.EnableSpecificJava}" Spacing="5">
                             <Label
@@ -121,7 +122,7 @@
                                 Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_overrideMaxMemory}}"
                                 FontSize="13"
                                 Foreground="{DynamicResource InnerForegroundColor}" />
-                            <ToggleSwitch IsChecked="{Binding Instance.JavaConfig.EnableOverrideMaxMemory}" />
+                            <ui:InfinityToggleSwitch IsChecked="{Binding Instance.JavaConfig.EnableOverrideMaxMemory}" />
                         </StackPanel>
                         <StackPanel IsVisible="{Binding Instance.JavaConfig.EnableOverrideMaxMemory}" Spacing="5">
                             <Label
@@ -209,7 +210,7 @@
                                 Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_useAdvancedOptions}}"
                                 FontSize="13"
                                 Foreground="{DynamicResource InnerForegroundColor}" />
-                            <ToggleSwitch IsChecked="{Binding Instance.Config.EnableOverrideAdvancedOptions}" />
+                            <ui:InfinityToggleSwitch IsChecked="{Binding Instance.Config.EnableOverrideAdvancedOptions}" />
                             <TextBlock
                                 FontSize="11"
                                 Foreground="{DynamicResource InnerForegroundColor}"
@@ -236,7 +237,7 @@
                                         Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_autoSetChinese}}"
                                         FontSize="13"
                                         Foreground="{DynamicResource InnerForegroundColor}" />
-                                    <ToggleSwitch IsChecked="{Binding Instance.JavaConfig.AutoSetChineseLanguage}" />
+                                    <ui:InfinityToggleSwitch IsChecked="{Binding Instance.JavaConfig.AutoSetChineseLanguage}" />
                                     <TextBlock
                                         FontSize="11"
                                         Foreground="{DynamicResource InnerForegroundColor}"
@@ -248,7 +249,7 @@
                                         Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_gameOverlay}}"
                                         FontSize="13"
                                         Foreground="{DynamicResource InnerForegroundColor}" />
-                                    <ToggleSwitch IsChecked="{Binding Instance.JavaConfig.EnableGameOverlay}" />
+                                    <ui:InfinityToggleSwitch IsChecked="{Binding Instance.JavaConfig.EnableGameOverlay}" />
                                     <TextBlock
                                         FontSize="11"
                                         Foreground="{DynamicResource InnerForegroundColor}"
@@ -260,7 +261,7 @@
                                         Content="{Translate {x:Static loc:InstancesLanguageManager+Keys.properties_fullscreen}}"
                                         FontSize="13"
                                         Foreground="{DynamicResource InnerForegroundColor}" />
-                                    <ToggleSwitch IsChecked="{Binding Instance.JavaConfig.EnableFullscreen}" />
+                                    <ui:InfinityToggleSwitch IsChecked="{Binding Instance.JavaConfig.EnableFullscreen}" />
                                 </StackPanel>
                                 <StackPanel Spacing="5">
                                     <Label

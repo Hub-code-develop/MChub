@@ -4,6 +4,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:controls="https://github.com/tiouoo/TioUi.Avalonia"
     xmlns:local="clr-namespace:MChub.Views.Pages.InstancePages"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="using:MChub.Localization">
     <Grid RowDefinitions="Auto,*,Auto">
         <TextBlock
@@ -68,7 +69,7 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                     <TextBlock Grid.Row="7" Text="{Translate {x:Static loc:InstancesLanguageManager+Keys.worldsaveoverview_allowCheats}}" />
-                    <ToggleSwitch
+                    <ui:InfinityToggleSwitch
                         Grid.Column="1"
                         Grid.Row="7"
                         HorizontalAlignment="Left"

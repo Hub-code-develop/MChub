@@ -169,7 +169,7 @@
                         <Border
                             Classes.mod-card="True"
                             Classes.selected="{Binding IsSelected}"
-                            CornerRadius="11"
+                            CornerRadius="0"
                             Cursor="Hand"
                             PointerPressed="ModCard_OnPointerPressed">
                             <Border.ContextFlyout>
@@ -245,7 +245,7 @@
                                 BorderThickness="1"
                                 Classes.mod-card-inner="True"
                                 Classes.selected="{Binding IsSelected}"
-                                CornerRadius="10"
+                                CornerRadius="0"
                                 Padding="14">
                                 <DockPanel>
                                     <StackPanel
@@ -255,7 +255,7 @@
                                         <TextBlock Foreground="{DynamicResource InnerForegroundColor}" Text="{Binding LastWriteTimeText}" />
                                         <Border
                                             Background="{DynamicResource SystemAccentColor}"
-                                            CornerRadius="8"
+                                            CornerRadius="0"
                                             IsVisible="{Binding IsPreload}"
                                             Padding="6,1">
                                             <TextBlock
@@ -266,7 +266,7 @@
                                         </Border>
                                         <Border
                                             Background="#A8643030"
-                                            CornerRadius="8"
+                                            CornerRadius="0"
                                             IsVisible="{Binding IsDisabled}"
                                             Padding="6,1">
                                             <TextBlock

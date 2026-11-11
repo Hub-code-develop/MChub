@@ -40,7 +40,7 @@
 
                             <Border
                                 ClipToBounds="True"
-                                CornerRadius="10"
+                                CornerRadius="0"
                                 Height="52"
                                 Width="52">
                                 <owned:OwnedAdvancedImage

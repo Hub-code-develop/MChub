@@ -28,7 +28,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="8"
+            CornerRadius="0"
             Grid.Row="1"
             Padding="10,8">
             <DockPanel>
@@ -85,7 +85,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="8"
+            CornerRadius="0"
             Grid.Row="2"
             Margin="0,10,0,0"
             Padding="8">

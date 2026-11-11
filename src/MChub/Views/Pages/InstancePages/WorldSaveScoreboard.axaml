@@ -4,6 +4,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:controls="https://github.com/tiouoo/TioUi.Avalonia"
     xmlns:local="clr-namespace:MChub.Views.Pages.InstancePages"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="using:MChub.Localization">
     <Grid RowDefinitions="Auto,*,Auto">
         <StackPanel Spacing="8">
@@ -92,7 +93,7 @@
                                         PlaceholderText="{Translate {x:Static loc:InstancesLanguageManager+Keys.worldsavescoreboard_scoreValuePlaceholder}}"
                                         Text="{Binding Score}"
                                         TextWrapping="NoWrap" />
-                                    <ToggleSwitch
+                                    <ui:InfinityToggleSwitch
                                         Grid.Column="4"
                                         IsChecked="{Binding Locked}"
                                         OffContent="{Translate {x:Static loc:InstancesLanguageManager+Keys.worldsavescoreboard_notLocked}}"

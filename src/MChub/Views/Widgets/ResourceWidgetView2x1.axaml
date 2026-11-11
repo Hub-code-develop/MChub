@@ -40,7 +40,7 @@
             TextTrimming="CharacterEllipsis" />
 
         <ProgressBar
-            CornerRadius="4"
+            CornerRadius="0"
             Height="8"
             Margin="0,6,0,6"
             Maximum="{Binding ProgressMaximum}"

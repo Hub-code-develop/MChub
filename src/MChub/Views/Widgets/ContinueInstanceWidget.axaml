@@ -39,7 +39,7 @@
                     Spacing="4">
                     <Border
                         ClipToBounds="True"
-                        CornerRadius="12"
+                        CornerRadius="0"
                         Height="42"
                         Margin="0,0,8,0"
                         Width="42">
