@@ -125,10 +125,11 @@
          shows it. BundleApp only looks for the icon by CFBundleIconFile name at the
          bundle root, so a manual copy is required. -->
     <Target Name="CopyAppIconToBundle" AfterTargets="BundleApp">
-        <Message Importance="high" Text="[CopyAppIconToBundle] OutputPath=$(OutputPath) AssemblyName=$(AssemblyName)" />
+        <Message Importance="high" Text="[CopyAppIconToBundle] OutputPath=$(OutputPath) AssemblyName=$(AssemblyName) CFBundleName=$(CFBundleName)" />
         <PropertyGroup>
             <_AppIconSrc>$(MSBuildProjectDirectory)/../../assets/MChub.icns</_AppIconSrc>
-            <_AppBundleDir Condition="Exists('$(OutputPath)publish/MChub.app')">$(OutputPath)publish/MChub.app</_AppBundleDir>
+            <_AppBundleDir Condition="Exists('$(OutputPath)publish/$(CFBundleName).app')">$(OutputPath)publish/$(CFBundleName).app</_AppBundleDir>
+            <_AppBundleDir Condition="'$(_AppBundleDir)' == '' And Exists('$(OutputPath)$(CFBundleName).app')">$(OutputPath)$(CFBundleName).app</_AppBundleDir>
             <_AppBundleDir Condition="'$(_AppBundleDir)' == '' And Exists('$(OutputPath)$(AssemblyName).app')">$(OutputPath)$(AssemblyName).app</_AppBundleDir>
         </PropertyGroup>
         <Message Importance="high" Text="[CopyAppIconToBundle] AppBundleDir=$(_AppBundleDir) IconExists=$([System.IO.File]::Exists('$(_AppIconSrc)'))" />

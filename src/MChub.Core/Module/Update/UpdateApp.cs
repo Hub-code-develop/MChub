@@ -991,11 +991,55 @@ public static class UpdateApp
         if (Directory.Exists(extracted)) Directory.Delete(extracted, true);
         Directory.CreateDirectory(extracted);
         RunAndWait("/usr/bin/ditto", "-x", "-k", packagePath, extracted);
-        var replacement = Path.Combine(extracted, "MChub.app");
-        if (!File.Exists(Path.Combine(replacement, "Contents", "MacOS", "MChub.Desktop")))
-            throw new InvalidDataException(CommonLanguageManager.Instance.update_macPackageInvalid.CurrentValue());
+        // 不能写死 MChub.app：普通版与新手版要能同时安装，两者的 .app 名不同
+        // （本变体是 MCStudio-Newbie.app，名字来自构建时的 CFBundleName）。
+        // zip 用 ditto --keepParent 只打一层，所以优先在顶层找唯一的 .app。
+        var replacement = FindMacAppBundle(extracted)
+                          ?? throw new InvalidDataException(CommonLanguageManager.Instance.update_macPackageInvalid.CurrentValue());
         var script = WriteUnixScript(updateDirectory, target, replacement, true);
         return UnixScript(script, !CanWriteDirectory(Path.GetDirectoryName(target)!));
+    }
+
+    /// <summary>
+    /// 在解压目录里定位 .app。先认历史的 MChub.app，再找顶层唯一的 .app，
+    /// 最后兼容打包器多套一层目录的情况。
+    /// </summary>
+    private static string? FindMacAppBundle(string extracted)
+    {
+        var legacy = Path.Combine(extracted, "MChub.app");
+        if (IsMacAppBundle(legacy)) return legacy;
+
+        var found = FindSingleAppBundle(extracted);
+        if (found != null) return found;
+
+        foreach (var child in Directory.EnumerateDirectories(extracted))
+        {
+            found = FindSingleAppBundle(child);
+            if (found != null) return found;
+        }
+
+        return null;
+    }
+
+    private static string? FindSingleAppBundle(string directory)
+    {
+        string? result = null;
+        foreach (var candidate in Directory.EnumerateDirectories(directory, "*.app", SearchOption.TopDirectoryOnly))
+        {
+            if (!IsMacAppBundle(candidate)) continue;
+            // 同一层出现多个 .app 时无法判断该换哪个，宁可返回 null 报错，
+            // 也不要猜错把别的 bundle 覆盖掉。
+            if (result != null) return null;
+            result = candidate;
+        }
+
+        return result;
+    }
+
+    private static bool IsMacAppBundle(string path)
+    {
+        var macOs = Path.Combine(path, "Contents", "MacOS");
+        return Directory.Exists(macOs) && Directory.GetFileSystemEntries(macOs).Length > 0;
     }
 
     private static string WriteUnixScript(string directory, string target, string source, bool isMac)
