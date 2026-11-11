@@ -143,6 +143,50 @@ jobs:
           run_with_timeout restore restore -r ${{ inputs.rid }} -m:1 /p:UseSharedCompilation=false
           run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ inputs.rid }} -property:Configuration=Release -p:SelfContained=true -m:1 /p:UseSharedCompilation=false
 
+      - name: Fetch CodeNet runtime
+        if: inputs.sdk == 'official'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          DEST="$RUNNER_TEMP/codenet-runtime"
+          mkdir -p "$DEST"
+          if [ "${{ inputs.rid }}" = "osx-arm64" ]; then
+            ASSET="dotnet-codenet-osx-arm64-fixed.tar.gz"
+          else
+            ASSET="dotnet-codenet-osx-x64.tar.gz"
+          fi
+          gh release download "sdk-v10.0.400" -R Open-code-Studio/CodeNet -p "$ASSET" -D "$DEST"
+          tar xzf "$DEST/$ASSET" -C "$DEST"
+          LIBSRC=$(find "$DEST" -maxdepth 5 -type d -name "Microsoft.NETCore.App" | head -1)
+          echo "CodeNet 运行时目录: $LIBSRC"
+          ls "$LIBSRC"
+          echo "CODENET_LIBS=$LIBSRC" >> "$GITHUB_ENV"
+
+      - name: Overlay signalfix runtime
+        if: inputs.sdk == 'official'
+        run: |
+          set -euo pipefail
+          APP="./src/MChub.Desktop/bin/Release/net10.0/${{ inputs.rid }}/publish/MChub.app"
+          APPRT=$(python3 -c "import json;print(json.load(open('$APP/Contents/MacOS/MChub.Desktop.runtimeconfig.json'))['runtimeOptions']['includedFrameworks'][0]['version'])")
+          echo "App 运行时版本: $APPRT"
+          if [ ! -d "$CODENET_LIBS/$APPRT" ]; then
+            echo "::warning::CodeNet 没有 $APPRT 版本（只有 $(ls "$CODENET_LIBS" | tr '\n' ' ')），跳过叠加"
+            exit 0
+          fi
+          for f in libcoreclr.dylib libclrjit.dylib libclrgc.dylib libclrgcexp.dylib; do
+            src="$CODENET_LIBS/$APPRT/$f"; dst="$APP/Contents/MacOS/$f"
+            if [ -f "$src" ] && [ -f "$dst" ]; then
+              before=$(stat -f%z "$dst"); cp -f "$src" "$dst"; chmod 755 "$dst"
+              echo "  $f: $before -> $(stat -f%z "$dst")"
+            else
+              echo "  跳过 $f"
+            fi
+          done
+          codesign --force --deep --sign - "$APP"
+          codesign --verify --deep --verbose=2 "$APP"
+          echo "App 可执行文件: $(file -b "$APP/Contents/MacOS/MChub.Desktop")"
+
       - name: Verify bundle
         run: |
           APP="./src/MChub.Desktop/bin/Release/net10.0/${{ inputs.rid }}/publish/MChub.app"
