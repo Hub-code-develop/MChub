@@ -94,8 +94,8 @@ MChub 建立在许多优秀的 [开源项目](src/MChub/Classes/OpenSourceProjec
 
 > [!NOTE]
 > 项目中使用的部分开源库进行了二次修改：
-> - **MinecraftLaunch**：[Blessing-Studio/MinecraftLaunch](https://github.com/Blessing-Studio/MinecraftLaunch) → [tiouoo/MinecraftLaunch](https://github.com/tiouoo/MinecraftLaunch)
-> - **LiteSkinViewer**：[Ktn429/LiteSkinViewer](https://github.com/Ktn429/LiteSkinViewer) → [tiouoo/LiteSkinViewer](https://github.com/tiouoo/LiteSkinViewer)
+> - **MinecraftLaunch**：[Blessing-Studio/MinecraftLaunch](https://github.com/Blessing-Studio/MinecraftLaunch)
+> - **LiteSkinViewer**：[Ktn429/LiteSkinViewer](https://github.com/Ktn429/LiteSkinViewer)
 
 在交互设计、功能取舍与跨平台体验的探索中，MChub 也从下列开源项目的实践中获得了许多启发。感谢所有维护者与贡献者持续丰富 Minecraft 启动器生态；MChub 以独立的产品定位、架构与实现持续开发。
 
