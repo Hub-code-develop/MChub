@@ -531,7 +531,13 @@ jobs:
           LIBSRC=$(find "$DEST" -maxdepth 5 -type d -name "Microsoft.NETCore.App" | head -1)
           echo "CodeNet 运行时目录: $LIBSRC"
           ls "$LIBSRC"
+          # 取其中版本号最大的目录，作为后面固定 RuntimeFrameworkVersion 的依据：
+          # 官方 SDK 默认带的是更新的补丁版（如 10.0.14），CodeNet 只有它自己那一版，
+          # 不固定住的话 publish 会拉到官方包，signalfix 那四个 dylib 就对不上了。
+          CODENET_RT=$(ls "$LIBSRC" | sort -V | tail -1)
+          echo "CodeNet 运行时版本: $CODENET_RT"
           echo "CODENET_LIBS=$LIBSRC" >> "$GITHUB_ENV"
+          echo "CODENET_RT=$CODENET_RT" >> "$GITHUB_ENV"
 
       - name: Update Submodules
         run: |
@@ -595,8 +601,8 @@ jobs:
             echo "== $label gave up after 3 attempts =="
             return 1
           }
-          run_with_timeout restore restore -r ${{ matrix.rid }} -m:1 /p:UseSharedCompilation=false
-          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true -m:1 /p:UseSharedCompilation=false
+          run_with_timeout restore restore -r ${{ matrix.rid }} -p:RuntimeFrameworkVersion="$CODENET_RT" -m:1 /p:UseSharedCompilation=false
+          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true -p:RuntimeFrameworkVersion="$CODENET_RT" -m:1 /p:UseSharedCompilation=false
 
       # macOS 27 的 EXC_GUARD 会让原版运行时的 Mach exception 路径被 SIGKILL(137)，
       # CodeNet 的 signalfix 版本把这条路径换成 signal-based SEH。
