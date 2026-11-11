@@ -555,9 +555,15 @@ jobs:
         # 以及 dotnet 进程直接 SIGSEGV(139)。实测 run 42974836908 里 4 个 mac 作业全挂，
         # restore 与 bundle 都中招。本地同样症状加 -m:1 + 禁用共享编译即可通过，
         # 这里一并固化到 CI，并关掉 MSBuild server / 节点复用，减少常驻进程。
+        #
+        # 仅加 -m:1 仍然失败（run 42977225067）：runner 是 macos-26-arm64，
+        # CodeNet 的 x64 SDK 靠 Rosetta 跑，报
+        #   error MSB6006: "csc" exited with code 139
+        # Rosetta 下 .NET 的 W^X 双映射会触发 SIGSEGV/SIGBUS，关掉即可。
         env:
           DOTNET_CLI_USE_MSBUILD_SERVER: "0"
           MSBUILDDISABLENODEREUSE: "1"
+          DOTNET_EnableWriteXorExecute: "0"
         run: |
           cd ./src/MChub.Desktop
           # CodeNet x64 SDK 在 Rosetta 下交叉构建 osx-arm64 会概率性死锁：
