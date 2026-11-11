@@ -602,7 +602,7 @@ jobs:
             return 1
           }
           run_with_timeout restore restore -r ${{ matrix.rid }} -p:RuntimeFrameworkVersion="$CODENET_RT" -m:1 /p:UseSharedCompilation=false
-          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true -p:RuntimeFrameworkVersion="$CODENET_RT" -m:1 /p:UseSharedCompilation=false
+          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true -p:RuntimeFrameworkVersion="$CODENET_RT" -p:CFBundleShortVersionString=${{ needs.prepare.outputs.app_version }} -p:CFBundleVersion=${{ needs.prepare.outputs.app_version }} -m:1 /p:UseSharedCompilation=false
 
       # macOS 27 的 EXC_GUARD 会让原版运行时的 Mach exception 路径被 SIGKILL(137)，
       # CodeNet 的 signalfix 版本把这条路径换成 signal-based SEH。
@@ -616,8 +616,11 @@ jobs:
           APPRT=$(python3 -c "import json;print(json.load(open('$APP/Contents/MacOS/MChub.Desktop.runtimeconfig.json'))['runtimeOptions']['includedFrameworks'][0]['version'])")
           echo "App 运行时版本: $APPRT"
           if [ ! -d "$CODENET_LIBS/$APPRT" ]; then
-            echo "::warning::CodeNet 没有 $APPRT 版本的运行时（只有 $(ls "$CODENET_LIBS" | tr '\n' ' ')），跳过 signalfix 叠加"
-            exit 0
+            # 以前这里是 ::warning:: 然后 exit 0 —— 结果是 v1.1.0 的 macOS 包带着官方运行时
+            # 发出去，在 macOS 27 上一启动就是 "Failed to create CoreCLR, HRESULT: 0x8007000C"。
+            # 宁可这次构建失败，也不能再静默产出打不开的包。
+            echo "::error::CodeNet 没有 $APPRT 版本的运行时（只有 $(ls "$CODENET_LIBS" | tr '\n' ' ')）；官方运行时在 macOS 27 上会被 EXC_GUARD 打死，不能跳过 signalfix 叠加"
+            exit 1
           fi
           echo "CodeNet 运行时版本匹配，开始替换原生库"
           for f in libcoreclr.dylib libclrjit.dylib libclrgc.dylib libclrgcexp.dylib; do
@@ -631,6 +634,16 @@ jobs:
               echo "  跳过 $f（源或目标不存在）"
             fi
           done
+          # 复核：核心四个库必须与 CodeNet 的同版本文件逐字节一致，否则等于没换。
+          for f in libcoreclr.dylib libclrjit.dylib libclrgc.dylib libclrgcexp.dylib; do
+            src="$CODENET_LIBS/$APPRT/$f"; dst="$APP/Contents/MacOS/$f"
+            [ -f "$src" ] && [ -f "$dst" ] || continue
+            if ! cmp -s "$src" "$dst"; then
+              echo "::error::$f 与 CodeNet 版本不一致，signalfix 未生效"
+              exit 1
+            fi
+          done
+          echo "signalfix 运行时已生效（libcoreclr 大小 $(stat -f%z "$APP/Contents/MacOS/libcoreclr.dylib")）"
           # 签名不在这里做：后面塞完 Bedrock 运行时、改完 Info.plist 有统一的整包重签步骤
 
       - name: Download Bedrock macOS runtime
