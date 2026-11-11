@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version_json: ${{ steps.meta.outputs.json }}
+      version_json_newui: ${{ steps.meta.outputs.json_newui }}
       app_version: ${{ steps.meta.outputs.app_version }}
       commit: ${{ steps.meta.outputs.commit_hash }}
       version: ${{ steps.meta.outputs.version }}
@@ -77,7 +78,12 @@ jobs:
           COMMIT_HASH="${BASE_COMMIT}"
           BUILD_TIME=$(TZ='Asia/Shanghai' date -Iseconds)
           JSON_STRING="{\"type\":\"release\",\"build-time\":\"${BUILD_TIME}\",\"action\":\"${{ github.run_id }}\",\"commit\":\"${COMMIT_HASH}\",\"version\":\"${VERSION}\",\"version_title\":\"MChub v${VERSION}\"}"
+          # 同一个 release 里并列两套构建，靠 edition 让客户端只挑自己那一套资产：
+          #   standard → MChub.*        （main 的普通版）
+          #   newui    → MChub.NewUI.*  （InfinityUI 重写版，来自 MChubforNEW 分支）
+          JSON_NEWUI="{\"type\":\"release\",\"build-time\":\"${BUILD_TIME}\",\"action\":\"${{ github.run_id }}\",\"commit\":\"${COMMIT_HASH}\",\"version\":\"${VERSION}\",\"version_title\":\"MChub v${VERSION}\",\"edition\":\"newui\"}"
           echo "json=${JSON_STRING}" >> "$GITHUB_OUTPUT"
+          echo "json_newui=${JSON_NEWUI}" >> "$GITHUB_OUTPUT"
           echo "app_version=${APP_VERSION}" >> "$GITHUB_OUTPUT"
           echo "commit_hash=${COMMIT_HASH}" >> "$GITHUB_OUTPUT"
 
@@ -109,31 +115,41 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # 一个 release 发两套构建：standard（main 的普通版）与 newui（MChubforNEW 分支）。
+        # variant 与下面的 include 是笛卡尔积，所以 5 种包 × 2 个变体 = 10 个作业。
+        # 两套资产靠文件名前缀区分，客户端按 version-ci.txt 的 edition 只挑自己那一套。
+        variant:
+          - id: standard
+            ref: current
+            prefix: "MChub."
+          - id: newui
+            ref: MChubforNEW
+            prefix: "MChub.NewUI."
         include:
           - kind: appimage
             package_type: appimage
             runtime: linux-x64
-            output: MChub.linux.x64.AppImage
+            output: linux.x64.AppImage
             runs_on: ubuntu-22.04
           - kind: deb
             package_type: deb
             runtime: linux-x64
-            output: MChub.linux.x64.deb
+            output: linux.x64.deb
             runs_on: ubuntu-22.04
           - kind: rpm
             package_type: rpm
             runtime: linux-x64
-            output: MChub.linux.x64.rpm
+            output: linux.x64.rpm
             runs_on: ubuntu-22.04
           - kind: appimage
             package_type: appimage
             runtime: linux-arm64
-            output: MChub.linux.arm64.AppImage
+            output: linux.arm64.AppImage
             runs_on: ubuntu-22.04-arm
           - kind: deb
             package_type: deb
             runtime: linux-arm64
-            output: MChub.linux.arm64.deb
+            output: linux.arm64.deb
             runs_on: ubuntu-22.04-arm
           # rpm arm64 skipped: PupNet 生成的 rpm spec 在 arm64 宿主上仍报
           # "No compatible architectures found for build"（x64/arm64 宿主均复现），
@@ -151,6 +167,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
+          # standard 变体跟随本次触发（main），newui 变体显式取 MChubforNEW 分支头。
+          ref: ${{ matrix.variant.ref == 'current' && github.sha || matrix.variant.ref }}
           submodules: "recursive"
 
       - name: Setup .NET SDK
@@ -164,8 +182,13 @@ jobs:
           git submodule foreach --recursive 'branch=$(git config -f "$toplevel/.gitmodules" --get "submodule.$name.branch" || echo main); git fetch origin "$branch" && git checkout -B "$branch" "origin/$branch"'
 
       - name: Write CI Config
+        shell: bash
         run: |
-          echo '${{ needs.prepare.outputs.version_json }}' > ./assets/conf/version-ci.txt
+          if [ "${{ matrix.variant.id }}" = "newui" ]; then
+            echo '${{ needs.prepare.outputs.version_json_newui }}' > ./assets/conf/version-ci.txt
+          else
+            echo '${{ needs.prepare.outputs.version_json }}' > ./assets/conf/version-ci.txt
+          fi
           echo '${{ matrix.package_type }}' > ./assets/conf/package-type.txt
 
       - name: Dependency
@@ -173,16 +196,16 @@ jobs:
           dotnet tool install -g KuiperZone.PupNet --version 1.8.0
           sudo apt-get update && sudo apt-get install -y fuse rpm
 
-      - name: Build ${{ matrix.kind }} Package
+      - name: Build ${{ matrix.kind }} Package (${{ matrix.variant.id }})
         run: |
           cd ./assets/conf
-          pupnet --runtime ${{ matrix.runtime }} --kind ${{ matrix.kind }} -o ${{ matrix.output }} -y --app-version ${{ needs.prepare.outputs.app_version }}
+          pupnet --runtime ${{ matrix.runtime }} --kind ${{ matrix.kind }} -o ${{ matrix.variant.prefix }}${{ matrix.output }} -y --app-version ${{ needs.prepare.outputs.app_version }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.runtime }}-${{ matrix.kind }}-artifacts
-          path: assets/conf/Deploy/OUT/${{ matrix.output }}
+          name: ${{ matrix.runtime }}-${{ matrix.kind }}-${{ matrix.variant.id }}-artifacts
+          path: assets/conf/Deploy/OUT/${{ matrix.variant.prefix }}${{ matrix.output }}
 
   win-exe:
     runs-on: windows-latest
@@ -197,6 +220,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        variant:
+          - id: standard
+            ref: current
+            prefix: "MChub."
+          - id: newui
+            ref: MChubforNEW
+            prefix: "MChub.NewUI."
         include:
           - runtime: win-x64
             arch: x64
@@ -215,6 +245,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
+          ref: ${{ matrix.variant.ref == 'current' && github.sha || matrix.variant.ref }}
           submodules: "recursive"
 
       - name: Setup .NET SDK
@@ -230,7 +261,11 @@ jobs:
 
       - name: Write CI Config
         run: |
-          echo '${{ needs.prepare.outputs.version_json }}' > ./assets/conf/version-ci.txt
+          if [ "${{ matrix.variant.id }}" = "newui" ]; then
+            echo '${{ needs.prepare.outputs.version_json_newui }}' > ./assets/conf/version-ci.txt
+          else
+            echo '${{ needs.prepare.outputs.version_json }}' > ./assets/conf/version-ci.txt
+          fi
           echo 'portable' > ./assets/conf/package-type.txt
         shell: bash
 
@@ -242,14 +277,14 @@ jobs:
           dotnet restore -r ${{ matrix.runtime }}
           dotnet publish -c Release -r ${{ matrix.runtime }} /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:SelfContained=false /p:Version=${{ needs.prepare.outputs.app_version }} -o "../../dist" -p:DebugType=none -p:DebugSymbols=false
           cd "../../dist"
-          Rename-Item -Path "MChub.Desktop.exe" -NewName "MChub.win.${{ matrix.arch }}.portable.exe" -Force
-          Compress-Archive -Path "MChub.win.${{ matrix.arch }}.portable.exe" -DestinationPath "../MChub.win.${{ matrix.arch }}.portable.zip" -Force
+          Rename-Item -Path "MChub.Desktop.exe" -NewName "${{ matrix.variant.prefix }}win.${{ matrix.arch }}.portable.exe" -Force
+          Compress-Archive -Path "${{ matrix.variant.prefix }}win.${{ matrix.arch }}.portable.exe" -DestinationPath "../${{ matrix.variant.prefix }}win.${{ matrix.arch }}.portable.zip" -Force
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: win-exe-win.${{ matrix.arch }}-artifacts
-          path: ./MChub.*.zip
+          name: win-exe-win.${{ matrix.arch }}-${{ matrix.variant.id }}-artifacts
+          path: ./${{ matrix.variant.prefix }}win.${{ matrix.arch }}.portable.zip
 
   win-installer:
     runs-on: windows-latest
@@ -264,6 +299,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        variant:
+          - id: standard
+            ref: current
+            prefix: "MChub."
+          - id: newui
+            ref: MChubforNEW
+            prefix: "MChub.NewUI."
         include:
           - runtime: win-x64
             arch: x64
@@ -282,6 +324,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
+          ref: ${{ matrix.variant.ref == 'current' && github.sha || matrix.variant.ref }}
           submodules: "recursive"
 
       - name: Setup .NET SDK
@@ -305,7 +348,11 @@ jobs:
 
       - name: Write CI Config
         run: |
-          echo '${{ needs.prepare.outputs.version_json }}' > ./assets/conf/version-ci.txt
+          if [ "${{ matrix.variant.id }}" = "newui" ]; then
+            echo '${{ needs.prepare.outputs.version_json_newui }}' > ./assets/conf/version-ci.txt
+          else
+            echo '${{ needs.prepare.outputs.version_json }}' > ./assets/conf/version-ci.txt
+          fi
           echo 'installer' > ./assets/conf/package-type.txt
         shell: bash
 
@@ -313,15 +360,15 @@ jobs:
         shell: pwsh
         run: |
           cd ./assets/conf
-          pupnet -r ${{ matrix.runtime }} -k setup -y -o MChub.win.${{ matrix.arch }}.installer.exe --app-version ${{ needs.prepare.outputs.app_version }}
+          pupnet -r ${{ matrix.runtime }} -k setup -y -o ${{ matrix.variant.prefix }}win.${{ matrix.arch }}.installer.exe --app-version ${{ needs.prepare.outputs.app_version }}
           ../../scripts/configure-windows-installer.ps1 -Runtime ${{ matrix.runtime }}
-          Compress-Archive -Path "Deploy/OUT/MChub.win.${{ matrix.arch }}.installer.exe" -DestinationPath "Deploy/OUT/MChub.win.${{ matrix.arch }}.installer.zip" -Force
+          Compress-Archive -Path "Deploy/OUT/${{ matrix.variant.prefix }}win.${{ matrix.arch }}.installer.exe" -DestinationPath "Deploy/OUT/${{ matrix.variant.prefix }}win.${{ matrix.arch }}.installer.zip" -Force
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: win-installer-win.${{ matrix.arch }}-artifacts
-          path: assets/conf/Deploy/OUT/MChub.win.*.installer.zip
+          name: win-installer-win.${{ matrix.arch }}-${{ matrix.variant.id }}-artifacts
+          path: assets/conf/Deploy/OUT/${{ matrix.variant.prefix }}win.${{ matrix.arch }}.installer.zip
 
   # 基岩版在 macOS 上没有原生客户端，靠 Wine(WineGDK) + xodus-service 跑 Windows GDK 版；
   # 运行时由可复用的 bedrock-macos-runtime.yml 构建，再内嵌进 .app。
@@ -341,12 +388,29 @@ jobs:
       REL_MC_KEY: ${{ secrets.REL_MC_KEY }}
     strategy:
       fail-fast: false
+      # 显式列 4 项（2 变体 × 2 架构）。用 variant + include 组合的话，
+      # include 里的 rid 与组合中的 rid 键重名，语义容易出错，这里写死更稳。
       matrix:
-        rid: [osx-x64, osx-arm64]
         include:
-          - rid: osx-x64
+          - id: standard
+            ref: current
+            prefix: "MChub."
+            rid: osx-x64
             dmg_arch: x64
-          - rid: osx-arm64
+          - id: standard
+            ref: current
+            prefix: "MChub."
+            rid: osx-arm64
+            dmg_arch: arm64
+          - id: newui
+            ref: MChubforNEW
+            prefix: "MChub.NewUI."
+            rid: osx-x64
+            dmg_arch: x64
+          - id: newui
+            ref: MChubforNEW
+            prefix: "MChub.NewUI."
+            rid: osx-arm64
             dmg_arch: arm64
     steps:
       # 基座库 CodeHub-FluentUI 发布在 GitHub Packages。该源即使包是公开的也要求认证
@@ -361,6 +425,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
+          ref: ${{ matrix.ref == 'current' && github.sha || matrix.ref }}
           submodules: "recursive"
 
       - name: Setup CodeNet SDK (macOS 定制版 .NET)
@@ -393,7 +458,11 @@ jobs:
 
       - name: Write CI Config
         run: |
-          echo '${{ needs.prepare.outputs.version_json }}' > ./assets/conf/version-ci.txt
+          if [ "${{ matrix.id }}" = "newui" ]; then
+            echo '${{ needs.prepare.outputs.version_json_newui }}' > ./assets/conf/version-ci.txt
+          else
+            echo '${{ needs.prepare.outputs.version_json }}' > ./assets/conf/version-ci.txt
+          fi
           echo 'app' > ./assets/conf/package-type.txt
 
       - name: Download Bedrock native components
@@ -510,7 +579,7 @@ jobs:
       - name: Package APP to ZIP
         run: |
           cd ./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/
-          /usr/bin/ditto -c -k --keepParent MChub.app ../../../../../../../MChub.osx.mac.${{ matrix.dmg_arch }}.app.zip
+          /usr/bin/ditto -c -k --keepParent MChub.app ../../../../../../../${{ matrix.prefix }}osx.mac.${{ matrix.dmg_arch }}.app.zip
 
       # macOS Runner 预装的 aws/tap 未受信任，会导致 brew 输出警告，构建 DMG 前先移除
       - name: Untap Untrusted Homebrew Taps
@@ -519,16 +588,16 @@ jobs:
       - name: Build DMG
         uses: L-Super/create-dmg-actions@v1.1.0
         with:
-          dmg_name: "MChub.osx.mac.${{ matrix.dmg_arch }}"
+          dmg_name: "${{ matrix.prefix }}osx.mac.${{ matrix.dmg_arch }}"
           src_dir: "./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/MChub.app"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: osx-${{ matrix.dmg_arch }}-artifacts
+          name: osx-${{ matrix.dmg_arch }}-${{ matrix.id }}-artifacts
           path: |
-            ./MChub.osx.mac.${{ matrix.dmg_arch }}.dmg
-            ./MChub.osx.mac.${{ matrix.dmg_arch }}.app.zip
+            ./${{ matrix.prefix }}osx.mac.${{ matrix.dmg_arch }}.dmg
+            ./${{ matrix.prefix }}osx.mac.${{ matrix.dmg_arch }}.app.zip
 
   publish:
     needs: [prepare, linux-package, win-exe, win-installer, mac-dmg]
@@ -563,6 +632,16 @@ jobs:
             echo "MChub v${VERSION}"
             echo "发布日期：${RELEASE_DATE}"
             echo "基准提交：\`${BASE_COMMIT}\`"
+            echo ""
+            echo "## 本版本包含两套构建"
+            echo ""
+            echo "| 资产前缀 | 版本 | 说明 |"
+            echo "| --- | --- | --- |"
+            echo "| \`MChub.\` | 普通版 | main 分支构建，沿用原有界面 |"
+            echo "| \`MChub.NewUI.\` | InfinityUI 重写版 | \`MChubforNEW\` 分支构建，自研控件库 + 五色零圆角界面 |"
+            echo ""
+            echo "两套包的版本号相同（v${VERSION}），各自只跟随自己的资产更新，互不覆盖："
+            echo "普通版客户端只会下载 \`MChub.*\`，InfinityUI 版只会下载 \`MChub.NewUI.*\`。"
             echo ""
             if [ -n "${PREV_TAG}" ]; then
               echo "更新日志（自 ${PREV_TAG}）："

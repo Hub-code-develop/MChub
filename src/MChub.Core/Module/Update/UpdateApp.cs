@@ -313,6 +313,9 @@ public static class UpdateApp
 
     internal static UpdateAsset SelectAsset(UpdateRelease release, string packageType)
     {
+        // 一个 release 里并列两套构建：普通版 MChub.* 与 InfinityUI 重写版 MChub.NewUI.*。
+        // 靠 version-ci.txt 注入的 edition 决定自己该跟哪一套，避免两个变体互相覆盖。
+        var prefix = IsNewUiEdition(AppVersionService.Instance.Version.Edition) ? "MChub.NewUI." : "MChub.";
         var arch = RuntimeInformation.ProcessArchitecture switch
         {
             Architecture.X64 => "x64",
@@ -326,8 +329,8 @@ public static class UpdateApp
             if (arch != "x64") throw new PlatformNotSupportedException(CommonLanguageManager.Instance.update_noWindowsArmPackage.CurrentValue());
             expectedName = packageType switch
             {
-                "installer" => "MChub.win.x64.installer.zip",
-                "portable" => "MChub.win.x64.portable.zip",
+                "installer" => $"{prefix}win.x64.installer.zip",
+                "portable" => $"{prefix}win.x64.portable.zip",
                 _ => throw new NotSupportedException(string.Format(CommonLanguageManager.Instance.update_unsupportedWindowsInstallType.CurrentValue(), packageType))
             };
         }
@@ -336,9 +339,9 @@ public static class UpdateApp
             if (arch != "x64") throw new PlatformNotSupportedException(CommonLanguageManager.Instance.update_linuxOnlyX64.CurrentValue());
             expectedName = packageType switch
             {
-                "appimage" => "MChub.linux.x64.AppImage",
-                "deb" => "MChub.linux.x64.deb",
-                "rpm" => "MChub.linux.x64.rpm",
+                "appimage" => $"{prefix}linux.x64.AppImage",
+                "deb" => $"{prefix}linux.x64.deb",
+                "rpm" => $"{prefix}linux.x64.rpm",
                 _ => throw new NotSupportedException(string.Format(CommonLanguageManager.Instance.update_unsupportedLinuxInstallType.CurrentValue(), packageType))
             };
         }
@@ -346,7 +349,7 @@ public static class UpdateApp
         {
             if (packageType is not ("app" or "dmg")) throw new NotSupportedException(CommonLanguageManager.Instance.update_macOnlyAppBundle.CurrentValue());
             if (arch == "arm") throw new PlatformNotSupportedException(CommonLanguageManager.Instance.update_noArmMac.CurrentValue());
-            expectedName = $"MChub.osx.mac.{arch}.app.zip";
+            expectedName = $"{prefix}osx.mac.{arch}.app.zip";
         }
         else
         {
@@ -355,6 +358,11 @@ public static class UpdateApp
 
         return release.Assets.SingleOrDefault(asset => asset.Name.Equals(expectedName, StringComparison.Ordinal))
                ?? throw new FileNotFoundException(string.Format(CommonLanguageManager.Instance.update_packageNotFound.CurrentValue(), expectedName));
+    }
+
+    private static bool IsNewUiEdition(string? edition)
+    {
+        return edition?.Trim().ToLowerInvariant() is "newui" or "infinity" or "infinityui";
     }
 
     private static async Task<UpdateTaskHandle?> Download(UpdateAsset asset, string destination, bool showTask,

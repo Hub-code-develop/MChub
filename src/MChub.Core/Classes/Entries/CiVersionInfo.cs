@@ -28,4 +28,14 @@ public partial class CiVersionInfo : ObservableObject
     [JsonPropertyName("version_title")]
     [ObservableProperty]
     public partial string VersionTitle { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 构建变体。同一个 release 里会并列存放两套构建：
+    /// <c>standard</c> 对应普通版的 <c>MChub.*</c> 资产，
+    /// <c>newui</c> 对应 InfinityUI 重写版的 <c>MChub.NewUI.*</c> 资产。
+    /// 旧版本发布产物没有这个字段，缺省即 <c>standard</c>，行为与改动前一致。
+    /// </summary>
+    [JsonPropertyName("edition")]
+    [ObservableProperty]
+    public partial string Edition { get; set; } = "standard";
 }
