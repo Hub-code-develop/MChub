@@ -316,6 +316,7 @@ public static class MinecraftLaunchService
 
         context.SetRunning(CommonLanguageManager.Instance.launch_startingProcess.CurrentValue());
         await PrepareGraphicsBeforeLaunchAsync(instance, config, context.CancellationToken);
+        await PrepareAuthlibInjectorAsync(config, options, topLevel, context.CancellationToken);
         if (options.SetChineseLanguageOnLaunch && instance.MinecraftEntry != null)
         {
             context.SetRunning(CommonLanguageManager.Instance.launch_settingGameLanguage.CurrentValue());
@@ -363,6 +364,32 @@ public static class MinecraftLaunchService
 
         var agent = GraphicsLaunchArgumentsBuilder.BuildJavaAgent(jarPath, mesaDriverName);
         config.JvmArguments = config.JvmArguments.Append("-javaagent:" + agent);
+    }
+
+    /// <summary>
+    /// 第三方 Yggdrasil 账号（LittleSkin / 皮肤站 / 私服认证）启动前挂上 authlib-injector。
+    /// 不注入时客户端仍向 Mojang 校验会话，表现为皮肤不显示、部分正版验证服务器拒绝登录。
+    /// </summary>
+    private static async Task PrepareAuthlibInjectorAsync(LaunchConfig config, MinecraftLaunchOptions options,
+        TopLevel? topLevel, CancellationToken cancellationToken)
+    {
+        if (options.Account is not { AccountType: AccountType.Yggdrasil } account ||
+            string.IsNullOrWhiteSpace(account.YggdrasilServerUrl))
+            return;
+
+        var jarPath = await AuthlibInjectorService.EnsureAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(jarPath))
+        {
+            Logger.Warning("[AuthlibInjector] 未取得 authlib-injector.jar，第三方皮肤与会话改写不会生效。");
+            Notice(topLevel,
+                CommonLanguageManager.Instance.launch_authlibInjectorUnavailable.CurrentValue(),
+                NotificationType.Warning);
+            return;
+        }
+
+        var argument = AuthlibInjectorService.BuildJavaAgentArgument(jarPath, account.YggdrasilServerUrl);
+        config.JvmArguments = config.JvmArguments.Append(argument);
+        Logger.Info($"[AuthlibInjector] 已注入：{argument}");
     }
 
     private static async Task RunBeforeLaunchCommandAsync(TaskExecutionContext context, TopLevel? topLevel,

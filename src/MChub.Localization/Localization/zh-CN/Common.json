@@ -532,6 +532,7 @@
     "optimizingMemory": "正在优化系统内存",
     "memoryOptimizationIncomplete": "内存优化未完成，将继续启动游戏：{0}",
     "startingProcess": "正在启动 Minecraft 进程",
+    "authlibInjectorUnavailable": "第三方认证注入组件获取失败，皮肤与正版验证可能不生效；可稍后重试启动。",
     "settingGameLanguage": "正在设置游戏语言",
     "noProcessInfo": "Minecraft 启动器未返回进程信息。",
     "runningBeforeLaunchCommand": "正在执行启动前命令",

@@ -532,6 +532,7 @@
     "optimizingMemory": "Optimizing system memory",
     "memoryOptimizationIncomplete": "Memory optimization incomplete, continuing to launch the game: {0}",
     "startingProcess": "Starting Minecraft process",
+    "authlibInjectorUnavailable": "Failed to fetch the third-party auth injector; skins and session validation may not work. Try launching again later.",
     "settingGameLanguage": "Setting the game language",
     "noProcessInfo": "The Minecraft launcher did not return process information.",
     "runningBeforeLaunchCommand": "Running pre-launch command",

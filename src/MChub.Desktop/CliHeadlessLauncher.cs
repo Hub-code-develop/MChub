@@ -104,6 +104,23 @@ internal static class CliHeadlessLauncher
         var extraGameArguments = new List<string>();
         var config = CreateLaunchConfig(instance, account, java, options, command, placeholders, extraGameArguments);
 
+        if (settings.UsingMinecraftMinecraftAccount is { AccountType: AccountType.Yggdrasil } yggdrasil &&
+            !string.IsNullOrWhiteSpace(yggdrasil.YggdrasilServerUrl))
+        {
+            var authlibJar = await AuthlibInjectorService.EnsureAsync();
+            if (authlibJar is not null)
+            {
+                var argument = AuthlibInjectorService.BuildJavaAgentArgument(authlibJar,
+                    yggdrasil.YggdrasilServerUrl);
+                config.JvmArguments = config.JvmArguments.Append(argument);
+                Write($"[AuthlibInjector] {argument}");
+            }
+            else
+            {
+                Write(CommonLanguageManager.Instance.launch_authlibInjectorUnavailable.CurrentValue());
+            }
+        }
+
         await CompleteResourcesAsync(instance.Context!, options);
 
         Write(CommonLanguageManager.Instance.launch_startingProcess.CurrentValue());
