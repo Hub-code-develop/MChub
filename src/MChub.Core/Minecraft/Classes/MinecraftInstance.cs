@@ -146,7 +146,8 @@ public class MinecraftInstance : ObservableObject
     }
 
     public string MinecraftPath
-    {        get
+    {
+        get
         {
             if (Type == MinecraftInstanceType.Java && MinecraftEntry != null)
                 return Layout?.InstanceRoot ?? MinecraftEntry.InstancePath;
