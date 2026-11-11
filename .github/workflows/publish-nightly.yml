@@ -14,11 +14,15 @@ concurrency:
 # 与已验证可用的 publish-release.yml 取同一组合 —— 这两个权限就是发布流程实际需要的全部：
 #   contents: write  创建/更新 release、上传资产（gh release create/upload）
 #   packages: read   从 GitHub Packages 还原基座库 CodeHub-FluentUI
+#   actions: write   prepare 在「24h 内无提交」时需要 gh run cancel 取消本次运行；
+#                    缺这个权限会 403 Resource not accessible by integration，把本该跳过的
+#                    nightly 变成一条每日红色失败。
 # 仓库级默认是「读写全部」，这里收紧到最小集。
 # 注：下载本工作流内其它 job 的 artifact 走 ACTIONS_RUNTIME_TOKEN，不需要额外权限。
 permissions:
   contents: write
   packages: read
+  actions: write
 
 jobs:
   prepare:
