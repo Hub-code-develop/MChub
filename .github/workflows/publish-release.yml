@@ -80,7 +80,7 @@ jobs:
           JSON_STRING="{\"type\":\"release\",\"build-time\":\"${BUILD_TIME}\",\"action\":\"${{ github.run_id }}\",\"commit\":\"${COMMIT_HASH}\",\"version\":\"${VERSION}\",\"version_title\":\"MChub v${VERSION}\"}"
           # 同一个 release 里并列两套构建，靠 edition 让客户端只挑自己那一套资产：
           #   standard → MChub.*        （main 的普通版）
-          #   newui    → MChub.NewUI.*  （InfinityUI 重写版，来自 MChubforNEW 分支）
+          #   newui    → MChub.NewUI.*  （新手版 New-user UI，来自 MChubforNEW 分支）
           JSON_NEWUI="{\"type\":\"release\",\"build-time\":\"${BUILD_TIME}\",\"action\":\"${{ github.run_id }}\",\"commit\":\"${COMMIT_HASH}\",\"version\":\"${VERSION}\",\"version_title\":\"MChub v${VERSION}\",\"edition\":\"newui\"}"
           echo "json=${JSON_STRING}" >> "$GITHUB_OUTPUT"
           echo "json_newui=${JSON_NEWUI}" >> "$GITHUB_OUTPUT"
@@ -460,6 +460,13 @@ jobs:
       max-parallel: 2
       # 显式列 4 项（2 变体 × 2 架构）。用 variant + include 组合的话，
       # include 里的 rid 与组合中的 rid 键重名，语义容易出错，这里写死更稳。
+      #
+      # bundle_name / display_name：两套构建要能同时装进 /Applications，就必须让
+      # .app 目录名（Finder 里看到的名字）不同 —— 同名的第二个会被第一个覆盖。
+      # CFBundleIdentifier 保持两边一致（hub.code.MChub），共用协议注册与偏好域；
+      # 因此这里只改 CFBundleName / CFBundleDisplayName，不动 Identifier。
+      # bundle_name 会同时成为 .app 目录名，故刻意不用空格（DMG 构建步骤
+      # 会把路径直接插进 shell，空格会断词）。显示名不受此限。
       matrix:
         include:
           - id: standard
@@ -467,21 +474,29 @@ jobs:
             prefix: "MChub."
             rid: osx-x64
             dmg_arch: x64
+            bundle_name: MChub
+            display_name: MChub
           - id: standard
             ref: current
             prefix: "MChub."
             rid: osx-arm64
             dmg_arch: arm64
+            bundle_name: MChub
+            display_name: MChub
           - id: newui
             ref: MChubforNEW
             prefix: "MChub.NewUI."
             rid: osx-x64
             dmg_arch: x64
+            bundle_name: MCStudio-Newbie
+            display_name: MCStudio Newbie
           - id: newui
             ref: MChubforNEW
             prefix: "MChub.NewUI."
             rid: osx-arm64
             dmg_arch: arm64
+            bundle_name: MCStudio-Newbie
+            display_name: MCStudio Newbie
     steps:
       # 基座库 CodeHub-FluentUI 发布在 GitHub Packages。该源即使包是公开的也要求认证
       # （实测匿名请求服务索引与包下载均 401），所以每个会还原的作业都要先配好凭据。
@@ -602,7 +617,10 @@ jobs:
             return 1
           }
           run_with_timeout restore restore -r ${{ matrix.rid }} -p:RuntimeFrameworkVersion="$CODENET_RT" -m:1 /p:UseSharedCompilation=false
-          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true -p:RuntimeFrameworkVersion="$CODENET_RT" -p:CFBundleShortVersionString=${{ needs.prepare.outputs.app_version }} -p:CFBundleVersion=${{ needs.prepare.outputs.app_version }} -m:1 /p:UseSharedCompilation=false
+          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true -p:RuntimeFrameworkVersion="$CODENET_RT" -p:CFBundleName="${{ matrix.bundle_name }}" -p:CFBundleDisplayName="${{ matrix.display_name }}" -p:CFBundleShortVersionString=${{ needs.prepare.outputs.app_version }} -p:CFBundleVersion=${{ needs.prepare.outputs.app_version }} -m:1 /p:UseSharedCompilation=false
+          # CFBundleName 决定生成的 .app 目录名（DotNet.Bundle 的 BundleAppTask 用它建目录），
+          # 所以两套构建的 app 名只靠这一个属性区分；Identifier 仍来自 csproj 的
+          # CFBundleIdentifier（hub.code.MChub），两边一致。
 
       # macOS 27 的 EXC_GUARD 会让原版运行时的 Mach exception 路径被 SIGKILL(137)，
       # CodeNet 的 signalfix 版本把这条路径换成 signal-based SEH。
@@ -612,7 +630,7 @@ jobs:
       - name: Overlay signalfix runtime
         run: |
           set -euo pipefail
-          APP="./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/MChub.app"
+          APP="./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.bundle_name }}.app"
           APPRT=$(python3 -c "import json;print(json.load(open('$APP/Contents/MacOS/MChub.Desktop.runtimeconfig.json'))['runtimeOptions']['includedFrameworks'][0]['version'])")
           echo "App 运行时版本: $APPRT"
           if [ ! -d "$CODENET_LIBS/$APPRT" ]; then
@@ -654,7 +672,7 @@ jobs:
 
       - name: Embed Bedrock macOS runtime
         run: |
-          APP="./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/MChub.app"
+          APP="./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.bundle_name }}.app"
           mkdir -p "$APP/Contents/MacOS/mcbe-macos"
           # MChub.Bedrock.MacOS 在 AppContext.BaseDirectory/mcbe-macos 下探测运行时。
           cp -R ./.runtime/. "$APP/Contents/MacOS/mcbe-macos/"
@@ -668,7 +686,7 @@ jobs:
       # DotNet.Bundle 不支持 CFBundleURLTypes，mchub:// 协议声明在打包后写入 Info.plist
       - name: Declare mchub URL Scheme
         run: |
-          PLIST="./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/MChub.app/Contents/Info.plist"
+          PLIST="./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.bundle_name }}.app/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$PLIST"
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$PLIST"
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string hub.code.mchub" "$PLIST"
@@ -676,7 +694,7 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$PLIST"
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string mchub" "$PLIST"
 
-      # 打包前 MChub.app 只带着 apphost 的 ad-hoc 签名（.NET/DotNet.Bundle 自动施加）。
+      # 打包前 app bundle 只带着 apphost 的 ad-hoc 签名（.NET/DotNet.Bundle 自动施加）。
       # 上面又往 Contents/MacOS 塞了 Bedrock 运行时、并用 PlistBuddy 改写了 Info.plist，
       # bundle 级签名与内容因此不一致 —— codesign --verify 会报
       #   "code has no resources but signature indicates they must be present"
@@ -688,7 +706,7 @@ jobs:
       - name: Sign app bundle (ad-hoc)
         run: |
           set -euo pipefail
-          APP="./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/MChub.app"
+          APP="./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.bundle_name }}.app"
           VULKAN_DIR="$APP/Contents/MacOS/mcbe-macos/render/vulkan"
           # macOS 把 ".d" 目录当成 bundle，codesign --deep 扫到
           #   .../render/vulkan/icd.d
@@ -713,7 +731,7 @@ jobs:
       - name: Package APP to ZIP
         run: |
           cd ./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/
-          /usr/bin/ditto -c -k --keepParent MChub.app ../../../../../../../${{ matrix.prefix }}osx.mac.${{ matrix.dmg_arch }}.app.zip
+          /usr/bin/ditto -c -k --keepParent "${{ matrix.bundle_name }}.app" ../../../../../../../${{ matrix.prefix }}osx.mac.${{ matrix.dmg_arch }}.app.zip
 
       # macOS Runner 预装的 aws/tap 未受信任，会导致 brew 输出警告，构建 DMG 前先移除
       - name: Untap Untrusted Homebrew Taps
@@ -723,7 +741,7 @@ jobs:
         uses: L-Super/create-dmg-actions@v1.1.0
         with:
           dmg_name: "${{ matrix.prefix }}osx.mac.${{ matrix.dmg_arch }}"
-          src_dir: "./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/MChub.app"
+          src_dir: "./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/${{ matrix.bundle_name }}.app"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7

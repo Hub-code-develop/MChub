@@ -124,11 +124,15 @@
     <!-- Copy the macOS app icon into the bundled .app/Contents/Resources so Finder
          shows it. BundleApp only looks for the icon by CFBundleIconFile name at the
          bundle root, so a manual copy is required. -->
+    <!-- 目录名不能用固定的 MChub.app：CI 会给不同变体传不同的 CFBundleName
+         （普通版 MChub、新手版 MCStudio-Newbie），BundleAppTask 正是拿它建 .app 目录。
+         固定名会导致改名后的变体找不到 bundle，图标悄悄不复制。 -->
     <Target Name="CopyAppIconToBundle" AfterTargets="BundleApp">
-        <Message Importance="high" Text="[CopyAppIconToBundle] OutputPath=$(OutputPath) AssemblyName=$(AssemblyName)" />
+        <Message Importance="high" Text="[CopyAppIconToBundle] OutputPath=$(OutputPath) AssemblyName=$(AssemblyName) CFBundleName=$(CFBundleName)" />
         <PropertyGroup>
             <_AppIconSrc>$(MSBuildProjectDirectory)/../../assets/MChub.icns</_AppIconSrc>
-            <_AppBundleDir Condition="Exists('$(OutputPath)publish/MChub.app')">$(OutputPath)publish/MChub.app</_AppBundleDir>
+            <_AppBundleDir Condition="Exists('$(OutputPath)publish/$(CFBundleName).app')">$(OutputPath)publish/$(CFBundleName).app</_AppBundleDir>
+            <_AppBundleDir Condition="'$(_AppBundleDir)' == '' And Exists('$(OutputPath)$(CFBundleName).app')">$(OutputPath)$(CFBundleName).app</_AppBundleDir>
             <_AppBundleDir Condition="'$(_AppBundleDir)' == '' And Exists('$(OutputPath)$(AssemblyName).app')">$(OutputPath)$(AssemblyName).app</_AppBundleDir>
         </PropertyGroup>
         <Message Importance="high" Text="[CopyAppIconToBundle] AppBundleDir=$(_AppBundleDir) IconExists=$([System.IO.File]::Exists('$(_AppIconSrc)'))" />
