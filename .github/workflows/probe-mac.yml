@@ -1,0 +1,133 @@
+name: probe-mac
+
+# 临时诊断用：只跑一次 macOS 打包，用来验证 CodeNet SDK 在 runner 上的可构建性。
+# 验证完成后删除本文件（它不参与发布流程）。
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "runner 标签"
+        required: true
+        default: macos-latest
+        type: choice
+        options:
+          - macos-latest
+          - macos-15
+          - macos-15-intel
+          - macos-13
+      rid:
+        description: "目标 RID"
+        required: true
+        default: osx-arm64
+        type: choice
+        options:
+          - osx-arm64
+          - osx-x64
+      wx:
+        description: "DOTNET_EnableWriteXorExecute"
+        required: true
+        default: "0"
+        type: choice
+        options:
+          - "0"
+          - "1"
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  probe:
+    name: probe-${{ inputs.runner }}-${{ inputs.rid }}-wx${{ inputs.wx }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 40
+    steps:
+      - name: Runner info
+        run: |
+          uname -a
+          sw_vers || true
+          echo "arch=$(uname -m)"
+          echo "rosetta=$(/usr/bin/pgrep oahd >/dev/null && echo yes || echo no)"
+
+      - name: Configure NuGet (GitHub Packages)
+        shell: bash
+        run: |-
+          dotnet nuget add source "https://nuget.pkg.github.com/hub-code-develop/index.json" --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name codehub-gh || true
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: "recursive"
+
+      - name: Setup CodeNet SDK (x64)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          CODENET_VER="10.0.400"
+          DEST="$RUNNER_TEMP/codenet"
+          mkdir -p "$DEST"
+          gh release download "sdk-v${CODENET_VER}" -R Open-code-Studio/CodeNet -p "dotnet-codenet-osx-x64.tar.gz" -D "$DEST"
+          tar xzf "$DEST/dotnet-codenet-osx-x64.tar.gz" -C "$DEST"
+          echo "DOTNET_ROOT=$DEST/dotnet11x64" >> "$GITHUB_ENV"
+          echo "$DEST/dotnet11x64" >> "$GITHUB_PATH"
+          "$DEST/dotnet11x64/dotnet" --version
+          "$DEST/dotnet11x64/dotnet" --info 2>/dev/null | grep -iE "Architecture|RID|Version" || true
+
+      - name: Update Submodules
+        run: |
+          git submodule update --init --recursive
+          git submodule foreach --recursive 'branch=$(git config -f "$toplevel/.gitmodules" --get "submodule.$name.branch" || echo main); git fetch origin "$branch" && git checkout -B "$branch" "origin/$branch"'
+
+      - name: Write CI Config
+        run: |
+          echo '{"type":"release","build-time":"2026-01-01T00:00:00+08:00","action":"probe","commit":"probe","version":"1.2.0","version_title":"MChub v1.2.0"}' > ./assets/conf/version-ci.txt
+          echo 'app' > ./assets/conf/package-type.txt
+
+      - name: Build macOS App
+        env:
+          DOTNET_CLI_USE_MSBUILD_SERVER: "0"
+          MSBUILDDISABLENODEREUSE: "1"
+          DOTNET_EnableWriteXorExecute: ${{ inputs.wx }}
+        run: |
+          cd ./src/MChub.Desktop
+          run_with_timeout() {
+            local label="$1"; shift
+            for attempt in 1 2 3; do
+              echo "== $label attempt $attempt =="
+              dotnet "$@" &
+              local pid=$!
+              ( sleep 600; kill -9 "$pid" 2>/dev/null ) &
+              local killer=$!
+              local rc=0
+              wait "$pid" || rc=$?
+              kill "$killer" 2>/dev/null || true
+              if [ "$rc" -eq 0 ]; then
+                echo "== $label OK =="
+                return 0
+              fi
+              echo "== $label failed (rc=$rc), retrying =="
+              pkill -9 dotnet 2>/dev/null || true
+              sleep 5
+            done
+            echo "== $label gave up after 3 attempts =="
+            return 1
+          }
+          run_with_timeout restore restore -r ${{ inputs.rid }} -m:1 /p:UseSharedCompilation=false
+          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ inputs.rid }} -property:Configuration=Release -p:SelfContained=true -m:1 /p:UseSharedCompilation=false
+
+      - name: Verify bundle
+        run: |
+          APP="./src/MChub.Desktop/bin/Release/net10.0/${{ inputs.rid }}/publish/MChub.app"
+          ls -la "$APP/Contents/MacOS" | head -20
+          file "$APP/Contents/MacOS/MChub.Desktop" || true
+          /usr/bin/ditto -c -k --keepParent "$APP" "/tmp/probe.${{ inputs.rid }}.app.zip"
+          ls -lh "/tmp/probe.${{ inputs.rid }}.app.zip"
+
+      - name: Upload bundle
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: probe-${{ inputs.rid }}-wx${{ inputs.wx }}
+          path: /tmp/probe.${{ inputs.rid }}.app.zip
+          if-no-files-found: warn
