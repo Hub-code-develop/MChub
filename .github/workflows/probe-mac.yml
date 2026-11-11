@@ -145,7 +145,7 @@ jobs:
             echo "== $label gave up after 3 attempts =="
             return 1
           }
-          run_with_timeout restore restore -r ${{ inputs.rid }} -m:1 /p:UseSharedCompilation=false
+          run_with_timeout restore restore -r ${{ inputs.rid }} ${{ inputs.rtver != '' && format('-p:RuntimeFrameworkVersion={0}', inputs.rtver) || '' }} -m:1 /p:UseSharedCompilation=false
           run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ inputs.rid }} -property:Configuration=Release -p:SelfContained=true ${{ inputs.rtver != '' && format('-p:RuntimeFrameworkVersion={0}', inputs.rtver) || '' }} -m:1 /p:UseSharedCompilation=false
 
       - name: Fetch CodeNet runtime
