@@ -30,7 +30,7 @@
         <Style Selector="Border.dot">
             <Setter Property="Height" Value="6" />
             <Setter Property="Width" Value="6" />
-            <Setter Property="CornerRadius" Value="3" />
+            <Setter Property="CornerRadius" Value="0" />
             <Setter Property="Background" Value="{DynamicResource InnerForegroundColor}" />
             <Setter Property="Opacity" Value="0.3" />
         </Style>
@@ -216,7 +216,7 @@
                                     Background="{DynamicResource TranslucentBackgroundColor}"
                                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="10"
+                                    CornerRadius="0"
                                     Padding="12,8">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock FontFamily="{StaticResource IconFont}" FontWeight="Thin" Text="&#xe61d;" FontSize="22" HorizontalAlignment="Center" Margin="4,0,0,2" VerticalAlignment="Center" />
@@ -294,12 +294,12 @@
                                     Background="{DynamicResource TranslucentBackgroundColor}"
                                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="10"
+                                    CornerRadius="0"
                                     Padding="10,8">
                                     <StackPanel Orientation="Horizontal">
                                         <Border
                                             Background="{Binding AccountType, Converter={StaticResource AccountTypeToBrushConverter}}"
-                                            CornerRadius="6"
+                                            CornerRadius="0"
                                             Height="38"
                                             Width="38">
                                             <Image
@@ -390,7 +390,7 @@
                                     Background="{DynamicResource TranslucentBackgroundColor}"
                                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="10"
+                                    CornerRadius="0"
                                     Padding="12,8">
                                     <StackPanel Spacing="2">
                                         <TextBlock Text="{Binding DisplayName}" />

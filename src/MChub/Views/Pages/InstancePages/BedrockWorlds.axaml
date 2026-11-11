@@ -86,7 +86,7 @@
                             Background="{DynamicResource TranslucentBackgroundColor}"
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="10"
+                            CornerRadius="0"
                             Padding="10">
                             <Border.ContextFlyout>
                                 <MenuFlyout>
@@ -121,7 +121,7 @@
                                 <Border
                                     Background="{DynamicResource TranslucentBorderBrush}"
                                     ClipToBounds="True"
-                                    CornerRadius="7"
+                                    CornerRadius="0"
                                     Height="120">
                                     <Grid>
                                         <Image

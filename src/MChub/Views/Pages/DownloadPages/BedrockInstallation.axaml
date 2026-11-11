@@ -82,7 +82,7 @@
                             Background="{DynamicResource TranslucentBackgroundColor}"
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="10"
+                            CornerRadius="0"
                             Cursor="Hand"
                             Padding="12"
                             PointerPressed="VersionCard_OnPointerPressed">
@@ -103,7 +103,7 @@
                                             Background="{DynamicResource PopupBackgroundColor}"
                                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                             BorderThickness="1"
-                                            CornerRadius="8"
+                                            CornerRadius="0"
                                             HorizontalAlignment="Right"
                                             Padding="5,3,5,1"
                                             VerticalAlignment="Top">
@@ -116,7 +116,7 @@
                                             Background="{DynamicResource PopupBackgroundColor}"
                                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                             BorderThickness="1"
-                                            CornerRadius="8"
+                                            CornerRadius="0"
                                             Padding="5,3,5,1"
                                             VerticalAlignment="Top">
                                             <TextBlock

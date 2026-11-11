@@ -12,6 +12,25 @@
     xmlns:viewmodels="clr-namespace:MChub.ViewModels"
     xmlns:widgets="clr-namespace:MChub.Views.Widgets"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--  LauncherX 深色外壳下，FluentAvalonia 的下拉框/搜索框仍按系统浅色渲染，
+          这里显式给工具栏一套深色外观，避免深色列表上出现浅色控件块。  -->
+    <UserControl.Styles>
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="{DynamicResource InfinitySurfaceRaised}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InfinityBorder}" />
+            <Setter Property="Foreground" Value="{DynamicResource InfinityOnSurface}" />
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="{DynamicResource InfinitySurfaceRaised}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InfinityBorder}" />
+            <Setter Property="Foreground" Value="{DynamicResource InfinityOnSurface}" />
+        </Style>
+        <Style Selector="DropDownButton">
+            <Setter Property="Background" Value="{DynamicResource InfinitySurfaceRaised}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InfinityBorder}" />
+            <Setter Property="Foreground" Value="{DynamicResource InfinityOnSurface}" />
+        </Style>
+    </UserControl.Styles>
     <DockPanel>
         <StackPanel
             HorizontalAlignment="Left"

@@ -4,6 +4,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:controls="https://github.com/tiouoo/TioUi.Avalonia"
     xmlns:local="clr-namespace:MChub.Views.Pages.InstancePages"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="using:MChub.Localization">
     <Grid RowDefinitions="Auto,*">
         <StackPanel Spacing="8">
@@ -25,7 +26,7 @@
                             <Border
                                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="10"
+                                CornerRadius="0"
                                 Padding="12">
                                 <StackPanel Spacing="8">
                                     <Grid ColumnDefinitions="*,Auto">
@@ -101,19 +102,19 @@
                                         </StackPanel>
                                     </Grid>
                                     <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <ToggleSwitch
+                                        <ui:InfinityToggleSwitch
                                             IsChecked="{Binding Invulnerable}"
                                             OffContent="{Translate {x:Static loc:InstancesLanguageManager+Keys.worldsaveplayers_notInvulnerable}}"
                                             OnContent="{Translate {x:Static loc:InstancesLanguageManager+Keys.worldsaveplayers_invulnerable}}" />
-                                        <ToggleSwitch
+                                        <ui:InfinityToggleSwitch
                                             IsChecked="{Binding MayFly}"
                                             OffContent="{Translate {x:Static loc:InstancesLanguageManager+Keys.worldsaveplayers_mayNotFly}}"
                                             OnContent="{Translate {x:Static loc:InstancesLanguageManager+Keys.worldsaveplayers_mayFly}}" />
-                                        <ToggleSwitch
+                                        <ui:InfinityToggleSwitch
                                             IsChecked="{Binding Flying}"
                                             OffContent="{Translate {x:Static loc:InstancesLanguageManager+Keys.worldsaveplayers_notFlying}}"
                                             OnContent="{Translate {x:Static loc:InstancesLanguageManager+Keys.worldsaveplayers_flying}}" />
-                                        <ToggleSwitch
+                                        <ui:InfinityToggleSwitch
                                             IsChecked="{Binding Instabuild}"
                                             OffContent="{Translate {x:Static loc:InstancesLanguageManager+Keys.worldsaveplayers_notInstabuild}}"
                                             OnContent="{Translate {x:Static loc:InstancesLanguageManager+Keys.worldsaveplayers_instabuild}}" />

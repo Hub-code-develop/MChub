@@ -1,0 +1,96 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:tio="https://github.com/tiouoo/TioUi.Avalonia" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        infinityUI 造型层：直角 + Metro 通知。
+        只做两件事：把一切圆角压平；把通知做成 Windows 10 那种直角色条卡片。
+    -->
+
+    <!--  ============ 全局直角兜底  ============  -->
+    <Style Selector="Border">
+        <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="Button">
+        <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="TextBox">
+        <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="ComboBox">
+        <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="ToggleSwitch">
+        <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="FlyoutPresenter">
+        <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="ContextMenu">
+        <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="MenuItem">
+        <Setter Property="CornerRadius" Value="0" />
+    </Style>
+
+    <!--  ============ Metro 通知：直角 + 左侧 4px 语义色条  ============  -->
+    <Style Selector="tio|TioToastCard">
+        <Setter Property="Background" Value="{DynamicResource InfinitySurfaceRaised}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InfinityBorderStrong}" />
+        <Setter Property="BorderThickness" Value="6,0,0,0" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource InfinityOnSurface}" />
+        <Setter Property="MaxWidth" Value="460" />
+    </Style>
+    <Style Selector="tio|TioToastCard:information">
+        <Setter Property="BorderBrush" Value="{DynamicResource InfinityMuted}" />
+    </Style>
+    <Style Selector="tio|TioToastCard:success">
+        <Setter Property="BorderBrush" Value="{DynamicResource InfinitySuccess}" />
+    </Style>
+    <Style Selector="tio|TioToastCard:warning">
+        <Setter Property="BorderBrush" Value="{DynamicResource InfinityWarning}" />
+    </Style>
+    <Style Selector="tio|TioToastCard:error">
+        <Setter Property="BorderBrush" Value="{DynamicResource InfinityDanger}" />
+    </Style>
+
+    <Style Selector="tio|TioToastCard:success /template/ PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource InfinitySuccess}" />
+    </Style>
+    <Style Selector="tio|TioToastCard:warning /template/ PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource InfinityWarning}" />
+    </Style>
+    <Style Selector="tio|TioToastCard:error /template/ PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource InfinityDanger}" />
+    </Style>
+    <Style Selector="tio|TioToastCard:information /template/ PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource InfinityMuted}" />
+    </Style>
+
+    <!--  通知中心里的常驻条目，同一套规则  -->
+    <Style Selector="tio|TioNotificationCard">
+        <Setter Property="Background" Value="{DynamicResource InfinitySurfaceRaised}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InfinityBorderStrong}" />
+        <Setter Property="BorderThickness" Value="6,0,0,0" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource InfinityOnSurface}" />
+    </Style>
+    <Style Selector="tio|TioNotificationCard:information">
+        <Setter Property="BorderBrush" Value="{DynamicResource InfinityMuted}" />
+    </Style>
+    <Style Selector="tio|TioNotificationCard:success">
+        <Setter Property="BorderBrush" Value="{DynamicResource InfinitySuccess}" />
+    </Style>
+    <Style Selector="tio|TioNotificationCard:warning">
+        <Setter Property="BorderBrush" Value="{DynamicResource InfinityWarning}" />
+    </Style>
+    <Style Selector="tio|TioNotificationCard:error">
+        <Setter Property="BorderBrush" Value="{DynamicResource InfinityDanger}" />
+    </Style>
+
+    <!--  通知里的文字：标题强调、正文次级  -->
+    <Style Selector="tio|TioToastCard TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource InfinityOnSurface}" />
+    </Style>
+    <Style Selector="tio|TioNotificationCard TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource InfinityOnSurface}" />
+    </Style>
+</Styles>

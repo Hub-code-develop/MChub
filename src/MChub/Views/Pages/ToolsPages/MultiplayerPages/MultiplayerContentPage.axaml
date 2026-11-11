@@ -17,7 +17,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding IsComponentBannerVisible}"
             Padding="15">
             <StackPanel Spacing="10">
@@ -38,7 +38,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="12"
+                CornerRadius="0"
                 IsVisible="{Binding IsNotInRoom}"
                 Padding="15">
                 <StackPanel Spacing="8">
@@ -60,7 +60,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="12"
+                CornerRadius="0"
                 IsVisible="False"
                 Padding="15">
                 <StackPanel Spacing="8">
@@ -87,7 +87,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="12"
+                CornerRadius="0"
                 IsVisible="{Binding ShowJavaRoomActions}"
                 Padding="15">
                 <StackPanel Spacing="10">
@@ -148,7 +148,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="12"
+                CornerRadius="0"
                 IsVisible="{Binding ShowBedrockRoomActions}"
                 Padding="15">
                 <StackPanel Spacing="10">
@@ -174,7 +174,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="12"
+                CornerRadius="0"
                 IsVisible="{Binding IsNotInRoom}"
                 Padding="15">
                 <StackPanel Spacing="12">
@@ -220,7 +220,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="12"
+                CornerRadius="0"
                 IsVisible="{Binding IsInRoom}"
                 Padding="15">
                 <StackPanel Spacing="10">
@@ -260,7 +260,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="12"
+                CornerRadius="0"
                 IsVisible="{Binding IsInRoom}"
                 Padding="15">
                 <StackPanel Spacing="10">
@@ -287,7 +287,7 @@
                                 <Border
                                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
+                                    CornerRadius="0"
                                     Padding="10">
                                     <StackPanel>
                                         <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />

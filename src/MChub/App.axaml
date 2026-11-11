@@ -1,5 +1,5 @@
 <Application
-    Name="MCStudio"
+    Name="MChub"
     RequestedThemeVariant="Default"
     x:Class="MChub.App"
     xmlns="https://github.com/avaloniaui"
@@ -13,6 +13,10 @@
                 <ResourceInclude Source="/Styles/Theme/Dark.axaml" />
                 <ResourceInclude Source="/Styles/Theme/Mirage.axaml" />
                 <ResourceInclude Source="/Styles/Resources.axaml" />
+                <!--  infinityUI 设计令牌（自研组件库）  -->
+                <ResourceInclude Source="avares://InfinityUI/Tokens/InfinityTokens.axaml" />
+                <!--  infinityUI：必须最后，覆盖上面的圆角与强调色  -->
+                <ResourceInclude Source="/Styles/InfinityUi.axaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
@@ -33,20 +37,14 @@
         <StyleInclude Source="/Styles/Fonts.axaml" />
         <!-- 必须最后：接管 TransparentButton，修掉被 Fluent 大内边距裁掉的图标 -->
         <StyleInclude Source="/Styles/Buttons.axaml" />
+        <!-- infinityUI 自研控件库主题 -->
+        <StyleInclude Source="avares://InfinityUI/Themes/InfinityTheme.axaml" />
+        <!-- infinityUI：直角 + Metro 通知，必须排在最后才能真正覆盖 -->
+        <StyleInclude Source="/Styles/InfinityStyles.axaml" />
     </Application.Styles>
     <NativeMenu.Menu>
         <NativeMenu>
             <NativeMenuItem Click="OpenSetting_OnClick" Header="{Translate {x:Static loc:AppLanguageManager+Keys.app_settings}}" />
-            <NativeMenuItem Header="{Translate {x:Static loc:AppLanguageManager+Keys.app_theme}}">
-                <NativeMenuItem.Menu>
-                    <NativeMenu>
-                        <NativeMenuItem Click="ThemeDefault_OnClick" Header="{Translate {x:Static loc:AppLanguageManager+Keys.app_themeSystem}}" />
-                        <NativeMenuItem Click="ThemeLight_OnClick" Header="{Translate {x:Static loc:AppLanguageManager+Keys.app_themeLight}}" />
-                        <NativeMenuItem Click="ThemeDark_OnClick" Header="{Translate {x:Static loc:AppLanguageManager+Keys.app_themeDark}}" />
-                        <NativeMenuItem Click="ThemeMirage_OnClick" Header="{Translate {x:Static loc:AppLanguageManager+Keys.app_themeMirage}}" />
-                    </NativeMenu>
-                </NativeMenuItem.Menu>
-            </NativeMenuItem>
             <NativeMenuItemSeparator />
         </NativeMenu>
     </NativeMenu.Menu>

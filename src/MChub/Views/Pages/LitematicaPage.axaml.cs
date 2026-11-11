@@ -44,13 +44,6 @@ public partial class LitematicaPage : UserControl, ITioTabPage
         DataContext = null;
     }
 
-    /// <summary>从外部（创作台的结构列表）直接打开一个结构文件。</summary>
-    public void OpenFile(string path)
-    {
-        _vm.FilePath = path;
-        _vm.LoadAndAnalyzeCommand.Execute(null);
-    }
-
     private async void BrowsePath_OnClick(object? sender, RoutedEventArgs e)
     {
         if (sender is not Control control) return;

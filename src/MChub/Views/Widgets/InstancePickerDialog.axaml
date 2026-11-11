@@ -52,7 +52,7 @@
                             Background="{DynamicResource TranslucentBackgroundColor}"
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="10"
+                            CornerRadius="0"
                             Cursor="Hand"
                             Padding="12"
                             PointerPressed="InstanceItem_OnPointerPressed"
@@ -61,7 +61,7 @@
                                 <DockPanel>
                                     <Border
                                         ClipToBounds="True"
-                                        CornerRadius="8"
+                                        CornerRadius="0"
                                         Height="36"
                                         Margin="0,0,8,0"
                                         VerticalAlignment="Center"

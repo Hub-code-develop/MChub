@@ -12,7 +12,7 @@
         保持 NavMenuItem 全部状态属性与 SelectedItem 逻辑不变。
     -->
     <Style Selector="tio|NavMenuItem /template/ Border#PART_Border">
-        <Setter Property="CornerRadius" Value="4,4,4,4" />
+        <Setter Property="CornerRadius" Value="0" />
         <Setter Property="Margin" Value="0,1" />
     </Style>
     <Style Selector="tio|NavMenuItem /template/ Border#PART_Border:pointerover">

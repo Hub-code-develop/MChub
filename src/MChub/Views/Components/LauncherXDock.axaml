@@ -1,0 +1,93 @@
+<UserControl
+    d:DesignHeight="60"
+    d:DesignWidth="1100"
+    mc:Ignorable="d"
+    x:Class="MChub.Views.Components.LauncherXDock"
+    x:DataType="components:LauncherXDock"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:components="clr-namespace:MChub.Views.Components"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="using:InfinityUI.Controls"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        底部主导航：全部由 infinityUI 自研控件拼成，
+        不再依赖 TioUi / FluentAvalonia 的按钮与下拉。
+    -->
+    <ui:InfinityCard
+        ContentPadding="8,0"
+        IsRaised="True"
+        Opacity="0.97">
+        <Grid ColumnDefinitions="Auto,*,Auto" Height="60">
+            <!--  左侧：返回 + 主导航  -->
+            <StackPanel
+                Grid.Column="0"
+                Orientation="Horizontal"
+                Spacing="2"
+                VerticalAlignment="Center">
+                <ui:InfinityIconButton
+                    BoxSize="36"
+                    Click="Back_OnClick"
+                    Glyph="&#xe608;"
+                    GlyphFontFamily="{StaticResource IconFont}"
+                    IsVisible="{Binding CanGoBack}"
+                    Margin="0,0,4,0"
+                    ToolTip.Tip="返回" />
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="2" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="components:LauncherXDockItem">
+                            <ui:InfinityNavItem
+                                Click="Item_OnClick"
+                                Content="{Binding Label}"
+                                Height="40"
+                                IsActive="{Binding IsSelected}"
+                                MinWidth="76" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!--  中间：当前实例名  -->
+            <TextBlock
+                Grid.Column="1"
+                Margin="16,0"
+                FontSize="12.5"
+                Foreground="{DynamicResource InfMuted}"
+                IsVisible="{Binding HasCurrentInstance}"
+                Text="{Binding CurrentInstanceName}"
+                TextTrimming="CharacterEllipsis"
+                VerticalAlignment="Center" />
+
+            <!--  右侧：开始游戏  -->
+            <ui:InfinityButton
+                Grid.Column="2"
+                Click="Launch_OnClick"
+                Height="40"
+                IsVisible="{Binding ShowLaunchButton}"
+                Padding="22,0"
+                Variant="Primary"
+                VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock
+                        FontFamily="{StaticResource IconFont}"
+                        FontSize="14"
+                        FontWeight="Thin"
+                        Foreground="{DynamicResource InfOnAccent}"
+                        Text="&#xe613;"
+                        VerticalAlignment="Center" />
+                    <TextBlock
+                        FontSize="13.5"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource InfOnAccent}"
+                        Text="{Binding LaunchText}"
+                        VerticalAlignment="Center" />
+                </StackPanel>
+            </ui:InfinityButton>
+        </Grid>
+    </ui:InfinityCard>
+</UserControl>

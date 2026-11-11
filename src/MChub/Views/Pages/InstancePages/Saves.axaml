@@ -104,7 +104,7 @@
                             Background="{DynamicResource TranslucentBackgroundColor}"
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="12"
+                            CornerRadius="0"
                             Cursor="Hand"
                             Padding="12"
                             PointerPressed="InputElement_OnPointerPressed">
@@ -189,14 +189,14 @@
                             <DockPanel>
                                 <Border
                                     Background="{DynamicResource TranslucentBorderBrush}"
-                                    CornerRadius="12"
+                                    CornerRadius="0"
                                     DockPanel.Dock="Left"
                                     Height="56"
                                     Margin="2,0,0,0"
                                     VerticalAlignment="Top"
                                     Width="56">
                                     <owned:OwnedAdvancedImage
-                                        CornerRadius="12"
+                                        CornerRadius="0"
                                         IsVisible="{Binding HasIcon}"
                                         Loader="{Binding ImageLoader}"
                                         Source="{Binding IconPath}"

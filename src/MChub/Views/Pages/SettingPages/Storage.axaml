@@ -15,7 +15,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             Margin="0,0,0,15"
             Padding="20">
             <Grid ColumnDefinitions="Auto,*,470" MinHeight="180">
@@ -25,7 +25,7 @@
                     RowDefinitions="Auto,*,Auto">
                     <StackPanel>
                         <Border
-                            CornerRadius="10"
+                            CornerRadius="0"
                             HorizontalAlignment="Left"
                             Margin="0,0,0,2"
                             Padding="5,3,5,1">
@@ -42,7 +42,7 @@
 
                     <StackPanel Grid.Row="2">
                         <Border
-                            CornerRadius="10"
+                            CornerRadius="0"
                             HorizontalAlignment="Left"
                             Margin="0,0,0,2"
                             Padding="5,3,5,1">
@@ -82,7 +82,7 @@
                             Background="{DynamicResource TranslucentBackgroundColor}"
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="12"
+                            CornerRadius="0"
                             Padding="10">
                             <StackPanel>
                                 <DockPanel>
@@ -129,7 +129,7 @@
                             Background="{DynamicResource TranslucentBackgroundColor}"
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="10"
+                            CornerRadius="0"
                             Padding="10">
                             <StackPanel>
                                 <DockPanel>

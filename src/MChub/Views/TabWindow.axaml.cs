@@ -10,11 +10,15 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using MChub.Classes.Config;
 using MChub.Core.Classes;
 using MChub.Core.Classes.Entries;
 using MChub.Core.Const;
+using MChub.Core.Minecraft;
 using MChub.Core.Minecraft.Classes;
+using MChub.Core.Minecraft.Instance;
+using MChub.Core.Minecraft.Services;
 using MChub.Core.Module.Initialize;
 using MChub.Core.Module.Multiplayer;
 using MChub.Localization;
@@ -85,6 +89,12 @@ public partial class TabWindow : TioTabWindowBase
         set => SetField(ref field, value);
     }
 
+    /// <summary>外壳已是唯一形态：沉浸背景 + 底部悬浮胶囊导航，不再可切换。</summary>
+    public bool IsLauncherX => true;
+
+    /// <summary>内容区底部为悬浮导航条留出的空间。</summary>
+    public Thickness LauncherXContentMargin => new(0, 0, 0, 88);
+
     public override bool OnClose()
     {
         if (AllWindows.Count == 1)
@@ -143,15 +153,12 @@ public partial class TabWindow : TioTabWindowBase
         if (IsMainWindow)
         {
             IsUiLoading = true;
-            var pageType = DefaultPageRegistry.Pages
-                .FirstOrDefault(item => item.PageType.AssemblyQualifiedName == Data.ConfigEntry.DefaultPage)
-                ?.PageType;
-            var page = pageType != null && Activator.CreateInstance(pageType) is ITioTabPage tabPage
-                ? tabPage
-                : new NewTabPage();
-            var tab = new TabEntry(this, page);
-            AddTab(tab);
-            SelectTab(tab);
+            // 外壳固化：主窗口不用多标签默认页，首页固定在底部导航的"主页"槽位。
+            var homePage = new LauncherXHomePage();
+            var homeTab = new TabEntry(this, homePage);
+            AddTab(homeTab);
+            _dockTabs["home"] = homeTab;
+            SelectTab(homeTab);
         }
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -164,11 +171,234 @@ public partial class TabWindow : TioTabWindowBase
             };
 
         Loaded += TabWindow_OnLoaded;
+        InitLauncherXDock();
+        InfinityToast.Register(InfinityToasts);
     }
+
+#if DEBUG
+    /// <summary>
+    /// 调试用：设 MCHUB_CAPTURE=&lt;目录&gt; 时，启动后依次切换底部导航并自渲染截图，
+    /// 便于在没有屏幕录制权限的环境里核对界面。仅 DEBUG 编译生效。
+    /// </summary>
+    private async void RunCaptureTourIfRequested()
+    {
+        var dir = Environment.GetEnvironmentVariable("MCHUB_CAPTURE");
+        if (string.IsNullOrWhiteSpace(dir)) return;
+
+        await Task.Delay(4200);
+        CaptureTo(dir, "01-home");
+
+        // 顺便把三种语义通知摆出来，核对 infinityUI 的 Metro 直角色条
+        InfinityToasts.Show("无法连接认证服务器，请检查网络或代理设置", InfinityUI.Controls.InfinityToastLevel.Error);
+        InfinityToasts.Show("Java 运行时版本过低，可能导致游戏无法启动", InfinityUI.Controls.InfinityToastLevel.Warning);
+        InfinityToasts.Show("Minecraft 1.21.1 安装完成", InfinityUI.Controls.InfinityToastLevel.Success);
+        await Task.Delay(900);
+        CaptureTo(dir, "05-toasts");
+        InfinityToasts.Clear();
+
+        NavigateToDock("instances");
+        await Task.Delay(1400);
+        CaptureTo(dir, "02-instances");
+        NavigateToDock("download");
+        await Task.Delay(1600);
+        CaptureTo(dir, "03-download");
+        NavigateToDock("settings");
+        await Task.Delay(1600);
+        CaptureTo(dir, "04-settings");
+
+        // 验证首页账户卡 → 设置账户页的跳转链路
+        OpenAccountSettings();
+        await Task.Delay(1200);
+        CaptureTo(dir, "06-account-settings");
+
+        // 验证"换个实例当启动目标"的数据链路（选择器确认后走的就是这条）
+        var other = InstanceManager.Instance.Instances
+            .FirstOrDefault(i => !ReferenceEquals(i, LaunchTarget.Current) && i.Config is not null);
+        if (other is not null)
+        {
+            LaunchTarget.Set(other);
+            NavigateToDock("home");
+            await Task.Delay(1000);
+            CaptureTo(dir, "07-target-switch");
+            Logger.Info($"[Capture] launch target switched to {other.InstanceName}");
+        }
+
+        if (Environment.GetEnvironmentVariable("MCHUB_CAPTURE_EXIT") == "1")
+        {
+            await Task.Delay(300);
+            Environment.Exit(0);
+        }
+    }
+
+    private void CaptureTo(string dir, string name)
+    {
+        try
+        {
+            var width = (int)Math.Round(Bounds.Width);
+            var height = (int)Math.Round(Bounds.Height);
+            if (width <= 0 || height <= 0) return;
+
+            // 渲染窗口内容根而不是 Window 本身：Window 的快照来自 GPU 合成表面，
+            // macOS 上经常拿到上一帧；直接渲染视觉树下的 Border 才是当前状态。
+            using var bitmap = new RenderTargetBitmap(new PixelSize(width, height), new Vector(96, 96));
+            bitmap.Render(RootBorder);
+            Directory.CreateDirectory(dir);
+            bitmap.Save(Path.Combine(dir, name + ".png"));
+            Logger.Info($"[Capture] saved {name}.png ({width}x{height})");
+        }
+        catch (Exception exception)
+        {
+            Logger.Error(exception);
+        }
+    }
+#endif
+
+    #region LauncherX 外壳
+
+    private readonly Dictionary<string, TabEntry> _dockTabs = new(StringComparer.Ordinal);
+    private string _lastDockKey = "home";
+
+    private static readonly (string Key, string Label)[] DockDefinitions =
+    [
+        ("home", "主页"),
+        ("instances", "游戏列表"),
+        ("download", "下载"),
+        ("settings", "设置")
+    ];
+
+    private void InitLauncherXDock()
+    {
+        Dock.Items.Clear();
+        foreach (var (key, label) in DockDefinitions)
+            Dock.Items.Add(new LauncherXDockItem(key, label));
+
+        Dock.ShowLaunchButton = Data.ConfigEntry.LauncherXDockShowLaunchButton;
+        Dock.ItemInvoked += (_, item) => NavigateToDock(item.Key);
+        Dock.BackRequested += (_, _) => NavigateToDock(_lastDockKey);
+        Dock.LaunchRequested += (_, _) => LaunchRecentInstance();
+        Tabs.CollectionChanged += (_, _) => SyncDockSelection();
+        Data.ConfigEntry.PropertyChanged += OnShellConfigChanged;
+        InstanceManager.Instance.InstancesChanged += (_, _) => UpdateDockInstance();
+        InstanceManager.Instance.StatisticsChanged += (_, _) => UpdateDockInstance();
+        LaunchTarget.Changed += (_, _) => UpdateDockInstance();
+        SyncDockSelection();
+        UpdateDockInstance();
+    }
+
+    private void OnShellConfigChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(Data.ConfigEntry.LauncherXDockShowLaunchButton):
+                Dock.ShowLaunchButton = Data.ConfigEntry.LauncherXDockShowLaunchButton;
+                break;
+            case nameof(Data.ConfigEntry.LauncherXBackdropUseGradient):
+            case nameof(Data.ConfigEntry.LauncherXBackdropStartColor):
+            case nameof(Data.ConfigEntry.LauncherXBackdropEndColor):
+            case nameof(Data.ConfigEntry.LauncherXBackdropSolidColor):
+                ApplyBackground();
+                break;
+            case nameof(Data.ConfigEntry.ThemeColor):
+                // 用户改主题色时，外壳模式下仍要压回中性色
+                if (IsLauncherX) ApplyShellThemeVariant();
+                break;
+        }
+    }
+
+    /// <summary>打开（必要时创建）底部导航对应的页面。</summary>
+    private void NavigateToDock(string key)
+    {
+        if (!IsLauncherX) return;
+
+        _lastDockKey = key;
+
+        if (_dockTabs.TryGetValue(key, out var cached) && Tabs.Contains(cached))
+        {
+            SelectTab(cached);
+            SyncDockSelection();
+            return;
+        }
+
+        var page = CreateDockPage(key);
+        if (page is null) return;
+
+        var tab = new TabEntry(this, page);
+        AddTab(tab);
+        _dockTabs[key] = tab;
+        SelectTab(tab);
+        SyncDockSelection();
+    }
+
+    private ITioTabPage? CreateDockPage(string key)
+    {
+        return key switch
+        {
+            "home" => new LauncherXHomePage(),
+            "instances" => new InstancesPage(),
+            "download" => new DownloadPage(),
+            "settings" => new SettingPage(),
+            _ => null
+        };
+    }
+
+    /// <summary>根据当前选中页刷新导航高亮与返回按钮。</summary>
+    private void SyncDockSelection()
+    {
+        var current = SelectedTab;
+        string? activeKey = null;
+        if (current is not null)
+        {
+            foreach (var (key, tab) in _dockTabs)
+            {
+                if (!ReferenceEquals(tab, current)) continue;
+                activeKey = key;
+                break;
+            }
+        }
+
+        Dock.SetSelected(activeKey);
+        Dock.CanGoBack = current is not null && activeKey is null;
+        UpdateDockInstance();
+    }
+
+    private void UpdateDockInstance()
+    {
+        var instance = LaunchTarget.Current;
+        Dock.HasCurrentInstance = instance is not null;
+        Dock.CurrentInstanceName = instance?.InstanceName;
+    }
+
+    private void LaunchRecentInstance()
+    {
+        var instance = LaunchTarget.Current;
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (instance is null || topLevel is null)
+            return;
+
+        _ = MinecraftLaunchService.LaunchAsync(instance, topLevel,
+            MinecraftLaunchOptionsFactory.Create(instance,
+                logSession => MinecraftLogPage.Open(logSession, topLevel)));
+    }
+
+    /// <summary>从首页账户卡跳转到「设置 → 账户」，那里才是切换/新增账户的地方。</summary>
+    public void OpenAccountSettings()
+    {
+        NavigateToDock("settings");
+        if (_dockTabs.TryGetValue("settings", out var tab) && tab.Content is SettingPage page)
+            page.NavigateTo(typeof(MChub.Views.Pages.SettingPages.Account));
+    }
+
+    #endregion
 
     private async void TabWindow_OnLoaded(object? sender, RoutedEventArgs e)
     {
         Loaded -= TabWindow_OnLoaded;
+#if DEBUG
+        RunCaptureTourIfRequested();
+#endif
+        // 视觉树已建好，此时再应用一次外壳主题：构造期设置的变体会被
+        // 已解析并缓存的主题资源盖掉（表现为下拉框等仍是浅色）。
+        ApplyShellThemeVariant();
         var entry = Data.ConfigEntry;
         var path = entry.BackgroundImagePath;
         if (entry.BackgroundMode != BackgroundMode.Image || string.IsNullOrEmpty(path) || !File.Exists(path))
@@ -243,6 +473,27 @@ public partial class TabWindow : TioTabWindowBase
 
         ExtendClientAreaToDecorationsHint = true;
         ExtendClientAreaTitleBarHeightHint = TitleBarHeight;
+
+        // LauncherX 是深色沉浸式设计：外壳开启时窗口级强制深色变体，
+        // 这样背景、卡片、文字资源全部走 Dark 主题，白字才安全。
+        ApplyShellThemeVariant();
+    }
+
+    private void ApplyShellThemeVariant()
+    {
+        ContentThemeScope.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+
+        if (Application.Current is not { } app) return;
+
+        // 外壳是深色沉浸式设计。这里改的是 Application 级变体而不是窗口级，
+        // 否则 TioUi / FluentAvalonia 里按应用级解析的控件（下拉框、搜索框等）仍留在浅色，
+        // 在深色底上会出现"白块 + 深字"的割裂感。
+        app.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+        App.ApplyFluentAvaloniaVariant(Avalonia.Styling.ThemeVariant.Dark);
+
+        // infinityUI 纪律：全局只允许黑白 + 红黄绿。
+        // 用户配置的主题色是彩色，会把开关、进度条、选中态染成杂色，这里压成中性白。
+        TioUi.Common.Helpers.ThemeHelper.SetThemeColor(Color.Parse("#F5F5F5"));
     }
 
     /// <summary>
@@ -617,9 +868,36 @@ public partial class TabWindow : TioTabWindowBase
                 tabWin.ApplyImageMaskOverlay();
     }
 
-    public void ApplyBackground()
+    /// <summary>
+    /// LauncherX 外壳的默认底：没有背景图时铺一层深蓝到近黑的斜向渐变，
+    /// 让沉浸式布局里的白色大字与半透明面板有依托，而不是压在纯色上显得空。
+    /// </summary>
+    private void ApplyLauncherXBackdrop()
     {
+        if (RootBorder is null) return;
+
         var entry = Data.ConfigEntry;
+
+        if (!entry.LauncherXBackdropUseGradient)
+        {
+            RootBorder.Background = new SolidColorBrush(entry.LauncherXBackdropSolidColor);
+            return;
+        }
+
+        RootBorder.Background = new LinearGradientBrush
+        {
+            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+            EndPoint = new RelativePoint(0.45, 1, RelativeUnit.Relative),
+            GradientStops =
+            {
+                new GradientStop(entry.LauncherXBackdropStartColor, 0),
+                new GradientStop(entry.LauncherXBackdropEndColor, 1)
+            }
+        };
+    }
+
+    public void ApplyBackground()
+    {        var entry = Data.ConfigEntry;
 
         // UI 磨砂玻璃：标题栏 / 标签栏那一行（做成独立层，开关与强度直接取配置）
         if (TitleBarAcrylic is not null)
@@ -655,6 +933,7 @@ public partial class TabWindow : TioTabWindowBase
                 ClearValue(BackgroundProperty);
                 ClearValue(TransparencyBackgroundFallbackProperty);
                 TransparencyLevelHint = new[] { WindowTransparencyLevel.Transparent };
+                ApplyLauncherXBackdrop();
                 break;
 
             case BackgroundMode.Transparent:

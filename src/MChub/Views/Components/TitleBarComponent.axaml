@@ -25,7 +25,7 @@
                     <Border
                         Background="{TemplateBinding Background}"
                         BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="7"
+                        CornerRadius="0"
                         Height="24"
                         Name="bd"
                         Width="24">
@@ -70,7 +70,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="999"
+                CornerRadius="0"
                 IsVisible="{Binding Data.ConfigEntry.ShowDragDropTip}"
                 Padding="8,3,8,2"
                 VerticalAlignment="Center">
@@ -92,7 +92,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="999"
+                CornerRadius="0"
                 Padding="8,3,8,2">
                 <TextBlock
                     FontSize="13"
@@ -109,7 +109,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="999"
+                CornerRadius="0"
                 Padding="8,3,8,2">
                 <TextBlock FontSize="13" Text="{Translate {x:Static loc:ComponentsLanguageManager+Keys.titlebarcomponent_restartUpdate}}" />
             </Border>
@@ -124,7 +124,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="999"
+                CornerRadius="0"
                 IsVisible="{Binding Data.UiProperty.ShowNewVersionTip}"
                 Padding="8,3,8,2"
                 VerticalAlignment="Center">
@@ -147,7 +147,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="999"
+                CornerRadius="0"
                 Padding="8,3,8,2">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <Ellipse
@@ -199,7 +199,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="999"
+                CornerRadius="0"
                 Padding="8,3,8,2">
                 <Panel>
                     <TextBlock
@@ -355,7 +355,7 @@
 
                                         <Border
                                             ClipToBounds="True"
-                                            CornerRadius="10"
+                                            CornerRadius="0"
                                             Grid.Column="0"
                                             Height="32"
                                             Margin="2,0,10,0"
@@ -419,7 +419,7 @@
                                     <Grid Background="Transparent" ColumnDefinitions="Auto,*,Auto">
                                         <Border
                                             ClipToBounds="True"
-                                            CornerRadius="10"
+                                            CornerRadius="0"
                                             Height="32"
                                             Margin="2,0,10,0"
                                             Width="32">

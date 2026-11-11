@@ -60,7 +60,7 @@
                         <Border
                             BorderThickness="1"
                             Classes.java-card="True"
-                            CornerRadius="11"
+                            CornerRadius="0"
                             Padding="0">
                             <Border.Transitions>
                                 <Transitions>
@@ -74,7 +74,7 @@
                                 Background="{DynamicResource TranslucentBackgroundColor}"
                                 BorderThickness="1"
                                 Classes.java-card-inner="True"
-                                CornerRadius="10"
+                                CornerRadius="0"
                                 MinHeight="62"
                                 Padding="12">
                                 <Border.Transitions>
@@ -95,7 +95,7 @@
                                             Background="{DynamicResource PopupBackgroundColor}"
                                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                             BorderThickness="1"
-                                            CornerRadius="8"
+                                            CornerRadius="0"
                                             DockPanel.Dock="Right"
                                             HorizontalAlignment="Right"
                                             IsVisible="{Binding IsInstalled}"

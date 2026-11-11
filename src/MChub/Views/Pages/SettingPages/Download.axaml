@@ -9,6 +9,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:settingPages="clr-namespace:MChub.Views.Pages.SettingPages"
     xmlns:tio="https://github.com/tiouoo/TioUi.Avalonia"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="using:MChub.Localization">
     <StackPanel Spacing="15">
         <StackPanel Spacing="8">
@@ -113,7 +114,7 @@
                 Content="{Translate {x:Static loc:SettingsLanguageManager+Keys.download_enableFragmentDownload}}"
                 FontSize="13"
                 Foreground="{DynamicResource InnerForegroundColor}" />
-            <ToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableFragmentDownload}" />
+            <ui:InfinityToggleSwitch IsChecked="{Binding Data.ConfigEntry.EnableFragmentDownload}" />
         </StackPanel>
         <StackPanel IsVisible="{Binding Data.ConfigEntry.EnableFragmentDownload}" Spacing="5">
             <Label
@@ -140,7 +141,7 @@
             Background="{DynamicResource SystemFillColorCautionBackground}"
             BorderBrush="{DynamicResource SystemFillColorCaution}"
             BorderThickness="1"
-            CornerRadius="10"
+            CornerRadius="0"
             IsVisible="{Binding HasHighConcurrencyWarning}"
             Margin="0,10,0,15"
             Padding="12,10">

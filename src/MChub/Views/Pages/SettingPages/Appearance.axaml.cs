@@ -52,7 +52,6 @@ public partial class Appearance : Dsc, INotifyPropertyChanged
         DataContext = this;
         Loaded += (_, _) =>
         {
-            ListBox.SelectedIndex = (int)Data.ConfigEntry.Theme;
             UpdateApplyButtonState();
             RefreshBackgroundHistory();
             SubscribeRenderScaling();
@@ -61,11 +60,6 @@ public partial class Appearance : Dsc, INotifyPropertyChanged
         {
             UnsubscribeRenderScaling();
             ClearBackgroundHistory();
-        };
-        ListBox.SelectionChanged += (_, _) =>
-        {
-            if (ListBox.SelectedIndex == -1) return;
-            Data.ConfigEntry.Theme = (Theme)ListBox.SelectedIndex;
         };
     }
 

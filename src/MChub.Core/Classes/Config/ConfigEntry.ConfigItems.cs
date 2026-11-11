@@ -13,9 +13,6 @@ namespace MChub.Core.Classes.Config;
 public partial class ConfigEntry : ObservableObject
 {
     [ObservableProperty] public partial bool IsInitialized { get; set; } = true;
-
-    /// <summary>首次启动的「必须有正版账号」闸门是否已经通过（通过后不再检查）。</summary>
-    [ObservableProperty] public partial bool AccountGateCompleted { get; set; }
     [ObservableProperty] public partial string? TelemetryUserId { get; set; }
     [ObservableProperty] public partial bool EnableCustomForegroundColor { get; set; } = false;
     [ObservableProperty] public partial bool EnableCheckAutoUpdate { get; set; } = true;
@@ -135,6 +132,28 @@ public partial class ConfigEntry : ObservableObject
     [ObservableProperty] public partial bool HasTabWindowSize { get; set; }
     [ObservableProperty] public partial List<WidgetLayoutData> WidgetLayout { get; set; } = [];
     [ObservableProperty] public partial List<GameListWidgetEntry> HomePageItems { get; set; } = [];
+
+    /// <summary>
+    /// LauncherX 外壳已是唯一形态（沉浸背景 + 底部悬浮胶囊导航），不再提供开关。
+    /// 保留为只读恒真属性，仅为兼容既有引用；旧配置里的同名键会被忽略。
+    /// </summary>
+    public bool EnableLauncherXShell => true;
+
+    /// <summary>LauncherX 外壳下，底部导航条是否显示"开始游戏"按钮。</summary>
+    [ObservableProperty] public partial bool LauncherXDockShowLaunchButton { get; set; } = true;
+
+    /// <summary>没有背景图时，是否用渐变作为沉浸底（关闭则用单色）。</summary>
+    [ObservableProperty] public partial bool LauncherXBackdropUseGradient { get; set; } = true;
+
+    /// <summary>渐变起点色（左上）。</summary>
+    [ObservableProperty] public partial Color LauncherXBackdropStartColor { get; set; } = Color.Parse("#161616");
+
+    /// <summary>渐变终点色（右下）。</summary>
+    [ObservableProperty] public partial Color LauncherXBackdropEndColor { get; set; } = Color.Parse("#050505");
+
+    /// <summary>单色模式下的底色。</summary>
+    [ObservableProperty] public partial Color LauncherXBackdropSolidColor { get; set; } = Color.Parse("#0A0A0A");
+
     [ObservableProperty] public partial string? LaunchPageInstanceFolderPath { get; set; }
     [ObservableProperty] public partial MinecraftAccount? UsingMinecraftMinecraftAccount { get; set; }
     [ObservableProperty] public partial BedrockAccount? UsingBedrockAccount { get; set; }

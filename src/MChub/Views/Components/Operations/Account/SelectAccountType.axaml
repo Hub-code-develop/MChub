@@ -51,7 +51,7 @@
                                     <Border
                                         Classes="account-card"
                                         Classes.selected="{Binding IsSelected}"
-                                        CornerRadius="11"
+                                        CornerRadius="0"
                                         Cursor="Hand"
                                         Height="66"
                                         Padding="0"
@@ -70,7 +70,7 @@
                                             BorderThickness="1"
                                             Classes="account-card-inner"
                                             Classes.selected="{Binding IsSelected}"
-                                            CornerRadius="10"
+                                            CornerRadius="0"
                                             Padding="12">
                                             <Border.Transitions>
                                                 <Transitions>

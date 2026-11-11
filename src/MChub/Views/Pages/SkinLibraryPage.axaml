@@ -48,7 +48,7 @@
                 Background="{DynamicResource LineColor}"
                 BorderBrush="{DynamicResource PanelBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="8"
+                CornerRadius="0"
                 Padding="8">
                 <DockPanel>
                     <Button
@@ -102,7 +102,7 @@
                 Background="{DynamicResource LineColor}"
                 BorderBrush="{DynamicResource PanelBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="8"
+                CornerRadius="0"
                 Grid.Column="2">
                 <Grid>
                     <lsv:SkinViewer3D

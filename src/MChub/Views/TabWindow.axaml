@@ -3,7 +3,7 @@
     Icon="/Assets/MChub.ico"
     MinHeight="620"
     MinWidth="1020"
-    Title="MCStudio"
+    Title="MChub"
     Width="1200"
     d:DesignHeight="450"
     d:DesignWidth="800"
@@ -22,6 +22,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:sys="clr-namespace:System;assembly=System.Runtime"
     xmlns:tio="https://github.com/tiouoo/TioUi.Avalonia"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:views="clr-namespace:MChub.Views"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <faApp:FAAppWindow.Resources>
@@ -62,7 +63,7 @@
                     <Border
                         Background="{TemplateBinding Background}"
                         BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="7"
+                        CornerRadius="0"
                         Height="24"
                         Name="bd"
                         Width="24">
@@ -127,6 +128,16 @@
                     Grid.Column="1"
                     Name="TitleBarDragSurface"
                     PointerPressed="OnTitleBarDragSurfacePointerPressed" />
+                <!--  LauncherX 外壳：左上角品牌字，替代顶部标签条  -->
+                <TextBlock
+                    Grid.Column="1"
+                    Margin="10,0,0,0"
+                    FontSize="15"
+                    FontWeight="SemiBold"
+                    IsVisible="{Binding IsLauncherX}"
+                    LetterSpacing="0.2"
+                    Text="MChub"
+                    VerticalAlignment="Center" />
             <ScrollViewer
                 Background="{x:Null}"
                 Classes="Flat"
@@ -134,6 +145,7 @@
                 Height="44"
                 HorizontalAlignment="Left"
                 HorizontalScrollBarVisibility="Auto"
+                IsVisible="{Binding !IsLauncherX}"
                 Name="NavScrollViewer"
                 OpacityMask="{Binding IsTabMaskVisible, Converter={StaticResource NavScrollOpacityMaskConverter}}"
                 PointerWheelChanged="InputElement_OnPointerWheelChanged"
@@ -160,7 +172,7 @@
                                 <Border
                                     BorderThickness="0"
                                     Classes="tab-root"
-                                    CornerRadius="8"
+                                    CornerRadius="0"
                                     Height="30"
                                     Margin="2,1,2,0"
                                     MinWidth="{Binding MinWidth}"
@@ -237,7 +249,7 @@
                                                 VerticalAlignment="Center" />
                                         </Button>
                                         <Border
-                                            CornerRadius="3,3,0,0"
+                                            CornerRadius="0"
                                             Height="2"
                                             HorizontalAlignment="Stretch"
                                             Margin="10,0,10,1"
@@ -255,7 +267,7 @@
                     <Button
                         Classes="tab-add-btn"
                         Click="Button_OnClick"
-                        CornerRadius="10"
+                        CornerRadius="0"
                         DockPanel.Dock="Right"
                         Height="30"
                         Margin="3,0,25,0"
@@ -282,14 +294,27 @@
                     VerticalAlignment="Center" />
             </Grid>
             <Panel Background="Transparent">
-                <TransitioningContentControl Background="Transparent" Content="{Binding SelectedTab.Content}">
-                    <TransitioningContentControl.PageTransition>
-                        <CompositePageTransition>
-                            <CrossFade Duration="0:0:0.2" />
+                <!--  LauncherX 外壳下把内容区锁到 Dark 变体：FluentAvalonia 控件按作用域内的
+                     实际变体解析资源，只设 Application 级时下拉框/搜索框仍会留在浅色。  -->
+                <ThemeVariantScope Name="ContentThemeScope">
+                    <TransitioningContentControl Background="Transparent" Content="{Binding SelectedTab.Content}" Margin="{Binding LauncherXContentMargin}">
+                        <TransitioningContentControl.PageTransition>
+                            <CompositePageTransition>
+                                <CrossFade Duration="0:0:0.2" />
 
-                        </CompositePageTransition>
-                    </TransitioningContentControl.PageTransition>
-                </TransitioningContentControl>
+                            </CompositePageTransition>
+                        </TransitioningContentControl.PageTransition>
+                    </TransitioningContentControl>
+                </ThemeVariantScope>
+                <!--  LauncherX 外壳：底部悬浮胶囊导航  -->
+                <components:LauncherXDock
+                    HorizontalAlignment="Stretch"
+                    IsVisible="{Binding IsLauncherX}"
+                    Margin="14,0,14,14"
+                    Name="Dock"
+                    VerticalAlignment="Bottom" />
+                <!--  infinityUI 自研通知宿主：右下角堆叠，Metro 直角色条  -->
+                <ui:InfinityToastHost Name="InfinityToasts" />
                 <tio:OverlayDialogHost
                     HostId="{Binding HostId}"
                     IsTopLevel="True"

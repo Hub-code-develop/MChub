@@ -17,7 +17,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding ShowDownloadCard}"
             Padding="15">
             <StackPanel Spacing="12">
@@ -57,7 +57,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding ShowStarting}"
             Padding="15">
             <StackPanel Spacing="12">
@@ -88,7 +88,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding ShowSessionForm}"
             Padding="15">
             <StackPanel Spacing="8">
@@ -103,7 +103,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding ShowSessionForm}"
             Padding="15">
             <StackPanel Spacing="8">
@@ -123,7 +123,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding ShowSessionForm}"
             Padding="15">
             <StackPanel Spacing="10">
@@ -164,7 +164,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding ShowInProgress}"
             Padding="15">
             <StackPanel Spacing="12">
@@ -201,7 +201,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding ShowReady}"
             Padding="15">
             <StackPanel Spacing="12">
@@ -228,7 +228,7 @@
                     Background="{DynamicResource TranslucentBackgroundColor}"
                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="8"
+                    CornerRadius="0"
                     IsVisible="{Binding ShowRoomCodeCard}"
                     Padding="12">
                     <DockPanel>
@@ -272,7 +272,7 @@
                                 <Border
                                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
+                                    CornerRadius="0"
                                     Padding="10">
                                     <StackPanel>
                                         <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
@@ -298,7 +298,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding ShowError}"
             Padding="15">
             <StackPanel Spacing="10">
@@ -323,7 +323,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="0"
             IsVisible="{Binding ShowNotRunning}"
             Padding="15">
             <StackPanel Spacing="12">
@@ -331,7 +331,7 @@
                     Background="{DynamicResource TranslucentBackgroundColor}"
                     BorderBrush="{DynamicResource TranslucentBorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="8"
+                    CornerRadius="0"
                     IsVisible="{Binding ShowUpdateBanner}"
                     Padding="12">
                     <DockPanel>

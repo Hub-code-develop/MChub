@@ -43,7 +43,7 @@
                             <Border
                                 BorderBrush="Transparent"
                                 BorderThickness="1"
-                                CornerRadius="12"
+                                CornerRadius="0"
                                 Name="ItemBorder"
                                 Padding="10,8,12,8"
                                 PointerPressed="Item_OnPointerPressed"
@@ -59,7 +59,7 @@
                                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
                                     <Border
                                         ClipToBounds="True"
-                                        CornerRadius="10"
+                                        CornerRadius="0"
                                         Height="42"
                                         VerticalAlignment="Center"
                                         Width="42">

@@ -19,7 +19,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="12"
+                CornerRadius="0"
                 Padding="4">
                 <StackPanel>
                     <Button

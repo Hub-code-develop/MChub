@@ -29,7 +29,7 @@
                     <Grid ColumnDefinitions="Auto,*">
                         <Border
                             ClipToBounds="True"
-                            CornerRadius="12"
+                            CornerRadius="0"
                             Height="44"
                             Margin="2,0,0,0"
                             Width="44">

@@ -68,7 +68,7 @@
                             Background="{DynamicResource TranslucentBackgroundColor}"
                             BorderBrush="{DynamicResource TranslucentBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="10"
+                            CornerRadius="0"
                             Cursor="Hand"
                             Padding="12"
                             PointerPressed="DistributionCard_OnPointerPressed">

@@ -16,7 +16,7 @@
         Background="{DynamicResource TranslucentBackgroundColor}"
         BorderBrush="{DynamicResource TranslucentBorderBrush}"
         BorderThickness="1"
-        CornerRadius="10"
+        CornerRadius="0"
         Height="{Binding CardHeight, ElementName=Root}"
         Name="InstanceCardBorder"
         PointerReleased="InstanceCard_OnPointerReleased">
@@ -96,7 +96,7 @@
             <DockPanel DockPanel.Dock="Top">
                 <Border
                     ClipToBounds="True"
-                    CornerRadius="10"
+                    CornerRadius="0"
                     Height="{Binding IconSize, ElementName=Root}"
                     HorizontalAlignment="Left"
                     Margin="{Binding IconMargin, ElementName=Root}"

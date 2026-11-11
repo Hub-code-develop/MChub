@@ -47,7 +47,7 @@
                         </DataValidationErrors>
                     </tio:FormItem>
                     <fa:FAInfoBar
-                        CornerRadius="10"
+                        CornerRadius="0"
                         IsClosable="False"
                         IsOpen="True"
                         Margin="15,0,15,15"

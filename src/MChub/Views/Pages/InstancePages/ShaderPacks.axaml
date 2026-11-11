@@ -163,7 +163,7 @@
                         <Border
                             Classes.selected="{Binding IsSelected}"
                             Classes.shader-pack-card="True"
-                            CornerRadius="11"
+                            CornerRadius="0"
                             Cursor="Hand"
                             PointerPressed="ShaderPackCard_OnPointerPressed">
                             <Border.ContextFlyout>
@@ -253,12 +253,12 @@
                                 BorderThickness="1"
                                 Classes.selected="{Binding IsSelected}"
                                 Classes.shader-pack-card-inner="True"
-                                CornerRadius="10"
+                                CornerRadius="0"
                                 Padding="14">
                                 <DockPanel>
                                     <Border
                                         Background="{DynamicResource SystemAccentColor}"
-                                        CornerRadius="4"
+                                        CornerRadius="0"
                                         DockPanel.Dock="Bottom"
                                         HorizontalAlignment="Left"
                                         IsVisible="{Binding HasUpdate}"

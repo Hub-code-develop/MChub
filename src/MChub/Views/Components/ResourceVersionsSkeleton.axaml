@@ -12,13 +12,13 @@
             Orientation="Horizontal"
             Spacing="6">
             <fa:FASkeleton
-                CornerRadius="6"
+                CornerRadius="0"
                 Height="32"
                 IsActive="True"
                 IsLoading="True"
                 Width="150" />
             <fa:FASkeleton
-                CornerRadius="6"
+                CornerRadius="0"
                 Height="32"
                 IsActive="True"
                 IsLoading="True"
@@ -31,13 +31,13 @@
                         Background="{DynamicResource TranslucentBackgroundColor}"
                         BorderBrush="{DynamicResource TranslucentBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="8"
+                        CornerRadius="0"
                         Height="46"
                         Margin="0,0,0,10"
                         Padding="14,0">
                         <Panel>
                             <fa:FASkeleton
-                                CornerRadius="3"
+                                CornerRadius="0"
                                 Height="13"
                                 HorizontalAlignment="Right"
                                 IsActive="True"
@@ -45,7 +45,7 @@
                                 VerticalAlignment="Center"
                                 Width="62" />
                             <fa:FASkeleton
-                                CornerRadius="4"
+                                CornerRadius="0"
                                 Height="15"
                                 HorizontalAlignment="Left"
                                 IsActive="True"

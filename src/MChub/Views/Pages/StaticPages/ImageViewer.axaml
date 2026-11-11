@@ -38,7 +38,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="999"
+                CornerRadius="0"
                 HorizontalAlignment="Right"
                 Padding="5,0">
                 <StackPanel Orientation="Horizontal" Spacing="4">
@@ -80,7 +80,7 @@
                 Background="{DynamicResource TranslucentBackgroundColor}"
                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="999">
+                CornerRadius="0">
                 <StackPanel Orientation="Horizontal" Spacing="4">
                     <RepeatButton
                         Background="Transparent"

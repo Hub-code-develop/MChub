@@ -316,6 +316,7 @@ public static class MinecraftLaunchService
 
         context.SetRunning(CommonLanguageManager.Instance.launch_startingProcess.CurrentValue());
         await PrepareGraphicsBeforeLaunchAsync(instance, config, context.CancellationToken);
+        await PrepareAuthlibInjectorAsync(options, config, topLevel, context);
         if (options.SetChineseLanguageOnLaunch && instance.MinecraftEntry != null)
         {
             context.SetRunning(CommonLanguageManager.Instance.launch_settingGameLanguage.CurrentValue());
@@ -335,6 +336,41 @@ public static class MinecraftLaunchService
         processStarted(mcProcess.Process);
         OnGameProcessStarted(mcProcess.Process, options, placeholders, true, instance);
         context.ReportProgress(1);
+    }
+
+    /// <summary>
+    /// 第三方账户启动时注入 authlib-injector，否则游戏内认证仍指向 Mojang，
+    /// 表现为"能启动但皮肤不显示、服务器验证失败"。
+    /// </summary>
+    private static async Task PrepareAuthlibInjectorAsync(MinecraftLaunchOptions options, LaunchConfig config,
+        TopLevel? topLevel, TaskExecutionContext context)
+    {
+        if (options.Account is not { AccountType: AccountType.Yggdrasil } account ||
+            string.IsNullOrWhiteSpace(account.YggdrasilServerUrl))
+            return;
+
+        try
+        {
+            context.SetRunning("正在准备第三方认证注入…");
+            var jarPath = await AuthlibInjectorService.EnsureAsync(context.CancellationToken);
+            if (jarPath is null)
+            {
+                Notice(topLevel, "authlib-injector 获取失败，游戏内可能无法使用第三方皮肤与登录态。",
+                    NotificationType.Warning);
+                return;
+            }
+
+            config.JvmArguments = config.JvmArguments
+                .Concat(AuthlibInjectorService.BuildJvmArguments(jarPath, account.YggdrasilServerUrl));
+        }
+        catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Logger.Warning($"[AuthlibInjector] 注入失败：{exception.Message}");
+        }
     }
 
     private static async Task PrepareGraphicsBeforeLaunchAsync(MinecraftInstance instance, LaunchConfig config,

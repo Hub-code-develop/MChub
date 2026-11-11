@@ -131,7 +131,7 @@
                         <Border
                             Classes.selected="{Binding IsSelected}"
                             Classes.world-template-card="True"
-                            CornerRadius="11"
+                            CornerRadius="0"
                             Cursor="Hand"
                             PointerPressed="WorldTemplateCard_OnPointerPressed">
                             <Border.ContextFlyout>
@@ -157,13 +157,13 @@
                                 BorderThickness="1"
                                 Classes.selected="{Binding IsSelected}"
                                 Classes.world-template-card-inner="True"
-                                CornerRadius="10"
+                                CornerRadius="0"
                                 Padding="10">
                                 <StackPanel>
                                     <Border
                                         Background="{DynamicResource TranslucentBorderBrush}"
                                         ClipToBounds="True"
-                                        CornerRadius="7"
+                                        CornerRadius="0"
                                         Height="120">
                                         <Grid>
                                             <Image

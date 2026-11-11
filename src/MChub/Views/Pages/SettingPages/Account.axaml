@@ -11,6 +11,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:settingPages="clr-namespace:MChub.Views.Pages.SettingPages"
+    xmlns:ui="using:InfinityUI.Controls"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="using:MChub.Localization">
     <StackPanel Spacing="15">
         <StackPanel.Resources>
@@ -111,7 +112,7 @@
                         <StackPanel VerticalAlignment="Top">
                             <Border
                                 Background="{Binding AccountType, Converter={StaticResource AccountTypeToBrushConverter}}"
-                                CornerRadius="6"
+                                CornerRadius="0"
                                 Height="140"
                                 Margin="5,15,5,10"
                                 Width="140">
@@ -150,7 +151,7 @@
                     FontWeight="600"
                     HorizontalAlignment="Left"
                     Text="{Translate {x:Static loc:SettingsLanguageManager+Keys.account_bedrockAccounts}}" />
-                <ToggleSwitch
+                <ui:InfinityToggleSwitch
                     HorizontalAlignment="Right"
                     IsChecked="{Binding Data.ConfigEntry.EnableBedrockAccountInjection}"
                     OffContent="{Translate {x:Static loc:SettingsLanguageManager+Keys.account_disable}}"
@@ -172,7 +173,7 @@
                     <DataTemplate DataType="classes:BedrockAccount">
                         <Border
                             Background="Transparent"
-                            CornerRadius="8"
+                            CornerRadius="0"
                             Padding="0,12"
                             Width="350">
                             <Border.ContextMenu>
@@ -206,7 +207,7 @@
                             <Grid ColumnDefinitions="64,*">
                                 <Border
                                     ClipToBounds="True"
-                                    CornerRadius="8"
+                                    CornerRadius="0"
                                     Height="64"
                                     Margin="5,0,0,0"
                                     Width="64">

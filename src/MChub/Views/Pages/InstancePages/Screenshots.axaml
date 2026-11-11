@@ -62,11 +62,11 @@
                                 BorderBrush="{DynamicResource TranslucentBorderBrush}"
                                 BorderThickness="1"
                                 ClipToBounds="True"
-                                CornerRadius="16"
+                                CornerRadius="0"
                                 Cursor="Hand"
                                 PointerPressed="OpenImageViewer_OnPointerPressed">
                                 <owned:OwnedAdvancedImage
-                                    CornerRadius="15"
+                                    CornerRadius="0"
                                     Loader="{Binding ImageLoader}"
                                     Source="{Binding FilePath}"
                                     Stretch="UniformToFill" />

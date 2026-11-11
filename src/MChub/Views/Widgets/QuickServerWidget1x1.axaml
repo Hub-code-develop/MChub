@@ -11,7 +11,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border
         Background="Transparent"
-        CornerRadius="10"
+        CornerRadius="0"
         Cursor="Hand"
         Name="Card">
         <Border.Styles>
@@ -30,7 +30,7 @@
             <StackPanel Margin="5,5,5,0">
                 <Border
                     ClipToBounds="True"
-                    CornerRadius="10"
+                    CornerRadius="0"
                     Height="52"
                     HorizontalAlignment="Center"
                     Margin="0,5,0,4"

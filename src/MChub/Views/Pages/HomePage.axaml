@@ -23,7 +23,7 @@
         <Border Margin="0,12,0,45" Width="{Binding ElementName=Title, Path=Bounds.Width}">
             <Border
                 Background="{DynamicResource SystemAccentColor}"
-                CornerRadius="10"
+                CornerRadius="0"
                 Height="3"
                 HorizontalAlignment="Stretch"
                 Margin="40,0" />
@@ -32,7 +32,7 @@
             Background="{DynamicResource TranslucentBackgroundColor}"
             BorderBrush="{DynamicResource TranslucentBorderBrush}"
             BorderThickness="1"
-            CornerRadius="18"
+            CornerRadius="0"
             Margin="30,0"
             MaxWidth="920"
             Padding="12">
@@ -80,7 +80,7 @@
                                 BorderBrush="Transparent"
                                 BorderThickness="1"
                                 ContextRequested="Item_OnContextRequested"
-                                CornerRadius="14"
+                                CornerRadius="0"
                                 Name="ItemBorder"
                                 Padding="14,12,16,12"
                                 Tag="{Binding}">
@@ -95,7 +95,7 @@
                                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
                                     <Border
                                         ClipToBounds="True"
-                                        CornerRadius="12"
+                                        CornerRadius="0"
                                         Height="58"
                                         VerticalAlignment="Center"
                                         Width="58">
@@ -120,7 +120,7 @@
                                     </StackPanel>
                                     <Button
                                         Click="PlayButton_OnClick"
-                                        CornerRadius="12"
+                                        CornerRadius="0"
                                         Cursor="Hand"
                                         FontSize="15"
                                         Grid.Column="2"

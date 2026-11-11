@@ -26,7 +26,7 @@
                         Background="{DynamicResource TranslucentBackgroundColor}"
                         BorderBrush="{DynamicResource TranslucentBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="16"
+                        CornerRadius="0"
                         Height="114"
                         Name="RecentInstanceCard"
                         Width="260">
@@ -110,7 +110,7 @@
                                         Spacing="4">
                                         <Border
                                             ClipToBounds="True"
-                                            CornerRadius="12"
+                                            CornerRadius="0"
                                             Height="42"
                                             HorizontalAlignment="Left"
                                             Margin="0,0,8,0"
@@ -168,7 +168,7 @@
                         Background="{DynamicResource TranslucentBackgroundColor}"
                         BorderBrush="{DynamicResource TranslucentBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="16"
+                        CornerRadius="0"
                         Height="115"
                         Name="RecentTargetCard">
                         <Grid>
@@ -248,7 +248,7 @@
                                     <DockPanel DockPanel.Dock="Top">
                                         <Border
                                             ClipToBounds="True"
-                                            CornerRadius="10"
+                                            CornerRadius="0"
                                             Height="40"
                                             Margin="0,0,8,0"
                                             Width="40">
@@ -342,7 +342,7 @@
                         Background="{DynamicResource TranslucentBackgroundColor}"
                         BorderBrush="{DynamicResource TranslucentBorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="16"
+                        CornerRadius="0"
                         Height="87"
                         Name="PlayTimeCard">
                         <Grid Margin="13,13,13,10" RowDefinitions="Auto,*">
@@ -394,7 +394,7 @@
                         BorderBrush="{DynamicResource TranslucentBorderBrush}"
                         BorderThickness="1"
                         ClipToBounds="True"
-                        CornerRadius="16"
+                        CornerRadius="0"
                         Height="340"
                         Name="Border"
                         PointerWheelChanged="InputElement_OnPointerWheelChanged">

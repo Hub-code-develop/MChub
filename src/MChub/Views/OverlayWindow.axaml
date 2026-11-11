@@ -131,7 +131,7 @@
             Background="{DynamicResource PopupBackgroundColor}"
             BorderBrush="{DynamicResource PopupBorderBrush}"
             BorderThickness="1"
-            CornerRadius="10"
+            CornerRadius="0"
             IsHitTestVisible="False"
             Margin="25"
             Name="InstanceBorder"
