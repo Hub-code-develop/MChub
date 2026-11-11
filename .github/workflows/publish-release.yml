@@ -455,6 +455,9 @@ jobs:
       REL_MC_KEY: ${{ secrets.REL_MC_KEY }}
     strategy:
       fail-fast: false
+      # 4 个作业（2 变体 × 2 架构）如果同时开跑，Rosetta 下交叉构建的负载叠加会明显增加
+      # MSBuild 子进程崩溃的概率，限制同时跑 2 个。
+      max-parallel: 2
       # 显式列 4 项（2 变体 × 2 架构）。用 variant + include 组合的话，
       # include 里的 rid 与组合中的 rid 键重名，语义容易出错，这里写死更稳。
       matrix:
@@ -547,6 +550,14 @@ jobs:
           ls -l ./src/MChub.Bedrock.Preload/MChub.Preload.dll ./src/MChub.Bedrock.Bootstrap/MChub.Bootstrap.dll
 
       - name: Build macOS App
+        # MSBuild 多进程构建在 macOS runner 上会偶发子节点崩溃：
+        #   MSBUILD : error MSB4166: Child node "3" exited prematurely
+        # 以及 dotnet 进程直接 SIGSEGV(139)。实测 run 42974836908 里 4 个 mac 作业全挂，
+        # restore 与 bundle 都中招。本地同样症状加 -m:1 + 禁用共享编译即可通过，
+        # 这里一并固化到 CI，并关掉 MSBuild server / 节点复用，减少常驻进程。
+        env:
+          DOTNET_CLI_USE_MSBUILD_SERVER: "0"
+          MSBUILDDISABLENODEREUSE: "1"
         run: |
           cd ./src/MChub.Desktop
           # CodeNet x64 SDK 在 Rosetta 下交叉构建 osx-arm64 会概率性死锁：
@@ -576,8 +587,8 @@ jobs:
             echo "== $label gave up after 3 attempts =="
             return 1
           }
-          run_with_timeout restore restore -r ${{ matrix.rid }}
-          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true
+          run_with_timeout restore restore -r ${{ matrix.rid }} -m:1 /p:UseSharedCompilation=false
+          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true -m:1 /p:UseSharedCompilation=false
 
       - name: Download Bedrock macOS runtime
         uses: actions/download-artifact@v7
