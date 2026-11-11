@@ -31,6 +31,14 @@ on:
         options:
           - "0"
           - "1"
+      sdk:
+        description: "CodeNet SDK 架构"
+        required: true
+        default: x64
+        type: choice
+        options:
+          - x64
+          - arm64
 
 permissions:
   contents: read
@@ -38,7 +46,7 @@ permissions:
 
 jobs:
   probe:
-    name: probe-${{ inputs.runner }}-${{ inputs.rid }}-wx${{ inputs.wx }}
+    name: probe-${{ inputs.runner }}-sdk${{ inputs.sdk }}-${{ inputs.rid }}-wx${{ inputs.wx }}
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 40
     steps:
@@ -59,7 +67,7 @@ jobs:
         with:
           submodules: "recursive"
 
-      - name: Setup CodeNet SDK (x64)
+      - name: Setup CodeNet SDK (${{ inputs.sdk }})
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -67,12 +75,23 @@ jobs:
           CODENET_VER="10.0.400"
           DEST="$RUNNER_TEMP/codenet"
           mkdir -p "$DEST"
-          gh release download "sdk-v${CODENET_VER}" -R Open-code-Studio/CodeNet -p "dotnet-codenet-osx-x64.tar.gz" -D "$DEST"
-          tar xzf "$DEST/dotnet-codenet-osx-x64.tar.gz" -C "$DEST"
-          echo "DOTNET_ROOT=$DEST/dotnet11x64" >> "$GITHUB_ENV"
-          echo "$DEST/dotnet11x64" >> "$GITHUB_PATH"
-          "$DEST/dotnet11x64/dotnet" --version
-          "$DEST/dotnet11x64/dotnet" --info 2>/dev/null | grep -iE "Architecture|RID|Version" || true
+          if [ "${{ inputs.sdk }}" = "arm64" ]; then
+            ASSET="dotnet-codenet-osx-arm64-fixed.tar.gz"
+          else
+            ASSET="dotnet-codenet-osx-x64.tar.gz"
+          fi
+          gh release download "sdk-v${CODENET_VER}" -R Open-code-Studio/CodeNet -p "$ASSET" -D "$DEST"
+          tar xzf "$DEST/$ASSET" -C "$DEST"
+          # 两个包的顶层目录名不同（dotnet11x64 / dotnet-codenet-arm64 之类），直接探测 dotnet 可执行文件
+          DOTNET_DIR=$(find "$DEST" -maxdepth 3 -type f -name dotnet -perm -111 | head -1 | xargs dirname)
+          echo "SDK dir: $DOTNET_DIR"
+          file "$DOTNET_DIR/dotnet"
+          echo "DOTNET_ROOT=$DOTNET_DIR" >> "$GITHUB_ENV"
+          echo "$DOTNET_DIR" >> "$GITHUB_PATH"
+          FILEARCH=$(file -b "$DOTNET_DIR/dotnet")
+          echo "SDK 二进制架构: $FILEARCH"
+          "$DOTNET_DIR/dotnet" --version
+          "$DOTNET_DIR/dotnet" --info 2>/dev/null | grep -iE "Architecture|RID|Version" || true
 
       - name: Update Submodules
         run: |
@@ -128,6 +147,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: probe-${{ inputs.rid }}-wx${{ inputs.wx }}
+          name: probe-${{ inputs.rid }}-sdk${{ inputs.sdk }}-wx${{ inputs.wx }}
           path: /tmp/probe.${{ inputs.rid }}.app.zip
           if-no-files-found: warn
