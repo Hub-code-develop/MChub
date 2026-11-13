@@ -324,28 +324,45 @@ jobs:
         with:
           submodules: "recursive"
 
-      - name: Setup CodeNet SDK (macOS 定制版 .NET)
+      # 编译用官方 SDK，CodeNet 只作为「运行时库来源」（与 publish-release.yml 同一套做法）。
+      # 背景：2026-11 把三家组合都实测过一遍 ——
+      #   macos-latest(arm64) + CodeNet x64(Rosetta)  → restore 段错误，bundle 三次全崩
+      #   macos-latest(arm64) + CodeNet arm64(原生)   → bundle 崩两次，第三次 csc 139
+      #   macos-15-intel(x86_64) + CodeNet x64(原生)  → restore 通过，bundle 三次段错误
+      #   macos-latest(arm64) + 官方 SDK 10.0.400     → 构建成功
+      # 崩的是 CodeNet 那套编译器本身，与 Rosetta / runner 架构无关。
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.400
+
+      - name: Fetch CodeNet runtime (signalfix 原生库)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           CODENET_VER="10.0.400"
-          # 统一用 x64 SDK 交叉构建（含 osx-arm64）：
-          # arm64 的 CodeNet SDK 在 macOS 26 arm64 runner 上 signalfix 有竞态，
-          # dotnet restore -r osx-arm64 概率性 Segmentation fault 139（实测 run 35596627434）。
-          # x64 SDK 稳定，且其 packs 里自带 signalfix 版 arm64 原生库
-          # （libcoreclr 6144016 / libclrjit 3061968 / libclrgc 882208 / libclrgcexp 960800），
-          # 因此 x64 宿主交叉构建出的 arm64 产物同样是修复版。x64 宿主在 arm64 runner 上可运行（有 Rosetta）。
-          ASSET="dotnet-codenet-osx-x64.tar.gz"
-          DEST="$RUNNER_TEMP/codenet"
+          # arm64 包解压后顶层目录名仍是 dotnet11x64（历史遗留），内部二进制才是对应架构。
+          if [ "${{ matrix.dmg_arch }}" = "arm64" ]; then
+            ASSET="dotnet-codenet-osx-arm64-fixed.tar.gz"
+          else
+            ASSET="dotnet-codenet-osx-x64.tar.gz"
+          fi
+          DEST="$RUNNER_TEMP/codenet-runtime"
           mkdir -p "$DEST"
-          echo "从 Open-code-Studio/CodeNet 发布下载定制版 .NET SDK (sdk-v${CODENET_VER}, x64 → 交叉构建 ${{ matrix.rid }}) ..."
+          echo "下载 CodeNet ${ASSET} 仅用于取 signalfix 原生库 ..."
           gh release download "sdk-v${CODENET_VER}" -R Open-code-Studio/CodeNet -p "$ASSET" -D "$DEST"
           tar xzf "$DEST/$ASSET" -C "$DEST"
-          echo "DOTNET_ROOT=$DEST/dotnet11x64" >> "$GITHUB_ENV"
-          echo "$DEST/dotnet11x64" >> "$GITHUB_PATH"
-          "$DEST/dotnet11x64/dotnet" --version
-          "$DEST/dotnet11x64/dotnet" --info 2>/dev/null | grep Architecture
+          LIBSRC=$(find "$DEST" -maxdepth 5 -type d -name "Microsoft.NETCore.App" | head -1)
+          echo "CodeNet 运行时目录: $LIBSRC"
+          ls "$LIBSRC"
+          # 取其中版本号最大的目录，作为后面固定 RuntimeFrameworkVersion 的依据：
+          # 官方 SDK 默认带的是更新的补丁版（如 10.0.14），CodeNet 只有它自己那一版，
+          # 不固定住的话 publish 会拉到官方包，signalfix 那四个 dylib 就对不上了。
+          CODENET_RT=$(ls "$LIBSRC" | sort -V | tail -1)
+          echo "CodeNet 运行时版本: $CODENET_RT"
+          echo "CODENET_LIBS=$LIBSRC" >> "$GITHUB_ENV"
+          echo "CODENET_RT=$CODENET_RT" >> "$GITHUB_ENV"
 
       - name: Update Submodules
         run: |
@@ -372,19 +389,23 @@ jobs:
           ls -l ./src/MChub.Bedrock.Preload/MChub.Preload.dll ./src/MChub.Bedrock.Bootstrap/MChub.Bootstrap.dll
 
       - name: Build macOS App
+        # 编译用官方 SDK（上面已实测：CodeNet SDK 的编译器在 CI 的 mac 宿主上必崩）。
+        # 仍保留 -m:1 + 禁用共享编译、关掉 MSBuild server：历史上班上的
+        #   MSB4166 "Child node exited prematurely"
+        # 就是多进程 MSBuild 引起的，单进程最稳，代价只是慢一点。
+        # restore 保留重试：NuGet 偶发超时不算构建失败。
+        env:
+          DOTNET_CLI_USE_MSBUILD_SERVER: "0"
+          MSBUILDDISABLENODEREUSE: "1"
         run: |
           cd ./src/MChub.Desktop
-          # CodeNet x64 SDK 在 Rosetta 下交叉构建 osx-arm64 会概率性死锁：
-          # 轻则卡在 restore 的 "Determining projects to restore..."，
-          # 重则 BundleApp 编译阶段静默挂起直到 GitHub 6h 超时（实测多次）。
-          # 给每个 dotnet 调用套 600s 超时，挂起即 kill 重试，最多 3 次。
           run_with_timeout() {
             local label="$1"; shift
             for attempt in 1 2 3; do
               echo "== $label attempt $attempt =="
               dotnet "$@" &
               local pid=$!
-              ( sleep 600; kill -9 "$pid" 2>/dev/null ) &
+              ( sleep 900; kill -9 "$pid" 2>/dev/null ) &
               local killer=$!
               # GitHub 默认 shell 带 -e，wait 直接返回非 0 会终止脚本，导致重试分支永远不执行
               local rc=0
@@ -401,8 +422,50 @@ jobs:
             echo "== $label gave up after 3 attempts =="
             return 1
           }
-          run_with_timeout restore restore -r ${{ matrix.rid }}
-          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true
+          run_with_timeout restore restore -r ${{ matrix.rid }} -p:RuntimeFrameworkVersion="$CODENET_RT" -m:1 /p:UseSharedCompilation=false
+          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true -p:RuntimeFrameworkVersion="$CODENET_RT" -m:1 /p:UseSharedCompilation=false
+
+      # macOS 27 的 EXC_GUARD 会让原版运行时的 Mach exception 路径被 SIGKILL(137)，
+      # CodeNet 的 signalfix 版本把这条路径换成 signal-based SEH。
+      # 编译阶段用不了 CodeNet 的 SDK，但产物里的原生库可以直接换成它的。
+      # 只有运行时版本完全一致（App 的 runtimeconfig 与 CodeNet 的 shared 目录同名）
+      # 才替换，避免 CoreCLR 与 CoreLib 版本错配把 App 搞坏。
+      - name: Overlay signalfix runtime
+        run: |
+          set -euo pipefail
+          APP="./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish/MChub.app"
+          APPRT=$(python3 -c "import json;print(json.load(open('$APP/Contents/MacOS/MChub.Desktop.runtimeconfig.json'))['runtimeOptions']['includedFrameworks'][0]['version'])")
+          echo "App 运行时版本: $APPRT"
+          if [ ! -d "$CODENET_LIBS/$APPRT" ]; then
+            # 以前这里是 ::warning:: 然后 exit 0 —— 结果是 macOS 包带着官方运行时发出去，
+            # 在 macOS 27 上一启动就是 "Failed to create CoreCLR, HRESULT: 0x8007000C"。
+            # 宁可这次构建失败，也不能再静默产出打不开的包。
+            echo "::error::CodeNet 没有 $APPRT 版本的运行时（只有 $(ls "$CODENET_LIBS" | tr '\n' ' ')）；官方运行时在 macOS 27 上会被 EXC_GUARD 打死，不能跳过 signalfix 叠加"
+            exit 1
+          fi
+          echo "CodeNet 运行时版本匹配，开始替换原生库"
+          for f in libcoreclr.dylib libclrjit.dylib libclrgc.dylib libclrgcexp.dylib; do
+            src="$CODENET_LIBS/$APPRT/$f"; dst="$APP/Contents/MacOS/$f"
+            if [ -f "$src" ] && [ -f "$dst" ]; then
+              before=$(stat -f%z "$dst")
+              cp -f "$src" "$dst"
+              chmod 755 "$dst"
+              echo "  $f: $before -> $(stat -f%z "$dst")"
+            else
+              echo "  跳过 $f（源或目标不存在）"
+            fi
+          done
+          # 复核：核心四个库必须与 CodeNet 的同版本文件逐字节一致，否则等于没换。
+          for f in libcoreclr.dylib libclrjit.dylib libclrgc.dylib libclrgcexp.dylib; do
+            src="$CODENET_LIBS/$APPRT/$f"; dst="$APP/Contents/MacOS/$f"
+            [ -f "$src" ] && [ -f "$dst" ] || continue
+            if ! cmp -s "$src" "$dst"; then
+              echo "::error::$f 与 CodeNet 版本不一致，signalfix 未生效"
+              exit 1
+            fi
+          done
+          echo "signalfix 运行时已生效（libcoreclr 大小 $(stat -f%z "$APP/Contents/MacOS/libcoreclr.dylib)）"
+          # 签名不在这里做：后面塞完 Bedrock 运行时、改完 Info.plist 有统一的整包重签步骤
 
       - name: Download Bedrock macOS runtime
         uses: actions/download-artifact@v7
