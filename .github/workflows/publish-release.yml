@@ -617,10 +617,42 @@ jobs:
             return 1
           }
           run_with_timeout restore restore -r ${{ matrix.rid }} -p:RuntimeFrameworkVersion="$CODENET_RT" -m:1 /p:UseSharedCompilation=false
-          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true -p:RuntimeFrameworkVersion="$CODENET_RT" -p:CFBundleName="${{ matrix.bundle_name }}" -p:CFBundleDisplayName="${{ matrix.display_name }}" -p:CFBundleShortVersionString=${{ needs.prepare.outputs.app_version }} -p:CFBundleVersion=${{ needs.prepare.outputs.app_version }} -m:1 /p:UseSharedCompilation=false
-          # CFBundleName 决定生成的 .app 目录名（DotNet.Bundle 的 BundleAppTask 用它建目录），
-          # 所以两套构建的 app 名只靠这一个属性区分；Identifier 仍来自 csproj 的
-          # CFBundleIdentifier（hub.code.MChub），两边一致。
+          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true -p:RuntimeFrameworkVersion="$CODENET_RT" -p:CFBundleShortVersionString=${{ needs.prepare.outputs.app_version }} -p:CFBundleVersion=${{ needs.prepare.outputs.app_version }} -m:1 /p:UseSharedCompilation=false
+          # 这里**不**用 -p:CFBundleName 改名：实测（v1.2.2 run 43115598626）传进去后
+          # CopyAppIconToBundle 收到的 CFBundleName 已是新值，但 BundleAppTask 产出的
+          # 目录名并没有跟着变，overlay 步骤随即找不到 bundle。
+          # 改成 bundle 之后显式 mv + 改 Info.plist（见下一步），行为确定可控。
+
+      # 两套构建要能同时装进 /Applications：.app 目录名（Finder 里看到的名字）必须不同，
+      # CFBundleIdentifier 则保持两边一致（hub.code.MChub），共用协议注册与偏好域。
+      # 改名放在 bundle 之后、overlay 之前，后面所有步骤统一用 matrix.bundle_name 定位。
+      - name: Apply variant bundle name
+        run: |
+          set -euo pipefail
+          PUB="./src/MChub.Desktop/bin/Release/net10.0/${{ matrix.rid }}/publish"
+          SRC="$PUB/MChub.app"
+          if [ ! -d "$SRC" ]; then
+            # 兜底：万一 BundleAppTask 换了命名规则，取 publish 下唯一的 .app
+            SRC=$(find "$PUB" -maxdepth 1 -name "*.app" -type d | head -1 || true)
+            echo "::warning::没有 MChub.app，改用 ${SRC:-（无）}"
+          fi
+          if [ -z "${SRC:-}" ] || [ ! -d "$SRC" ]; then
+            echo "::error::$PUB 下没有 .app"
+            ls -la "$PUB"
+            exit 1
+          fi
+          DST="$PUB/${{ matrix.bundle_name }}.app"
+          if [ "$SRC" != "$DST" ]; then
+            rm -rf "$DST"
+            mv "$SRC" "$DST"
+          fi
+          PLIST="$DST/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName ${{ matrix.bundle_name }}" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName ${{ matrix.display_name }}" "$PLIST"
+          echo "bundle 名: $(basename "$DST")"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleName" -c "Print :CFBundleDisplayName" -c "Print :CFBundleIdentifier" -c "Print :CFBundleExecutable" "$PLIST"
+          # 图标由 csproj 的 CopyAppIconToBundle 复制；改名只是换目录，资源应原样在
+          [ -f "$DST/Contents/Resources/MChub.icns" ] || echo "::warning::Contents/Resources 里没有 MChub.icns，图标会丢"
 
       # macOS 27 的 EXC_GUARD 会让原版运行时的 Mach exception 路径被 SIGKILL(137)，
       # CodeNet 的 signalfix 版本把这条路径换成 signal-based SEH。
