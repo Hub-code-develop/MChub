@@ -96,12 +96,18 @@ public sealed class LogShareClient
         if (string.IsNullOrWhiteSpace(id))
             throw new LogShareException(500, "服务端没有返回日志 ID。");
 
+        var deduplicated = GetBoolean(root, "deduplicated");
+
+        // 去重命中时服务端返回的是同一份记录的 id，但响应里的 token 并不是这条记录的删除凭证
+        // （实测 DELETE 会回 "Invalid token"），因此不要把它当成可用的删除令牌往外传。
+        var token = deduplicated ? null : GetString(root, "token");
+
         return new LogShareEntry(
             id!,
             GetString(root, "url"),
             GetString(root, "raw"),
-            GetString(root, "token"),
-            GetBoolean(root, "deduplicated"),
+            token,
+            deduplicated,
             GetInt32(root, "fileCount", 1),
             GetBoolean(root, "requiresFileSelection"),
             ReadFiles(root));

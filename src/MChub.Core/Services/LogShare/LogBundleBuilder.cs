@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text;
 using MChub.Core.Minecraft;
 using MChub.Core.Minecraft.Classes;
@@ -67,12 +68,33 @@ public static class LogBundleBuilder
 
 
         return new LogShareBundle(
-            files,
+            DeduplicateByContent(files),
             primaryName,
             instance?.InstanceName,
             instance?.VersionId,
             ResolveLoaderName(instance),
             instance?.MinecraftEntry?.Id);
+    }
+
+    /// <summary>
+    /// 主文件来自编辑器里的 latest.log，而 logs 目录里往往还有同一份文件，
+    /// 换个前缀就会重复上传。按内容哈希去重，保留先出现的那个（主文件优先）。
+    /// </summary>
+    private static List<LogShareFile> DeduplicateByContent(List<LogShareFile> files)
+    {
+        if (files.Count <= 1)
+            return files;
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var result = new List<LogShareFile>(files.Count);
+        foreach (var file in files)
+        {
+            var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(file.Content)));
+            if (seen.Add(hash))
+                result.Add(file);
+        }
+
+        return result;
     }
 
     private static async Task<(int Added, long Bytes)> AddDirectoryAsync(

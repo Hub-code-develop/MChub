@@ -17,6 +17,10 @@ public sealed record LogShareMetadataEntry(string Key, string Value, string? Lab
 public sealed record LogShareFileInfo(string Name, long Size, int Lines, string? Raw, string? Insights);
 
 /// <summary>上传（或读取元信息）后的日志记录。</summary>
+/// <remarks>
+/// Token 只在首次上传时可用；命中去重（Deduplicated = true）时为 null ——
+/// 此时这条记录属于更早上传的人，我们拿不到它的删除凭证。
+/// </remarks>
 public sealed record LogShareEntry(
     string Id,
     string? Url,
