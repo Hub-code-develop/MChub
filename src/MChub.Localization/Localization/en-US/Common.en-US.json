@@ -590,7 +590,16 @@
     "httpError": "HTTP {0}: {1}",
     "serverError": "The server returned an error",
     "noShareLink": "The server did not return a share link",
-    "aiNoResult": "AI analysis returned no result"
+    "aiNoResult": "AI analysis returned no result",
+    "noAnalyzableFile": "The server did not return an analyzable file",
+    "insightsProblems": "Problems detected ({0})",
+    "insightsNoProblems": "No obvious problems detected.",
+    "insightsOccurrence": "{0} times",
+    "insightsInformation": "Environment",
+    "metadataVersion": "Minecraft version",
+    "metadataLoader": "Loader",
+    "metadataInstance": "Instance",
+    "metadataLauncher": "Launcher version"
   },
   "littleskin": {
     "errorClientId": "LittleSkin client_id is not configured, so the skin library cannot be synced. Set the LITTLESKIN_CLIENT_ID environment variable.",

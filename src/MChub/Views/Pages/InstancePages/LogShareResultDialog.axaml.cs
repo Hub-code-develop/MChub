@@ -30,9 +30,28 @@ internal partial class LogShareResultDialog : UserControl
     {
         if (DataContext is not LogShareResultDialogViewModel viewModel)
             return;
-        var urls = string.Join('\n', viewModel.Items.Where(item => item.HasUrl).Select(item => item.Url));
+        var urls = string.Join('\n', viewModel.Items.Where(item => item.HasUrl && !item.IsDeleted).Select(item => item.Url));
         if (urls.Length > 0)
             await CopyAsync(urls);
+    }
+
+    private async void Delete_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if ((sender as Control)?.Tag is not LogShareResultItemViewModel { CanDelete: true } item)
+            return;
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        try
+        {
+            await LogSharingService.DeleteAsync(item.LogId!, item.DeleteToken!, CancellationToken.None);
+            item.IsDeleted = true;
+            topLevel?.Notice(InstancesLanguageManager.Instance.logshareresultdialog_deleted.CurrentValue(), NotificationType.Success);
+        }
+        catch (Exception ex)
+        {
+            topLevel?.Notice(string.Format(InstancesLanguageManager.Instance.logshareresultdialog_deleteFailed.CurrentValue(), ex.Message),
+                NotificationType.Error);
+        }
     }
 
     private async Task CopyAsync(string text)
@@ -79,26 +98,53 @@ internal class LogShareResultDialogViewModel : ObservableObject, IDialogContext
     public event EventHandler<object?>? RequestClose;
 }
 
-internal sealed class LogShareResultItemViewModel
+internal sealed partial class LogShareResultItemViewModel : ObservableObject
 {
     private static readonly IBrush SuccessBrush = new SolidColorBrush(Color.Parse("#4CAF50"));
     private static readonly IBrush ErrorBrush = new SolidColorBrush(Color.Parse("#F44336"));
+    private static readonly IBrush MutedBrush = new SolidColorBrush(Color.Parse("#8A8A8A"));
 
     private LogShareResultItemViewModel()
     {
     }
 
+    [ObservableProperty] public partial bool IsDeleted { get; set; }
+
     public required string Platform { get; init; }
     public required bool IsSuccess { get; init; }
     public string? Url { get; init; }
     public string? Error { get; init; }
+    public string? LogId { get; init; }
+    public string? DeleteToken { get; init; }
+    public int FileCount { get; init; }
+    public bool Deduplicated { get; init; }
 
     public bool HasUrl => Url is not null;
+
     public bool HasError => Error is not null;
-    public string StatusText => IsSuccess
-        ? CommonLanguageManager.Instance.logShare_shared.CurrentValue()
-        : CommonLanguageManager.Instance.logShare_failed.CurrentValue();
-    public IBrush StatusColor => IsSuccess ? SuccessBrush : ErrorBrush;
+
+    public bool CanDelete => IsSuccess && !IsDeleted && LogId is not null && DeleteToken is not null && !Deduplicated;
+
+    public bool HasDetail => FileCount > 1 || Deduplicated;
+
+    public string DetailText => Deduplicated
+        ? InstancesLanguageManager.Instance.logshareresultdialog_deduplicated.CurrentValue()
+        : string.Format(InstancesLanguageManager.Instance.logshareresultdialog_fileCount.CurrentValue(), FileCount);
+
+    public string StatusText => IsDeleted
+        ? InstancesLanguageManager.Instance.logshareresultdialog_deleted.CurrentValue()
+        : IsSuccess
+            ? CommonLanguageManager.Instance.logShare_shared.CurrentValue()
+            : CommonLanguageManager.Instance.logShare_failed.CurrentValue();
+
+    public IBrush StatusColor => IsDeleted ? MutedBrush : IsSuccess ? SuccessBrush : ErrorBrush;
+
+    partial void OnIsDeletedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(StatusColor));
+        OnPropertyChanged(nameof(CanDelete));
+    }
 
     public static LogShareResultItemViewModel From(LogShareResult result)
     {
@@ -107,7 +153,11 @@ internal sealed class LogShareResultItemViewModel
             Platform = result.Platform,
             IsSuccess = result.IsSuccess,
             Url = result.Url,
-            Error = result.Error
+            Error = result.Error,
+            LogId = result.Id,
+            DeleteToken = result.Token,
+            FileCount = result.FileCount,
+            Deduplicated = result.Deduplicated
         };
     }
 }

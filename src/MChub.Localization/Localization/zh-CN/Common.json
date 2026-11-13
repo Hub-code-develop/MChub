@@ -590,7 +590,16 @@
     "httpError": "HTTP {0}：{1}",
     "serverError": "服务器返回错误",
     "noShareLink": "服务器未返回分享链接",
-    "aiNoResult": "AI 分析未返回结果"
+    "aiNoResult": "AI 分析未返回结果",
+    "noAnalyzableFile": "服务端没有返回可分析的文件",
+    "insightsProblems": "检测到的问题（{0}）",
+    "insightsNoProblems": "没有检测到明显问题。",
+    "insightsOccurrence": "出现 {0} 次",
+    "insightsInformation": "环境信息",
+    "metadataVersion": "Minecraft 版本",
+    "metadataLoader": "加载器",
+    "metadataInstance": "实例",
+    "metadataLauncher": "启动器版本"
   },
   "littleskin": {
     "errorClientId": "尚未配置 LittleSkin client_id，无法同步皮肤库。请在环境变量 LITTLESKIN_CLIENT_ID 中设置。",

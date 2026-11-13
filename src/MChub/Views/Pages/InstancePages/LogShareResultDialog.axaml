@@ -50,6 +50,12 @@
                                         Margin="0,0,-2,0"
                                         Text="{Binding StatusText}" />
                                 </DockPanel>
+                                <TextBlock
+                                    FontSize="12"
+                                    IsVisible="{Binding HasDetail}"
+                                    Opacity="0.7"
+                                    Text="{Binding DetailText}"
+                                    TextWrapping="Wrap" />
                                 <SelectableTextBlock
                                     FontSize="13"
                                     IsVisible="{Binding HasUrl}"
@@ -85,6 +91,17 @@
                                             FontSize="13"
                                             Foreground="{DynamicResource SystemAccentColor}"
                                             Text="{Translate {x:Static loc:InstancesLanguageManager+Keys.logshareresultdialog_openLink}}" />
+                                    </Button>
+                                    <Button
+                                        Background="Transparent"
+                                        Click="Delete_OnClick"
+                                        IsVisible="{Binding CanDelete}"
+                                        Tag="{Binding}"
+                                        Theme="{StaticResource TransparentButton}">
+                                        <TextBlock
+                                            FontSize="13"
+                                            Foreground="#F44336"
+                                            Text="{Translate {x:Static loc:InstancesLanguageManager+Keys.logshareresultdialog_delete}}" />
                                     </Button>
                                 </StackPanel>
                             </StackPanel>

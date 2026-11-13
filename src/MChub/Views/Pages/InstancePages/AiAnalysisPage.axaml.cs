@@ -8,6 +8,7 @@ using Avalonia.Controls.Notifications;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using MChub.Core.Services;
+using MChub.Core.Services.LogShare;
 using MChub.Localization;
 using MChub.Module;
 using Tio.Avalonia.Standard.Tab.Entries;
@@ -21,7 +22,7 @@ public partial class AiAnalysisPage : UserControl, ITioTabPage, INotifyPropertyC
 {
     private static readonly ConcurrentDictionary<string, Lazy<Task<string>>> AnalysisCache = new();
 
-    private readonly string _content;
+    private readonly LogShareBundle _bundle;
     private readonly string _displayName;
     private string _resultText = string.Empty;
     private string? _errorMessage;
@@ -29,13 +30,14 @@ public partial class AiAnalysisPage : UserControl, ITioTabPage, INotifyPropertyC
     private bool _isComplete;
     private bool _isFailed;
 
-    public AiAnalysisPage() : this(string.Empty, string.Empty)
+    public AiAnalysisPage() : this(
+        new LogShareBundle([], string.Empty, null, null, null, null), string.Empty)
     {
     }
 
-    public AiAnalysisPage(string content, string displayName)
+    public AiAnalysisPage(LogShareBundle bundle, string displayName)
     {
-        _content = content;
+        _bundle = bundle;
         _displayName = displayName;
         PageInfo = new PageInfo
         {
@@ -112,18 +114,18 @@ public partial class AiAnalysisPage : UserControl, ITioTabPage, INotifyPropertyC
         DataContext = null;
     }
 
-    public static void Open(string content, string displayName, TopLevel sender)
+    public static void Open(LogShareBundle bundle, string displayName, TopLevel sender)
     {
         if (sender is not TioTabWindowBase window)
             return;
-        var tab = new TabEntry(window, new AiAnalysisPage(content, displayName));
+        var tab = new TabEntry(window, new AiAnalysisPage(bundle, displayName));
         window.CreateTab(tab);
         window.SelectTab(tab);
     }
 
     private async Task AnalyzeAsync()
     {
-        if (string.IsNullOrWhiteSpace(_content))
+        if (_bundle.Files.Count == 0)
             return;
 
         IsAnalyzing = true;
@@ -132,8 +134,8 @@ public partial class AiAnalysisPage : UserControl, ITioTabPage, INotifyPropertyC
 
         try
         {
-            var task = AnalysisCache.GetOrAdd(ComputeContentKey(_content),
-                _ => new Lazy<Task<string>>(() => LogSharingService.AnalyseAiAsync(_content, null, CancellationToken.None)))
+            var task = AnalysisCache.GetOrAdd(ComputeBundleKey(_bundle),
+                _ => new Lazy<Task<string>>(() => LogSharingService.AnalyseAsync(_bundle, CancellationToken.None)))
                 .Value;
             var result = await task;
             ResultText = result;
@@ -141,7 +143,7 @@ public partial class AiAnalysisPage : UserControl, ITioTabPage, INotifyPropertyC
         }
         catch (Exception ex)
         {
-            AnalysisCache.TryRemove(ComputeContentKey(_content), out _);
+            AnalysisCache.TryRemove(ComputeBundleKey(_bundle), out _);
             ErrorMessage = ex.Message;
             IsFailed = true;
         }
@@ -151,10 +153,16 @@ public partial class AiAnalysisPage : UserControl, ITioTabPage, INotifyPropertyC
         }
     }
 
-    private static string ComputeContentKey(string content)
+    private static string ComputeBundleKey(LogShareBundle bundle)
     {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(content));
-        return Convert.ToHexString(bytes);
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        foreach (var file in bundle.Files)
+        {
+            hash.AppendData(Encoding.UTF8.GetBytes(file.Name));
+            hash.AppendData(Encoding.UTF8.GetBytes(file.Content));
+        }
+
+        return Convert.ToHexString(hash.GetHashAndReset());
     }
 
     private async void Copy_OnClick(object? sender, RoutedEventArgs e)

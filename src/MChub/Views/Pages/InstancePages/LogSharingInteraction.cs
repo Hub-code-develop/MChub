@@ -1,7 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using AvaloniaEdit.Document;
+using MChub.Core.Minecraft.Classes;
 using MChub.Core.Services;
+using MChub.Core.Services.LogShare;
 using MChub.Localization;
 using Tio.Avalonia.Standard.Tab.Gateway;
 using TioUi.Common;
@@ -13,7 +15,12 @@ namespace MChub.Views.Pages.InstancePages;
 
 internal static class LogSharingInteraction
 {
-    public static async Task ShareAsync(Control view, TextDocument document, string displayName)
+    public static async Task ShareAsync(
+        Control view,
+        TextDocument document,
+        string displayName,
+        MinecraftInstance? instance = null,
+        string? primaryFileName = null)
     {
         var topLevel = TopLevel.GetTopLevel(view);
         if (topLevel is null)
@@ -31,7 +38,8 @@ internal static class LogSharingInteraction
         LogShareResult[] results;
         try
         {
-            results = await LogSharingService.ShareAllAsync(document.Text, CancellationToken.None);
+            var bundle = await LogBundleBuilder.CreateAsync(document.Text, primaryFileName, instance);
+            results = await LogSharingService.ShareAllAsync(bundle, CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -63,20 +71,33 @@ internal static class LogSharingInteraction
             });
     }
 
-    public static Task AnalyseAiAsync(Control view, TextDocument document, string displayName)
+    public static async Task AnalyseAiAsync(
+        Control view,
+        TextDocument document,
+        string displayName,
+        MinecraftInstance? instance = null,
+        string? primaryFileName = null)
     {
         var topLevel = TopLevel.GetTopLevel(view);
         if (topLevel is null)
-            return Task.CompletedTask;
+            return;
 
         if (string.IsNullOrWhiteSpace(document.Text))
         {
             topLevel.Notice(string.Format(CommonLanguageManager.Instance.logShare_noAnalyzable.CurrentValue(),
                 displayName), NotificationType.Warning);
-            return Task.CompletedTask;
+            return;
         }
 
-        AiAnalysisPage.Open(document.Text, displayName, topLevel);
-        return Task.CompletedTask;
+        try
+        {
+            var bundle = await LogBundleBuilder.CreateAsync(document.Text, primaryFileName, instance);
+            AiAnalysisPage.Open(bundle, displayName, topLevel);
+        }
+        catch (Exception ex)
+        {
+            topLevel.Notice(string.Format(CommonLanguageManager.Instance.logShare_failedWithMessage.CurrentValue(),
+                ex.Message), NotificationType.Error);
+        }
     }
 }

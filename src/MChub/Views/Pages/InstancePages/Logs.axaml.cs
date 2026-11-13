@@ -20,6 +20,7 @@ namespace MChub.Views.Pages.InstancePages;
 public partial class Logs : UserControl
 {
     private readonly IHighlightingDefinition _highlighting;
+    private readonly MinecraftInstance? _instance;
     private readonly string? _logsPath;
 
     public Logs()
@@ -33,6 +34,7 @@ public partial class Logs : UserControl
 
     public Logs(MinecraftInstance instance) : this()
     {
+        _instance = instance;
         _logsPath = instance.GetSpecialFolder(MinecraftSpecialFolder.LogsFolder);
         AttachedToVisualTree += async (_, _) => await RefreshLogFilesAsync();
     }
@@ -153,14 +155,16 @@ public partial class Logs : UserControl
     private void Share_OnClick(object? sender, RoutedEventArgs e)
     {
         _ = LogSharingInteraction.ShareAsync(this, LogEditor.Document,
-            CommonLanguageManager.Instance.logs_log.CurrentValue());
+            CommonLanguageManager.Instance.logs_log.CurrentValue(), _instance, SelectedFileName);
     }
 
     private void AnalyseAi_OnClick(object? sender, RoutedEventArgs e)
     {
         _ = LogSharingInteraction.AnalyseAiAsync(this, LogEditor.Document,
-            CommonLanguageManager.Instance.logs_log.CurrentValue());
+            CommonLanguageManager.Instance.logs_log.CurrentValue(), _instance, SelectedFileName);
     }
+
+    private string? SelectedFileName => (LogFileSelector.SelectedItem as InstanceLogFileItem)?.Name;
 
     private void SelectAll_OnClick(object? sender, RoutedEventArgs e)
     {

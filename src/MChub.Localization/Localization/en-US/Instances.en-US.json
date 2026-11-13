@@ -155,7 +155,12 @@
     "copyLink": "Copy Link",
     "openLink": "Open Link",
     "close": "Done",
-    "copyAllLinks": "Copy All Links"
+    "copyAllLinks": "Copy All Links",
+    "fileCount": "{0} files",
+    "deduplicated": "Duplicate content, reusing the existing link",
+    "delete": "Delete",
+    "deleted": "Deleted",
+    "deleteFailed": "Delete failed: {0}"
   },
   "logs": {
     "title": "Logs",

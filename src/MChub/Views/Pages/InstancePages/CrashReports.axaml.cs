@@ -157,13 +157,23 @@ public partial class CrashReports : UserControl
     private void Share_OnClick(object? sender, RoutedEventArgs e)
     {
         _ = LogSharingInteraction.ShareAsync(this, LogEditor.Document,
-            CommonLanguageManager.Instance.crashReports_crashReport.CurrentValue());
+            CommonLanguageManager.Instance.crashReports_crashReport.CurrentValue(), _instance, PrimaryFileName);
     }
 
     private void AnalyseAi_OnClick(object? sender, RoutedEventArgs e)
     {
         _ = LogSharingInteraction.AnalyseAiAsync(this, LogEditor.Document,
-            CommonLanguageManager.Instance.crashReports_crashReport.CurrentValue());
+            CommonLanguageManager.Instance.crashReports_crashReport.CurrentValue(), _instance, PrimaryFileName);
+    }
+
+    /// <summary>崩溃报告按 crash-reports/ 前缀上传，服务端识别日志类型时能直接看出这是崩溃报告。</summary>
+    private string? PrimaryFileName
+    {
+        get
+        {
+            var name = (LogFileSelector.SelectedItem as InstanceLogFileItem)?.Name;
+            return string.IsNullOrWhiteSpace(name) ? null : $"crash-reports/{name}";
+        }
     }
 
     private void SelectAll_OnClick(object? sender, RoutedEventArgs e)
