@@ -362,14 +362,16 @@ jobs:
           # CodeNet x64 SDK 在 Rosetta 下交叉构建 osx-arm64 会概率性死锁：
           # 轻则卡在 restore 的 "Determining projects to restore..."，
           # 重则 BundleApp 编译阶段静默挂起直到 GitHub 6h 超时（实测多次）。
-          # 给每个 dotnet 调用套 600s 超时，挂起即 kill 重试，最多 3 次。
+          # 给每个 dotnet 调用套超时（默认 600s，可用第二个参数覆盖），挂起即 kill 重试，最多 3 次。
           run_with_timeout() {
             local label="$1"; shift
+            local limit=600
+            if [[ "$1" =~ ^[0-9]+$ ]]; then limit="$1"; shift; fi
             for attempt in 1 2 3; do
-              echo "== $label attempt $attempt =="
+              echo "== $label attempt $attempt (timeout ${limit}s) =="
               dotnet "$@" &
               local pid=$!
-              ( sleep 600; kill -9 "$pid" 2>/dev/null ) &
+              ( sleep "$limit"; kill -9 "$pid" 2>/dev/null ) &
               local killer=$!
               # GitHub 默认 shell 带 -e，wait 直接返回非 0 会终止脚本，导致重试分支永远不执行
               local rc=0
@@ -387,7 +389,12 @@ jobs:
             return 1
           }
           run_with_timeout restore restore -r ${{ matrix.rid }}
-          run_with_timeout bundle msbuild -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true
+          # -m:1 禁用 MSBuild 的并行工作节点。x64 SDK 经 Rosetta 跑时，多进程构建会随机
+          # 崩在子节点上（MSBUILD : error MSB4166: Child node "N" exited prematurely，
+          # 伴随 rc=139/138），三个重试全灭。串行化后只有进程内节点，这条路径不再触发；
+          # 代价是这一步慢一些，但比整轮发布反复失败划算。串行构建耗时更长，
+          # 所以把这次的超时放宽到 1800s，避免被自己的看门狗砍掉。
+          run_with_timeout bundle 1800 msbuild -m:1 -t:BundleApp -p:RuntimeIdentifier=${{ matrix.rid }} -property:Configuration=Release -p:SelfContained=true
 
       - name: Download Bedrock macOS runtime
         uses: actions/download-artifact@v7
