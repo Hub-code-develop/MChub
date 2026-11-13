@@ -278,6 +278,13 @@ jobs:
       GRAVITYCONE_UPTIME_API_KEY: ${{ secrets.GRAVITYCONE_UPTIME_API_KEY }}
       PRE_MC_KEY: ${{ secrets.PRE_MC_KEY }}
       REL_MC_KEY: ${{ secrets.REL_MC_KEY }}
+      # x64 SDK 在 arm64 runner 上经 Rosetta 运行，而 W^X 双映射在 Rosetta 下不被支持
+      # （dotnet/runtime#106819）。runtime 本应检测到 Rosetta 后自动关掉它，但 CodeNet 的
+      # signalfix 改了 Mach 异常/信号处理路径，这个检测并未生效，于是表现为
+      #   · dotnet restore -r osx-arm64 随机 Segmentation fault (139) / Bus error (138)
+      #   · MSBUILD : error MSB4166: Child node exited prematurely
+      # 实测 osx-arm64 连续三次重试全部在 restore 阶段崩掉。显式关闭 W^X 即绕开双映射。
+      DOTNET_EnableWriteXorExecute: "0"
     strategy:
       fail-fast: false
       matrix:
