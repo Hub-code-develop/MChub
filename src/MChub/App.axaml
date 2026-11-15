@@ -1,5 +1,5 @@
 <Application
-    Name="MCStudio"
+    Name="MChub"
     RequestedThemeVariant="Default"
     x:Class="MChub.App"
     xmlns="https://github.com/avaloniaui"

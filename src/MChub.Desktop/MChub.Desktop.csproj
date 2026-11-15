@@ -125,7 +125,7 @@
          shows it. BundleApp only looks for the icon by CFBundleIconFile name at the
          bundle root, so a manual copy is required. -->
     <!-- 目录名不能用固定的 MChub.app：CI 会给不同变体传不同的 CFBundleName
-         （普通版 MChub、新手版 MCStudio-Newbie），BundleAppTask 正是拿它建 .app 目录。
+         （普通版 MChub、新手版 MChub-Newbie），BundleAppTask 正是拿它建 .app 目录。
          固定名会导致改名后的变体找不到 bundle，图标悄悄不复制。 -->
     <Target Name="CopyAppIconToBundle" AfterTargets="BundleApp">
         <Message Importance="high" Text="[CopyAppIconToBundle] OutputPath=$(OutputPath) AssemblyName=$(AssemblyName) CFBundleName=$(CFBundleName)" />
