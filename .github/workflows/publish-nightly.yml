@@ -464,7 +464,7 @@ jobs:
               exit 1
             fi
           done
-          echo "signalfix 运行时已生效（libcoreclr 大小 $(stat -f%z "$APP/Contents/MacOS/libcoreclr.dylib)）"
+          echo "signalfix 运行时已生效（libcoreclr 大小 $(stat -f%z "$APP/Contents/MacOS/libcoreclr.dylib")）"
           # 签名不在这里做：后面塞完 Bedrock 运行时、改完 Info.plist 有统一的整包重签步骤
 
       - name: Download Bedrock macOS runtime
