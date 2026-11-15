@@ -488,15 +488,15 @@ jobs:
             prefix: "MChub.NewUI."
             rid: osx-x64
             dmg_arch: x64
-            bundle_name: MCStudio-Newbie
-            display_name: MCStudio Newbie
+            bundle_name: MChub-Newbie
+            display_name: MChub Newbie
           - id: newui
             ref: MChubforNEW
             prefix: "MChub.NewUI."
             rid: osx-arm64
             dmg_arch: arm64
-            bundle_name: MCStudio-Newbie
-            display_name: MCStudio Newbie
+            bundle_name: MChub-Newbie
+            display_name: MChub Newbie
     steps:
       # 基座库 CodeHub-FluentUI 发布在 GitHub Packages。该源即使包是公开的也要求认证
       # （实测匿名请求服务索引与包下载均 401），所以每个会还原的作业都要先配好凭据。
