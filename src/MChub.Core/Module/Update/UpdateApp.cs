@@ -992,7 +992,7 @@ public static class UpdateApp
         Directory.CreateDirectory(extracted);
         RunAndWait("/usr/bin/ditto", "-x", "-k", packagePath, extracted);
         // 不能写死 MChub.app：普通版与新手版要能同时安装，两者的 .app 名不同
-        // （本变体是 MCStudio-Newbie.app，名字来自构建时的 CFBundleName）。
+        // （本变体是 MChub-Newbie.app，名字来自构建时的 CFBundleName）。
         // zip 用 ditto --keepParent 只打一层，所以优先在顶层找唯一的 .app。
         var replacement = FindMacAppBundle(extracted)
                           ?? throw new InvalidDataException(CommonLanguageManager.Instance.update_macPackageInvalid.CurrentValue());
